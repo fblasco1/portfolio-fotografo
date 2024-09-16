@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cristian Pirovano - Contact</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-left">
+                <h1>CRISTIAN PIROVANO</h1>
+                <p>photographer</p>
+            </div>
+            <div class="nav-right">
+                <button id="menuToggle" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul id="menu">
+                    <li><a href="/index.html">Home</a></li>
+                    <li><a href="/catalog.html">Gallery</a></li>
+                    <li><a href="/bio.html">Bio</a></li>
+                    <li><a href="/contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main id="content">
+        <section class="contact">
+            <h2>Contact Cristian</h2>
+            <form id="contactForm">
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="subject">Subject:</label>
+                    <input type="text" id="subject" name="subject" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message:</label>
+                    <textarea id="message" name="message" required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Send Message</button>
+            </form>
+        </section>
+    </main>
+
+    <script src="./js/script.js"></script>
+    <script src="./js/contact.js"></script>
+</body>
+</html>

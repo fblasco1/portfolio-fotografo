@@ -1,0 +1,351 @@
+:root {
+    --primary-color: #4CAF50;
+    --text-color: #333;
+    --background-color: #f4f4f4;
+    --header-bg: rgba(0, 0, 0, 0.8);
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+#background-carousel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+.carousel-inner {
+    width: 100%;
+    height: 100%;
+}
+
+.carousel-inner img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+.carousel-inner img.active {
+    opacity: 1;
+}
+
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--header-bg);
+    z-index: 1000;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.nav-left h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.nav-left p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #ccc;
+}
+
+#menuToggle {
+    display: none;
+}
+
+.nav-right ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+.nav-right ul li {
+    margin-left: 1.25rem;
+}
+
+.nav-right ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    transition: color 0.3s ease;
+}
+
+.nav-right ul li a:hover {
+    color: var(--primary-color);
+}
+
+#content {
+    margin-top: 5rem;
+    padding: 1.25rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.25rem;
+}
+
+.photo-item {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.photo-item:hover {
+    transform: translateY(-5px);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.photo-info {
+    padding: 1rem;
+}
+
+.photo-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.buy-btn {
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    padding: 0.625rem 1.25rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.buy-btn:hover {
+    background-color: #45a049;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.9);
+}
+
+.modal-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.close:hover,
+.close:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#modalCaption {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    text-align: center;
+    color: #ccc;
+    padding: 10px 0;
+    height: 150px;
+}
+
+@media screen and (max-width: 768px) {
+    .nav-right ul {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: var(--header-bg);
+    }
+
+    .nav-right ul.show {
+        display: flex;
+    }
+
+    .nav-right ul li {
+        margin: 0;
+        text-align: center;
+    }
+
+    .nav-right ul li a {
+        display: block;
+        padding: 1rem;
+    }
+
+    #menuToggle {
+        display: block;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    #menuToggle span {
+        display: block;
+        width: 25px;
+        height: 3px;
+        margin: 5px auto;
+        background-color: white;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .gallery {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Bio Page Styles */
+.bio {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.bio-image {
+    flex: 1 1 300px;
+}
+
+.bio-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.bio-text {
+    flex: 2 1 400px;
+}
+
+.bio-text h2 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.bio-text p {
+    margin-bottom: 1rem;
+}
+
+/* Contact Page Styles */
+.contact h2 {
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-group textarea {
+    height: 150px;
+    resize: vertical;
+}
+
+.submit-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-btn:hover {
+    background-color: #45a049;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .bio {
+        flex-direction: column;
+    }
+
+    .bio-image,
+    .bio-text {
+        flex-basis: 100%;
+    }
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cristian Pirovano - Gallery</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-left">
+                <h1>CRISTIAN PIROVANO</h1>
+                <p>photographer</p>
+            </div>
+            <div class="nav-right">
+                <button id="menuToggle" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul id="menu">
+                    <li><a href="/index.html">Home</a></li>
+                    <li><a href="/catalog.html">Gallery</a></li>
+                    <li><a href="/bio.html">Bio</a></li>
+                    <li><a href="/contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main id="content">
+        <h2>Gallery</h2>
+        <div class="gallery" id="photoGallery"></div>
+        
+        <div id="photoModal" class="modal" aria-hidden="true">
+            <button class="close" aria-label="Close modal">&times;</button>
+            <img class="modal-content" id="modalImg" alt="">
+            <div id="modalCaption"></div>
+        </div>
+    </main>
+
+    <script src="./js/catalog.js"></script>
+</body>
+</html>
