@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="no">
     <title>Cristian Pirovano - Gallery</title>
     <link rel="stylesheet" href="./css/style.css">
 </head>
@@ -11,7 +12,7 @@
         <nav>
             <div class="nav-left">
                 <h1>CRISTIAN PIROVANO</h1>
-                <p>photographer</p>
+                <p data-i18n="nav.photographer">photographer</p>
             </div>
             <div class="nav-right">
                 <button id="menuToggle" aria-label="Toggle menu">
@@ -20,26 +21,76 @@
                     <span></span>
                 </button>
                 <ul id="menu">
-                    <li><a href="/index.html">Home</a></li>
-                    <li><a href="/catalog.html">Gallery</a></li>
-                    <li><a href="/bio.html">Bio</a></li>
-                    <li><a href="/contact.html">Contact</a></li>
+                    <li><a href="/index.html" data-i18n="nav.home"></a></li>
+                    <li><a href="/bio.html" data-i18n="nav.bio"></a></li>
+                    <li><a href="/contacto.html" data-i18n="nav.contact"></a></li>
+                    <div class="language-switcher">
+                        <button onclick="changeLanguage('en')">
+                            <img src="https://static.knowunity.com/countries/US.svg" alt="EN" class="flag-icon">
+                        </button>
+                        <button onclick="changeLanguage('es')">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Bandera_de_Espa%C3%B1a.svg" alt="ES" class="flag-icon">
+                        </button>
+                    </div>
                 </ul>
-            </div>
+                
         </nav>
     </header>
 
     <main id="content">
-        <h2>Gallery</h2>
-        <div class="gallery" id="photoGallery"></div>
+        <h2 data-i18n="gallery.title">Gallery</h2>
+        <div class="folder-grid" id="folderGrid"></div>
         
-        <div id="photoModal" class="modal" aria-hidden="true">
+        <div id="carouselModal" class="modal" aria-hidden="true">
             <button class="close" aria-label="Close modal">&times;</button>
-            <img class="modal-content" id="modalImg" alt="">
-            <div id="modalCaption"></div>
+            <div class="carousel">
+                <button class="carousel-button prev" aria-label="Previous image">&lt;</button>
+                <div class="carousel-content">
+                    <img class="modal-content" id="carouselImg" alt="">
+                    <div id="carouselCaption"></div>
+                    <button id="selectPhoto" class="select-btn">Select for Purchase</button>
+                </div>
+                <button class="carousel-button next" aria-label="Next image">&gt;</button>
+            </div>
+        </div>
+
+        <div id="selectedPhotos" class="selected-photos">
+            <h3>Selected Photos</h3>
+            <ul id="selectedPhotosList"></ul>
+            <button id="checkout" class="checkout-btn">Proceed to Checkout</button>
+        </div>
+
+        <div id="checkoutModal" class="modal" aria-hidden="true">
+            <div class="modal-content checkout-form">
+                <button class="close" aria-label="Close checkout">&times;</button>
+                <h3>Complete Your Purchase</h3>
+                <form id="checkoutForm">
+                    <div class="form-group">
+                        <label for="name">Full Name:</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address:</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number:</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Residential Address:</label>
+                        <textarea id="address" name="address" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Complete Purchase</button>
+                </form>
+            </div>
         </div>
     </main>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/21.6.10/i18next.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-http-backend/1.3.2/i18nextHttpBackend.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/6.1.3/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="./js/i18n.js"></script>
     <script src="./js/catalog.js"></script>
+    <script src="./js/blockScreen.js"></script>
 </body>
 </html>

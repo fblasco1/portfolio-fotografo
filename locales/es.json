@@ -1,0 +1,48 @@
+{
+    "nav": {
+      "photographer": "fotógrafo",
+      "home": "Inicio",
+      "gallery": "Galeria",
+      "bio": "Biografía",
+      "contact": "Contacto"
+    },
+    "gallery": {
+      "title": "Galeria"
+    },
+    "checkout": {
+      "title": "Completa tu Compra",
+      "name": "Nombre Completo:",
+      "email": "Correo Electrónico:",
+      "phone": "Número de Teléfono:",
+      "address": "Dirección Residencial:",
+      "submit": "Completar Compra"
+    },
+    "removeFromSelection": "Quitar de la selección",
+    "selectForPurchase": "Seleccionar para compra",
+    "remove": "Quitar",
+    "selectPhotoAlert": "Por favor, seleccione al menos una foto antes de proceder al pago.",
+    "purchaseThankYou": "¡Gracias por su compra! El fotógrafo ha sido notificado y se pondrá en contacto con usted pronto.",
+    "emailContent": "Nueva solicitud de compra:\n\nDetalles del cliente:\nNombre: {{name}}\nEmail: {{email}}\nTeléfono: {{phone}}\nDirección: {{address}}\n\nFotos seleccionadas:\n{{selectedPhotos}}",
+    "eraMileiTitulo": "La Era Milei: 10 meses <br> Buenos Aires, Argentina (2023-2024)",
+    "eraMileiTexto": "Desde su ascenso al poder, la sociedad argentina ha atravesado un período de profundas transformaciones económicas y sociales, lo que ha provocado fuertes reacciones populares en contra de su gobierno. Las calles de Buenos Aires se han convertido en escenarios de protestas multitudinarias. Este registro fotográfico cubre los primeros 10 meses del gobierno de Milei: desde su asunción, su acto en el Luna Park y el Parque Lezama, hasta las manifestaciones contra la Ley Bases, el veto a la Ley de Movilidad Jubilatoria, los paros generales y las marchas universitarias.",
+    "yerbaMateTitulo": "Yerba Mate <br> Misiones, Argentina (2024)",
+    "eleccionesArgentina2023Titulo": "Elecciones Presidenciales 2023-Ballotaje <br> Buenos Aires, Argentina (2023)",
+    "vidaBajoOcupacionTitulo": "Vida bajo ocupación <br> Palestina (2013-2022)",
+    "vidaBajoOcupacionTexto": "La ocupación israelí ha moldeado las dinámicas diarias en Palestina, generando un contexto de restricciones y represión permanentes. El ejército israelí despliega miles de militares en Cisjordania, realizando incursiones diarias en ciudades y pueblos, lo que resulta en heridos y muertos, así como en secuestros sin orden judicial. La vida cotidiana se ve afectada por un régimen que limita la movilidad y restringe el acceso a recursos básicos. Sin embargo, los palestinos continúan resistiendo a la vida bajo ocupación.\n Este material es parte del libro Del Otro Lado Del Muro.",
+    "elMuroTitulo": "El Muro del Apartheid <br> Palestina (2013-2022)",
+    "elMuroTexto": "El muro de separación construido por Israel en territorio palestino es un símbolo de la ocupación y el apartheid. A lo largo de sus más de 700 kilómetros, el muro atraviesa paisajes, comunidades y vidas, dividiendo familias y restringiendo libertades. Esta barrera física afecta profundamente la vida diaria de quienes viven bajo su sombra, una sombra que se extiende, al igual que la resistencia y la lucha, en medio de la opresión. Este material es parte del libro Del Otro Lado Del Muro.",
+    "festejosCopaDelMundoTitulo": "Festejos de la Copa del Mundo <br> Buenos Aires, Argentina (2022)",
+    "covidTitulo": "Covid 19: Donde el tiempo se detiene <br> Buenos Aires, Argentina (2020)",
+    "covidTexto": "Durante los días de la pandemia de COVID-19, Buenos Aires, al igual que la mayoría de las ciudades del mundo, se transformó en un espacio vacío y silencioso.",
+    "motinTitulo": "Motín Cárcel Devoto <br> Buenos Aires, Argentina (2020)",
+    "mujeresTitulo": "Mujeres <br> (2010-2019)",
+    "mujeresTexto": "Retratos tomados en India, Nepal, Mozambique, Marruecos, Myanmar, Palestina, Rumania y Laos.",
+    "qomTitulo": "Comunidad Qom - Potae Napocna Navogoh <br> Formosa, Argentina (2013)",
+    "laosTitulo": "Phengsy Sommany, ícono de la resistencia de Laosiana <br> Viang Xai, Laos (2012)",
+    "bio": {
+      "title": "Acerca de Cristian Pirovano",
+      "p1": "Cristian Pirovano nació en Buenos Aires, Argentina, en 1978. Es fotoperiodista y documentalista, con formación en Sociología en la Universidad de Buenos Aires. Durante más de dos décadas, ha participado en diversos proyectos fotográficos y audiovisuales, documentando realidades en América del Sur, las secuelas de la guerra en el sudeste asiático y, en los últimos años, con un enfoque especial en la ocupación de los territorios palestinos.",
+      "p2": "Es fundador de la revista Músicas del Mundo y codirector y coproductor de la película Yallah Yallah, la primera coproducción oficial entre Argentina y Palestina, estrenada en 2018 y proyectada en 25 países de América, Europa y Oceanía, además de ser transmitida por Al Jazeera en 22 países.",
+      "p3": "Actualmente, está finalizando su proyecto más reciente, el libro de fotografía Del otro lado del muro, una obra homónima de su exposición fotográfica. Este proyecto se centra en la vida cotidiana en Palestina bajo la ocupación israelí y se basa en más de diez años de trabajo documental, con el objetivo de transmitir, mediante imágenes y testimonios, lo que implica vivir bajo ocupación."
+    }
+  }

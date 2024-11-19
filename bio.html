@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="no">
     <title>Cristian Pirovano - Bio</title>
     <link rel="stylesheet" href="./css/style.css">
 </head>
@@ -11,7 +12,7 @@
         <nav>
             <div class="nav-left">
                 <h1>CRISTIAN PIROVANO</h1>
-                <p>photographer</p>
+                <p data-i18n="nav.photographer">photographer</p>
             </div>
             <div class="nav-right">
                 <button id="menuToggle" aria-label="Toggle menu">
@@ -20,12 +21,19 @@
                     <span></span>
                 </button>
                 <ul id="menu">
-                    <li><a href="/index.html">Home</a></li>
-                    <li><a href="/catalog.html">Gallery</a></li>
-                    <li><a href="/bio.html">Bio</a></li>
-                    <li><a href="/contact.html">Contact</a></li>
+                    <li><a href="/index.html" data-i18n="nav.home"></a></li>
+                    <li><a href="/catalog.html" data-i18n="nav.gallery"></a></li>
+                    <li><a href="/contacto.html" data-i18n="nav.contact"></a></li>
+                    <div class="language-switcher">
+                        <button onclick="changeLanguage('en')">
+                            <img src="https://static.knowunity.com/countries/US.svg" alt="EN" class="flag-icon">
+                        </button>
+                        <button onclick="changeLanguage('es')">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Bandera_de_Espa%C3%B1a.svg" alt="ES" class="flag-icon">
+                        </button>
+                    </div>
                 </ul>
-            </div>
+                
         </nav>
     </header>
 
@@ -35,14 +43,19 @@
                 <img src="./assets/cristian-pirovano.jpg" alt="Cristian Pirovano" loading="lazy">
             </div>
             <div class="bio-text">
-                <h2>About Cristian Pirovano</h2>
-                <p>Cristian Pirovano is an Argentine photographer and filmmaker, born in 1978 in Buenos Aires, Argentina. He pursued his studies in Sociology at the University of Buenos Aires, where he also began his photography education.</p>
-                <p>Pirovano is known for his work in documentary filmmaking, particularly as a co-director of the film "Yallah! Yallah!" which focuses on the intersection of football and culture in Palestine. His contributions to the film industry have been recognized at various events, including the Palestine Cinema Days</p>
-                <p>In addition to his filmmaking, Pirovano works as a freelance photographer and fixer, engaging in projects that highlight social issues and cultural narratives</p>
+                <h2 data-i18n="bio.title"></h2>
+                <p data-i18n="bio.p1"></p>
+                <p data-i18n="bio.p2"></p>
+                <iframe width="800" height="500" src="https://www.youtube.com/embed/zMoT7R-bMSE" title="¡YALLAH! ¡YALLAH! Trailer oficial English subtitle" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                <p data-i18n="bio.p3"></p>
             </div>
         </section>
     </main>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/21.6.10/i18next.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-http-backend/1.3.2/i18nextHttpBackend.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/6.1.3/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="./js/i18n.js"></script>
     <script src="./js/script.js"></script>
+    <script src="./js/blockScreen.js"></script>
 </body>
 </html>

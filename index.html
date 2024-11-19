@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="no">
     <title>Cristian Pirovano - Photographer</title>
     <link rel="stylesheet" href="./css/style.css">
 </head>
@@ -11,7 +12,7 @@
         <nav>
             <div class="nav-left">
                 <h1>CRISTIAN PIROVANO</h1>
-                <p>photographer</p>
+                <p data-i18n="nav.photographer"></p>
             </div>
             <div class="nav-right">
                 <button id="menuToggle" aria-label="Toggle menu">
@@ -20,25 +21,43 @@
                     <span></span>
                 </button>
                 <ul id="menu">
-                    <li><a href="/index.html">Home</a></li>
-                    <li><a href="/catalog.html">Gallery</a></li>
-                    <li><a href="/bio.html">Bio</a></li>
-                    <li><a href="/contact.html">Contact</a></li>
+                    <li><a href="/catalog.html" data-i18n="nav.gallery"></a></li>
+                    <li><a href="/bio.html" data-i18n="nav.bio"></a></li>
+                    <li><a href="/contacto.html" data-i18n="nav.contact"></a></li>
+                    <div class="language-switcher">
+                        <button onclick="changeLanguage('en')">
+                            <img src="https://static.knowunity.com/countries/US.svg" alt="EN" class="flag-icon">
+                        </button>
+                        <button onclick="changeLanguage('es')">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Bandera_de_Espa%C3%B1a.svg" alt="ES" class="flag-icon">
+                        </button>
+                    </div>
                 </ul>
-            </div>
+                
         </nav>
     </header>
 
     <div id="background-carousel">
         <div class="carousel-inner">
-            <img src="./assets/foto1.jpg" alt="Imagen 1" class="active">
-            <img src="./assets/foto2.jpg" alt="Imagen 2">
-            <img src="./assets/foto3.jpg" alt="Imagen 3">
-            <img src="./assets/foto4.jpg" alt="Imagen 4">
-            <img src="./assets/foto5.jpg" alt="Imagen 5">
+            <img src="./assets/Reel 1/1-IMG_3509-3-30x45.jpg" alt="Imagen 1" class="active">
+            <img src="./assets/Reel 1/2-20231227182800_IMG_2433.jpg" alt="Imagen 2">
+            <img src="./assets//Reel 1/3-Cristian Pirovano_Ley Bases II.jpg" alt="Imagen 3">
+            <img src="./assets/Reel 1/4-20231203223111_IMG_0180.jpg" alt="Imagen 4">
+            <img src="./assets/Reel 1/5-india 1008.jpg" alt="Imagen 5">
+            <img src="./assets/Reel 1/6-272-2-222-45X30 (2).jpg" alt="Imagen 6">
+            <img src="./assets/Reel 1/7-20240201004731_IMG_3378.jpg" alt="Imagen 7">
+            <img src="./assets/Reel 1/8-IMG_4673.jpg" alt="Imagen 8">
+            <img src="./assets/Reel 1/9-IMG_5085.jpg" alt="Imagen 9">
+            <img src="./assets/Reel 1/10-IMG_6413.jpg" alt="Imagen 10">
+            <img src="./assets/Reel 1/11-IMG_8477.jpg" alt="Imagen 11">
+            <img src="./assets/Reel 1/12-india 873.jpg" alt="Imagen 12">
         </div>
     </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/21.6.10/i18next.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-http-backend/1.3.2/i18nextHttpBackend.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/6.1.3/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="./js/i18n.js"></script>
     <script src="./js/script.js"></script>
+    <script src="./js/blockScreen.js"></script>
 </body>
 </html>

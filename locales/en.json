@@ -1,0 +1,48 @@
+{
+    "nav": {
+        "photographer": "photographer",
+        "home": "Home",
+        "gallery": "Gallery",
+        "bio": "Bio",
+        "contact": "Contact"
+    },
+    "gallery": {
+      "title": "Gallery"
+    },
+    "checkout": {
+      "title": "Complete Your Purchase",
+      "name": "Full Name:",
+      "email": "Email Address:",
+      "phone": "Phone Number:",
+      "address": "Residential Address:",
+      "submit": "Complete Purchase"
+    },
+    "removeFromSelection": "Remove from Selection",
+    "selectForPurchase": "Select for Purchase",
+    "remove": "Remove",
+    "selectPhotoAlert": "Please select at least one photo before checking out.",
+    "purchaseThankYou": "Thank you for your purchase! The photographer has been notified and will contact you soon.",
+    "emailContent": "New Purchase Request:\n\nCustomer Details:\nName: {{name}}\nEmail: {{email}}\nPhone: {{phone}}\nAddress: {{address}}\n\nSelected Photos:\n{{selectedPhotos}}",
+    "eraMileiTitulo": "The Milei era: 10 months, Buenos Aires (2023-2024)",
+    "eraMileiTexto": "Since he came to power, Argentine society has undergone a period of profound economic and social change that has provoked strong popular reaction against his government. The streets of Buenos Aires became the scene of mass protests. This photographic record covers the first 10 months of Milei's government: from his inauguration, his act in Luna Park and Parque Lezama, to the demonstrations against the Bases Law, the veto of the Retirement Mobility Law, the general strikes and the university marches.",
+    "yerbaMateTitulo": "Yerba Mate <br> Misiones, Argentina (2024)",
+    "eleccionesArgentina2023Titulo": "Argentina 2023 Presidential Elections - Ballotage <br> Buenos Aires, Argentina (2023)",
+    "vidaBajoOcupacionTitulo": "Life under occupation <br> Palestine (2013-2022)",
+    "vidaBajoOcupacionTexto": "The Israeli occupation has shaped daily life in Palestine, creating a context of constant restriction and repression. The Israeli army deploys thousands of military personnel in the West Bank and carries out daily raids on towns and villages, resulting in injuries and deaths, as well as abductions without warrants. Daily life is affected by a regime that restricts movement and access to basic resources. Yet Palestinians continue to resist living under occupation.\n This material is part of the book On the Other Side of the Wall.",
+    "elMuroTitulo": "The Apartheid Wall <br> Palestine (2013-2022)",
+    "elMuroTexto": "The separation barrier built by Israel on Palestinian land is a symbol of occupation and apartheid. Along its more than 700 kilometres, the wall cuts through landscapes, communities and lives, dividing families and restricting freedoms. This physical barrier has a profound impact on the daily lives of those who live under its shadow, a shadow that grows as does resistance and struggle in the midst of oppression. This material is part of the book On the Other Side of the Wall.",
+    "festejosCopaDelMundoTitulo": "World Cup Celebrations <br> Buenos Aires, Argentina (2022)",
+    "covidTitulo": "Covid 19: Where time stands still <br> Buenos Aires, Argentina (2020)",
+    "covidTexto": "During the days of the COVID-19 pandemic, Buenos Aires, like most cities in the world, was transformed into an empty and silent space.",
+    "motinTitulo": "Riot in Devoto Prision <br> Buenos Aires, Argentina (2020)",
+    "mujeresTitulo": "Women <br> (2010-2019)",
+    "mujeresTexto": "Portraits taken in India, Nepal, Mozambique, Morocco, Myanmar, Palestine, Romania and Laos.",
+    "qomTitulo": "Qom-Potae Napocna Navogoh Community <br> Formosa, Argentina (2013)",
+    "laosTitulo": "Phengsy Sommany, icon of Laotian resistance <br> Viang Xai, Laos (2012)",
+    "bio": {
+      "title": "About Cristian Pirovano",
+      "p1": "Cristian Pirovano was born in Buenos Aires, Argentina, in 1978. He is a photojournalist and documentarian with a background in Sociology from the University of Buenos Aires. For over two decades, he has participated in various photographic and audiovisual projects, documenting realities in South America, the aftermath of war in Southeast Asia, and, in recent years, focusing particularly on the occupation of Palestinian territories.",
+      "p2": "He is the founder of the magazine Músicas del Mundo and co-director and co-producer of the film Yallah Yallah, the first official co-production between Argentina and Palestine. The film premiered in 2018 and has been screened in 25 countries across the Americas, Europe, and Oceania, as well as broadcasted by Al Jazeera in 22 countries.",
+      "p3": "Currently, he is completing his latest project, the photography book Del otro lado del muro (On the Other Side of the Wall), which shares its name with his photographic exhibition. This project focuses on daily life in Palestine under Israeli occupation and draws on over a decade of documentary work, aiming to convey through images and testimonies what it means to live under occupation."
+    }
+}
