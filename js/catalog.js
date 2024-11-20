@@ -247,27 +247,25 @@ const folderGrid = document.getElementById('folderGrid');
 const carouselModal = document.getElementById('carouselModal');
 const carouselImg = document.getElementById('carouselImg');
 const carouselCaption = document.getElementById('carouselCaption');
+const carouselDescription = document.getElementById('carouselDescription');
 const closeBtn = document.querySelector('.close');
 const prevBtn = document.querySelector('.prev');
 const nextBtn = document.querySelector('.next');
-const selectBtn = document.getElementById('selectPhoto');
-const selectedPhotosList = document.getElementById('selectedPhotosList');
-const checkoutBtn = document.getElementById('checkout');
-const checkoutModal = document.getElementById('checkoutModal');
-const checkoutForm = document.getElementById('checkoutForm');
 
 let currentFolder = null;
 let currentPhotoIndex = 0;
-let selectedPhotos = [];
 
 function renderFolderGrid() {
-    folderGrid.innerHTML = ''; // Limpiar el contenido existente
+    folderGrid.innerHTML = '';
     photoFolders.forEach(folder => {
         const folderItem = document.createElement('div');
         folderItem.className = 'folder-item';
         folderItem.innerHTML = `
             <div class="folder-image-container">
-                <img src="${folder.cover}" alt="${i18next.t(folder.title)}" loading="lazy">
+                ${folder.cover ? 
+                    `<img src="${folder.cover}" alt="${i18next.t(folder.title)}" loading="lazy">` :
+                    `<div class="folder-text">${i18next.t(folder.title)}</div>`
+                }
             </div>
             <div class="folder-title">${i18next.t(folder.title)}</div>
         `;
@@ -280,9 +278,10 @@ function openCarousel(folder) {
     currentFolder = folder;
     currentPhotoIndex = 0;
     updateCarouselContent();
-    carouselModal.style.display = "block";
+    carouselModal.style.display = "flex";
     document.body.style.overflow = 'hidden';
     carouselModal.setAttribute('aria-hidden', 'false');
+    showCarouselControls();
 }
 
 function closeCarousel() {
@@ -297,153 +296,48 @@ function updateCarouselContent() {
     if (photo.url) {
         carouselImg.src = photo.url;
         carouselImg.alt = i18next.t(photo.title);
-        carouselImg.style.display = 'block'; // Mostrar la imagen
+        carouselImg.style.display = 'block';
+        carouselDescription.style.display = 'none';
     } else {
-        carouselImg.style.display = 'none'; // Ocultar la imagen si no hay URL
-        const descriptionElement = document.getElementById('carouselDescription');
-        descriptionElement.textContent = i18next.t(photo.description);
-        descriptionElement.style.display = 'block'; // Mostrar la descripción
-        descriptionElement.style.fontSize = '24px'; // Aumentar el tamaño de la fuente para la descripción
-        descriptionElement.style.padding = '20px'; // Añadir padding para mejorar la legibilidad
+        carouselImg.style.display = 'none';
+        carouselDescription.textContent = i18next.t(photo.description);
+        carouselDescription.style.display = 'flex';
     }
     
-    // Actualizamos el botón de selección
-    updateSelectButton(photo);
+    carouselCaption.textContent = i18next.t(photo.title);
+    showCarouselControls();
+}
+
+function showCarouselControls() {
+    prevBtn.style.display = 'block';
+    nextBtn.style.display = 'block';
 }
 
 function showPrevious() {
-    // Ajustamos el índice para manejar el caso de la diapositiva de texto
-    currentPhotoIndex = (currentPhotoIndex - 1 + (currentFolder.photos.length + 1)) % (currentFolder.photos.length + 1);
+    currentPhotoIndex = (currentPhotoIndex - 1 + currentFolder.photos.length) % currentFolder.photos.length;
     updateCarouselContent();
 }
 
 function showNext() {
-    // Ajustamos el índice para manejar el caso de la diapositiva de texto
-    currentPhotoIndex = (currentPhotoIndex + 1) % (currentFolder.photos.length + 1);
+    currentPhotoIndex = (currentPhotoIndex + 1) % currentFolder.photos.length;
     updateCarouselContent();
 }
 
-function updateSelectButton(photo) {
-    // Si es la introducción (sin URL), ocultamos el botón
-    if (!photo.url) {
-        selectBtn.style.display = 'none';  // Ocultar botón si no hay URL (es introducción)
-    } else {
-        // Mostrar el botón si es una imagen seleccionable
-        selectBtn.style.display = 'block'; 
-
-        const isSelected = selectedPhotos.some(p => p.id === photo.id);
-        selectBtn.textContent = isSelected ? i18next.t('removeFromSelection') : i18next.t('selectForPurchase');
-    }
-}
-
-
-function togglePhotoSelection() {
-    const photo = currentFolder.photos[currentPhotoIndex];
-    const index = selectedPhotos.findIndex(p => p.id === photo.id);
-    if (index === -1) {
-        selectedPhotos.push(photo);
-    } else {
-        selectedPhotos.splice(index, 1);
-    }
-    updateSelectButton();
-    renderSelectedPhotos();
-}
-
-function renderSelectedPhotos() {
-    selectedPhotosList.innerHTML = '';
-    selectedPhotos.forEach(photo => {
-        const li = document.createElement('li');
-        li.textContent = `${i18next.t(photo.title)} - ${i18next.t(photo.description)}`;
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = i18next.t('remove');
-        removeBtn.addEventListener('click', () => removeSelectedPhoto(photo.id));
-        li.appendChild(removeBtn);
-        selectedPhotosList.appendChild(li);
-    });
-}
-
-function removeSelectedPhoto(id) {
-    selectedPhotos = selectedPhotos.filter(p => p.id !== id);
-    renderSelectedPhotos();
-    if (carouselModal.style.display === "block") {
-        updateSelectButton();
-    }
-}
-
-function openCheckoutModal() {
-    if (selectedPhotos.length === 0) {
-        alert(i18next.t('selectPhotoAlert'));
-        return;
-    }
-    checkoutModal.style.display = "block";
-    document.body.style.overflow = 'hidden';
-    checkoutModal.setAttribute('aria-hidden', 'false');
-}
-
-function closeCheckoutModal() {
-    checkoutModal.style.display = "none";
-    document.body.style.overflow = 'auto';
-    checkoutModal.setAttribute('aria-hidden', 'true');
-}
-
-function handleCheckout(event) {
-    event.preventDefault();
-    const formData = new FormData(checkoutForm);
-    const customerDetails = Object.fromEntries(formData.entries());
-
-    const selectedPhotosDetails = selectedPhotos.map(photo => 
-        `${i18next.t(photo.title)} - ${i18next.t(photo.description)}`
-    ).join('\n');
-
-    const emailContent = i18next.t('emailContent', {
-        name: customerDetails.name,
-        email: customerDetails.email,
-        phone: customerDetails.phone,
-        address: customerDetails.address,
-        selectedPhotos: selectedPhotosDetails
-    });
-
-    console.log('Email sent to photographer:', emailContent);
-
-    alert(i18next.t('purchaseThankYou'));
-    selectedPhotos = [];
-    renderSelectedPhotos();
-    closeCheckoutModal();
-    checkoutForm.reset();
-}
-
 // Event Listeners
-checkoutBtn.addEventListener('click', openCheckoutModal);
-checkoutForm.addEventListener('submit', handleCheckout);
-
-document.querySelectorAll('.modal .close').forEach(closeBtn => {
-    closeBtn.addEventListener('click', (e) => {
-        if (e.target.closest('#checkoutModal')) {
-            closeCheckoutModal();
-        } else {
-            closeCarousel();
-        }
-    });
-});
+closeBtn.addEventListener('click', closeCarousel);
+prevBtn.addEventListener('click', showPrevious);
+nextBtn.addEventListener('click', showNext);
 
 window.addEventListener('click', (e) => {
     if (e.target === carouselModal) {
         closeCarousel();
-    } else if (e.target === checkoutModal) {
-        closeCheckoutModal();
     }
 });
-
-closeBtn.addEventListener('click', closeCarousel);
-prevBtn.addEventListener('click', showPrevious);
-nextBtn.addEventListener('click', showNext);
-selectBtn.addEventListener('click', togglePhotoSelection);
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
     i18next.on('languageChanged', () => {
         renderFolderGrid();
-        renderSelectedPhotos();
         if (currentFolder) {
             updateCarouselContent();
         }
@@ -451,8 +345,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderFolderGrid();
 });
-
-// Hacer que las funciones necesarias sean accesibles globalmente
-window.openCheckoutModal = openCheckoutModal;
-window.closeCheckoutModal = closeCheckoutModal;
-window.handleCheckout = handleCheckout;
