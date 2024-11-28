@@ -304,7 +304,6 @@ function updateCarouselContent() {
         carouselDescription.style.display = 'flex';
     }
     
-    carouselCaption.textContent = i18next.t(photo.title);
     showCarouselControls();
 }
 

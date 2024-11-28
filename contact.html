@@ -6,13 +6,14 @@
     <meta name="apple-mobile-web-app-capable" content="no">
     <title>Cristian Pirovano - Contact</title>
     <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/contact.css">
 </head>
 <body>
     <header>
         <nav>
             <div class="nav-left">
                 <h1>CRISTIAN PIROVANO</h1>
-                <p>photographer</p>
+                <p data-i18n="nav.photographer"></p>
             </div>
             <div class="nav-right">
                 <button id="menuToggle" aria-label="Toggle menu">
@@ -21,10 +22,18 @@
                     <span></span>
                 </button>
                 <ul id="menu">
-                    <li><a href="/index.html">Home</a></li>
-                    <li><a href="/catalog.html">Gallery</a></li>
-                    <li><a href="/bio.html">Bio</a></li>
-                    <li><a href="/contact.html">Contact</a></li>
+                    <li><a href="/index.html" data-i18n="nav.home"></a></li>
+                    <li><a href="/shop.html" data-i18n="nav.shop"></a></li>
+                    <li><a href="/bio.html" data-i18n="nav.bio"></a></li>                    
+                    <li><a href="/gallery.html" data-i18n="nav.gallery"></a></li>
+                    <div class="language-switcher">
+                        <button onclick="changeLanguage('en')">
+                            <img src="https://static.knowunity.com/countries/US.svg" alt="EN" class="flag-icon">
+                        </button>
+                        <button onclick="changeLanguage('es')">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Bandera_de_Espa%C3%B1a.svg" alt="ES" class="flag-icon">
+                        </button>
+                    </div>
                 </ul>
             </div>
         </nav>
@@ -32,31 +41,32 @@
 
     <main id="content">
         <section class="contact">
-            <h2>Contact Cristian</h2>
+            <h2 data-i18n="contactForm.title"></h2>
             <form id="contactForm">
                 <div class="form-group">
-                    <label for="name">Name:</label>
+                    <label data-i18n="contactForm.name" for="name"></label>
                     <input type="text" id="name" name="name" required>
                 </div>
                 <div class="form-group">
-                    <label for="email">Email:</label>
+                    <label data-i18n="contactForm.email" for="email"></label>
                     <input type="email" id="email" name="email" required>
                 </div>
                 <div class="form-group">
-                    <label for="subject">Subject:</label>
+                    <label data-i18n="contactForm.subject" for="subject"></label>
                     <input type="text" id="subject" name="subject" required>
                 </div>
                 <div class="form-group">
-                    <label for="message">Message:</label>
+                    <label data-i18n="contactForm.message" for="message"></label>
                     <textarea id="message" name="message" required></textarea>
                 </div>
-                <button type="submit" class="submit-btn">Send Message</button>
+                <button data-i18n="contactForm.submitBtn" type="submit" class="submit-btn"></button>
             </form>
         </section>
     </main>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/21.6.10/i18next.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-http-backend/1.3.2/i18nextHttpBackend.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/6.1.3/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="./js/i18n.js"></script>
     <script src="./js/script.js"></script>
-    <script src="./js/contact.js"></script>
-    <script src="./js/blockScreen.js"></script>
 </body>
 </html>

@@ -1,16 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const carouselImages = document.querySelectorAll('#background-carousel img');
+document.addEventListener("contextmenu", function (e) {
+  e.preventDefault();
+});
 
-    // Función para el carrusel
-    function startCarousel() {
-        let currentIndex = 0;
-        setInterval(() => {
-            carouselImages[currentIndex].classList.remove('active');
-            currentIndex = (currentIndex + 1) % carouselImages.length;
-            carouselImages[currentIndex].classList.add('active');
-        }, 5000); // Cambia la imagen cada 5 segundos
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  const menuToggle = document.getElementById("menuToggle");
+  const menu = document.getElementById("menu");
 
-    // Iniciar el carrusel
-    startCarousel();
+  menuToggle.addEventListener("click", () => {
+    menu.classList.toggle("active");
+  });
 });
