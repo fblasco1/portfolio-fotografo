@@ -204,41 +204,50 @@ document.addEventListener("DOMContentLoaded", () => {
   async function handleCheckoutSubmit(event) {
     event.preventDefault();
 
+    // Recopila datos del formulario
     const formData = new FormData(checkoutForm);
     const customerName = formData.get("name");
     const customerEmail = formData.get("email");
     const customerAddress = formData.get("address");
 
-    const photosList = cart
-      .map((photo) => i18next.t(photo.titleKey))
-      .join("\n");
+    // Serializa los datos del carrito (ID y títulos de fotos)
+    const selectedPhotos = cart.map((photo) => ({
+      id: photo.id,
+      title: i18next.t(photo.titleKey),
+    }));
 
-    const emailBody = `
-New Order:
+    // Crea el payload para enviar
+    const payload = {
+      name: customerName,
+      subject: "Order Shop: " + customerName,
+      email: customerEmail,
+      address: customerAddress,
+      photos: selectedPhotos,
+    };
 
-Customer Details:
-Name: ${customerName}
-Email: ${customerEmail}
-Address: ${customerAddress}
+    try {
+      // Envía los datos a Formspree
+      const response = await fetch("https://formspree.io/f/xwpkyabj", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-Selected Photos:
-${photosList}
-        `;
-
-    // Create a mailto link with the email content
-    const mailtoLink = `mailto:pirovanofotografia@gmail.com?subject=New Photo Order&body=${encodeURIComponent(
-      emailBody
-    )}`;
-    window.location.href = mailtoLink;
-
-    // Clear cart and close modal after sending
-    cart = [];
-    updateCart();
-    closeModals();
-    checkoutForm.reset();
-
-    // Show success message
-    alert(i18next.t("shop.checkout.success"));
+      if (response.ok) {
+        // Pedido enviado con éxito
+        alert(i18next.t("shop.checkout.success"));
+        cart = [];
+        updateCart();
+        closeModals();
+        checkoutForm.reset();
+      } else {
+        throw new Error("Error al enviar el pedido.");
+      }
+    } catch (error) {
+      // Manejo de errores
+      console.error(error);
+      alert(i18next.t("shop.checkout.error"));
+    }
   }
 
   // Event Listeners

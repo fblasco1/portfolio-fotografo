@@ -23,8 +23,8 @@
                 </button>
                 <ul id="menu">
                     <li><a href="/index.html" data-i18n="nav.home"></a></li>
+                    <li><a href="/gallery.html" data-i18n="nav.gallery"></a></li>
                     <li><a href="/bio.html" data-i18n="nav.bio"></a></li>
-                    <li><a href="/catalog.html" data-i18n="nav.gallery"></a></li>
                     <li><a href="/contact.html" data-i18n="nav.contact"></a></li>
                     <div class="language-switcher">
                         <button onclick="changeLanguage('en')">
@@ -61,7 +61,11 @@
             <div class="modal-content">
                 <span class="close">&times;</span>
                 <h2 data-i18n="shop.checkout.title"></h2>
-                <form id="checkout-form">
+                <form 
+                    id="checkout-form"
+                    action="https://formspree.io/f/xwpkyabj"
+                    method="POST"
+                >
                     <div class="form-group">
                         <label for="name" data-i18n="shop.checkout.name"></label>
                         <input type="text" id="name" name="name" required>
