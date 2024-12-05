@@ -3,6 +3,8 @@
   --text-color: #333;
   --background-color: #f4f4f4;
   --header-bg: rgba(0, 0, 0, 0.8);
+  --header-text: #ffffff;
+  --header-hover: #4caf50;
 }
 
 body,
@@ -35,16 +37,27 @@ nav {
   margin: 0 auto;
 }
 
+.nav-left {
+  display: flex;
+  flex-direction: column;
+}
+
 .nav-left h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: white;
+  color: var(--header-text);
 }
 
 .nav-left p {
   margin: 0;
   font-size: 0.875rem;
   color: #ccc;
+}
+
+.nav-right {
+  position: static; /* Asegura que el menú se posicione correctamente */
+  display: flex;
+  align-items: center;
 }
 
 #menuToggle {
@@ -54,13 +67,16 @@ nav {
   width: 30px;
   height: 25px;
   cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 #menuToggle span {
   display: block;
   width: 100%;
   height: 3px;
-  background: black;
+  background: var(--header-text);
   border-radius: 3px;
   transition: 0.3s;
 }
@@ -70,6 +86,7 @@ nav {
   padding: 0;
   margin: 0;
   display: flex;
+  align-items: center;
 }
 
 .nav-right ul li {
@@ -77,7 +94,7 @@ nav {
 }
 
 .nav-right ul li a {
-  color: white;
+  color: var(--header-text);
   text-decoration: none;
   font-size: 0.875rem;
   text-transform: uppercase;
@@ -85,23 +102,29 @@ nav {
 }
 
 .nav-right ul li a:hover {
-  color: var(--primary-color);
+  color: var(--header-hover);
 }
 
 .language-switcher {
-  margin-left: auto;
+  display: flex;
+  align-items: center;
+  margin-left: 1.25rem;
 }
 
 .language-switcher button {
   background: none;
   border: none;
   cursor: pointer;
-  margin-left: 2px;
+  color: var(--header-text);
+  font-size: 0.875rem;
+  font-weight: bold;
+  padding: 5px 8px;
+  margin: 0 2px;
+  transition: color 0.3s ease;
 }
 
-.flag-icon {
-  width: 20px;
-  height: 15px;
+.language-switcher button:hover {
+  color: var(--header-hover);
 }
 
 #content {
@@ -113,9 +136,16 @@ nav {
 }
 
 @media (max-width: 768px) {
+  nav {
+    position: relative;
+  }
+
   #menuToggle {
     display: flex;
-    margin-right: 30px;
+    position: absolute;
+    right: 1rem; /* Añadido padding derecho */
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .nav-right ul {
@@ -124,10 +154,10 @@ nav {
     background: var(--header-bg);
     padding: 1rem;
     position: absolute;
-    top: 100%;
-    right: 1rem;
-    width: 200px;
-    border-radius: 8px;
+    top: calc(100% + 1rem);
+    right: 1rem; /* Añadido padding derecho */
+    width: calc(100% - 2rem); /* Ajustado el ancho para considerar el padding */
+    max-width: 300px; /* Limitamos el ancho máximo */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
@@ -137,18 +167,20 @@ nav {
 
   .nav-right ul li {
     margin: 0.5rem 0;
+    width: 100%;
+    text-align: left;
   }
 
   .language-switcher {
-    display: flex;
     justify-content: center;
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #ccc;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     width: 100%;
+    margin-left: 0;
   }
 
-  .flag-icon {
-    margin: 0 5px;
+  .language-switcher button {
+    padding: 8px 12px;
   }
 }
