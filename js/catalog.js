@@ -861,9 +861,9 @@ const photoFolders = [
       },
       {
         id: 504,
-        url: "./assets/Comunidad Qom- Potae Napocna Navogoh/4-IMG_2562.jpg",
+        url: "./assets/Comunidad Qom- Potae Napocna Navogoh/4-IMG_2582.jpg",
         title: "Comunidad Qom - Potae Napocna Navogoh",
-        description: "IMG_2562",
+        description: "IMG_2582",
       },
       {
         id: 505,
