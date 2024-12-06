@@ -3,7 +3,7 @@ const photoFolders = [
     id: 1,
     title: "eraMileiTitulo",
     location: "Buenos Aires, Argentina (2023-2024)",
-    cover: "./assets/La Era Milei/1-20231210182626_IMG_0828.jpg",
+    cover: "./assets/La era Milei/1-20231210182626_IMG_0828.jpg",
     photos: [
       {
         id: 1100,
