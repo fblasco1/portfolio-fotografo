@@ -1022,10 +1022,32 @@ function updateCarouselContent() {
   const photo = currentFolder.photos[currentPhotoIndex];
 
   if (photo.url) {
-    carouselImg.src = photo.url;
+    carouselImg.src = ""; // Limpia la src anterior
+    carouselImg.setAttribute("data-src", photo.url);
     carouselImg.alt = i18next.t(photo.title);
     carouselImg.style.display = "block";
     carouselDescription.style.display = "none";
+
+    // Usa Intersection Observer para cargar la imagen
+    if ("IntersectionObserver" in window) {
+      const lazyImageObserver = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              let lazyImage = entry.target;
+              lazyImage.src = lazyImage.dataset.src;
+              lazyImage.removeAttribute("data-src");
+              lazyImageObserver.unobserve(lazyImage);
+            }
+          });
+        }
+      );
+
+      lazyImageObserver.observe(carouselImg);
+    } else {
+      // Fallback para navegadores que no soportan Intersection Observer
+      carouselImg.src = photo.url;
+    }
   } else {
     carouselImg.style.display = "none";
     carouselDescription.textContent = i18next.t(photo.description);
