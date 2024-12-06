@@ -992,8 +992,10 @@ function renderFolderGrid() {
                       )}</div>`
                 }
             </div>
-            <div class="folder-title">${i18next.t(folder.title)}</div>
-            <div class="folder-subtitle">${i18next.t(folder.location)}</div>
+            <div class="folder-content">
+                <div class="folder-title">${i18next.t(folder.title)}</div>
+                <div class="folder-subtitle">${i18next.t(folder.location)}</div>
+            </div>
         `;
     folderItem.addEventListener("click", () => openCarousel(folder));
     folderGrid.appendChild(folderItem);
