@@ -7,6 +7,7 @@
     <title>Cristian Pirovano - Gallery</title>
     <link rel="stylesheet" href="./css/style.css">
     <link rel="stylesheet" href="./css/catalog.css">
+    <link rel="stylesheet" href="./css/spinner.css">
 </head>
 <body class="i18n-loading">
     <header>
@@ -36,7 +37,9 @@
     </header>
 
     <main id="content">
-        <div id="loading-overlay">Cargando...</div>
+        <div id="loading-overlay" class="spinner-overlay">
+            <div class="spinner"></div>
+        </div>
         <h2 data-i18n="gallery.title">Gallery</h2>
         <div class="folder-grid" id="folderGrid"></div>
         
