@@ -8,14 +8,23 @@ document.addEventListener("DOMContentLoaded", () => {
     .use(i18nextBrowserLanguageDetector)
     .init(
       {
-        fallbackLng: "en",
+        fallbackLng: "en", // Idioma de respaldo
         debug: false, // Cambiado a false para producción
+        load: "languageOnly", // Ignora variantes regionales como es-419
         backend: {
-          loadPath: "/locales/{{lng}}.json",
+          loadPath: "/locales/{{lng}}.json", // Ruta de los archivos de traducción
+        },
+        detection: {
+          order: ["querystring", "cookie", "localStorage", "navigator"], // Métodos para detectar idioma
+          caches: ["cookie", "localStorage"], // Opciones para almacenar el idioma detectado
         },
       },
       function (err, t) {
-        if (err) return console.error("Error al cargar las traducciones:", err);
+        if (err) {
+          console.error("Error al cargar las traducciones:", err);
+          document.body.classList.add("i18n-error");
+          return;
+        }
         updateContent();
         document.body.classList.remove("i18n-loading");
         document.body.classList.add("i18n-loaded");
@@ -33,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.changeLanguage = function (lng) {
     i18next.changeLanguage(lng, (err) => {
-      if (err) return console.error("Error al cambiar el idioma:", err);
+      if (err) console.error("Error al cambiar el idioma:", err);
     });
   };
 });
