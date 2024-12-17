@@ -9,7 +9,10 @@
     <link rel="stylesheet" href="./css/shop.css">
     <link rel="stylesheet" href="./css/spinner.css">
 </head>
-<body class="i18n-loading">
+<body class="loading">
+    <div id="loading-spinner" class="spinner-container">
+        <div class="spinner"></div>
+    </div>
     <header>
         <nav>
             <div class="nav-left">
@@ -37,9 +40,6 @@
     </header>
 
     <main id="content">
-        <div id="loading-overlay" class="spinner-overlay">
-            <div class="spinner"></div>
-        </div>
         <!-- Cart Section -->
         <div id="cart-section" class="cart-section">
             <h2 data-i18n="shop.cart.title"></h2>
@@ -48,7 +48,7 @@
         </div>
         
         <!-- Photo Grid -->
-        <div id="photo-grid"></div>
+        <div id="folder-grid"></div>
         
         <!-- Image Preview Modal -->
         <div id="image-modal" class="modal">

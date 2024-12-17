@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const photoGrid = document.getElementById("photo-grid");
+  const photoGrid = document.getElementById("folder-grid");
   const cartItems = document.getElementById("cart-items");
   const checkoutButton = document.getElementById("checkout-button");
   const imageModal = document.getElementById("image-modal");
@@ -118,20 +118,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createPhotoItem(photo) {
     const photoItem = document.createElement("div");
-    photoItem.classList.add("photo-item");
+    photoItem.classList.add("folder-item");
 
     photoItem.innerHTML = `
-            <img src="${photo.url}" alt="${i18next.t(
+      <div class="folder-image-container">
+        <img src="${photo.url}" alt="${i18next.t(
       photo.titleKey
     )}" class="preview-image">
-            <div class="photo-details">
-                <h2 class="photo-title">${i18next.t(photo.titleKey)}</h2>
-                <p class="photo-subtitle">${photo.subtitle}</p>
-                <button class="add-to-cart-button" data-id="${
-                  photo.id
-                }">${i18next.t("shop.addToCart")}</button>
-            </div>
-        `;
+      </div>
+      <div class="folder-content">
+        <h2 class="folder-title">${i18next.t(photo.titleKey)}</h2>
+        <p class="folder-subtitle">${photo.subtitle}</p>
+        <button class="add-to-cart-button" data-id="${photo.id}">${i18next.t(
+      "shop.addToCart"
+    )}</button>
+      </div>
+    `;
 
     const img = photoItem.querySelector(".preview-image");
     img.addEventListener("click", () => openImageModal(photo));
@@ -309,5 +311,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     // Update cart with new translations
     updateCart();
+  });
+
+  // Ocultar el spinner cuando todo esté cargado
+  window.addEventListener("load", () => {
+    document.body.classList.remove("loading");
   });
 });

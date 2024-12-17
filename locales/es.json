@@ -30,7 +30,7 @@
   "covidTitulo": "Covid 19: Donde el tiempo se detiene",
   "covidTexto": "Durante los días de la pandemia de COVID-19, Buenos Aires, al igual que la mayoría de las ciudades del mundo, se transformó en un espacio vacío y silencioso.",
   "motinTitulo": "Motín Cárcel Devoto",
-  "mujeresTitulo": "Mujeres",
+  "mujeresTitulo": "Retratos",
   "mujeresTexto": "Retratos tomados en India, Nepal, Mozambique, Marruecos, Myanmar, Palestina, Rumania y Laos.",
   "qomTitulo": "Comunidad Qom - Potae Napocna Navogoh",
   "laosTitulo": "Phengsy Sommany, ícono de la resistencia laosiana",
@@ -41,7 +41,6 @@
     "p3": "Actualmente, está finalizando su proyecto más reciente, el libro de fotografía Del otro lado del muro, una obra homónima de su exposición fotográfica. Este proyecto se centra en la vida cotidiana en Palestina bajo la ocupación israelí y se basa en más de diez años de trabajo documental, con el objetivo de transmitir, mediante imágenes y testimonios, lo que implica vivir bajo ocupación."
   },
   "contactForm": {
-    "title": "Contactar a Cristian",
     "name": "Nombre Completo:",
     "email": "Email:",
     "subject": "Asunto:",

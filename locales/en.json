@@ -1,6 +1,6 @@
 {
   "nav": {
-    "photographer": "photographer",
+    "photographer": "photojournalist",
     "home": "Home",
     "shop": "Shop",
     "gallery": "Gallery",
@@ -30,7 +30,7 @@
   "covidTitulo": "Covid 19: Where time stands still",
   "covidTexto": "During the days of the COVID-19 pandemic, Buenos Aires, like most cities in the world, was transformed into an empty and silent space.",
   "motinTitulo": "Riot in Devoto prison",
-  "mujeresTitulo": "Women",
+  "mujeresTitulo": "Portraits",
   "mujeresTexto": "Portraits taken in India, Nepal, Mozambique, Morocco, Myanmar, Palestine, Romania and Laos.",
   "qomTitulo": "Qom-Potae Napocna Navogoh community",
   "laosTitulo": "Phengsy Sommany, icon of Laotian resistance",
@@ -41,7 +41,6 @@
     "p3": "Currently, he is completing his latest project, the photography book Del otro lado del muro (On the Other Side of the Wall), which shares its name with his photographic exhibition. This project focuses on daily life in Palestine under Israeli occupation and draws on over a decade of documentary work, aiming to convey through images and testimonies what it means to live under occupation."
   },
   "contactForm": {
-    "title": "Contact Cristian",
     "name": "Full Name:",
     "email": "Email Address:",
     "subject": "Subject:",
