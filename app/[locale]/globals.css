@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 255, 255, 255;
+  background-color: ghostwhite;
   --background-start-rgb: 0, 0, 0;
   --background-end-rgb: 0, 0, 0;
 }
@@ -27,11 +27,12 @@ body {
 }
 
 .header-solid {
-  background-color: #000000;
+  background: linear-gradient(
+    to bottom,
+    rgba(100, 100, 100, 0.8) 0%,
+    rgba(100, 100, 100, 0.3) 50%,
+    rgba(100, 100, 100, 0) 100%
+  );
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.header-transition {
-  transition: all 0.3s ease-in-out;
 }

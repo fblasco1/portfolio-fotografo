@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import { Inter } from "next/font/google";
+import "./globals.css";
 import MainLayout from "@/app/[locale]/components/main-layout";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Cristian Pirovano - Photographer",
-  description: "Portfolio of Cristian Pirovano, professional photographer",
-}
+  title: "Cristian Pirovano",
+  description: "Portfolio of Cristian Pirovano, photojournalist",
+};
 
 export async function generateStaticParams() {
   return [{ locale: "en" }, { locale: "es" }];
@@ -16,19 +16,18 @@ export async function generateStaticParams() {
 
 type Props = {
   children: React.ReactNode;
-  params: {locale: string};
-}
+  params: { locale: string };
+};
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   params: { locale },
-}: Readonly <Props>) {
+}: Readonly<Props>) {
   return (
-    <html className="h-full" lang={ locale }>
+    <html className="h-full" lang={locale}>
       <body className={`${inter.className} h-full`}>
         <MainLayout locale={locale}>{children}</MainLayout>
       </body>
     </html>
-  )
+  );
 }
-

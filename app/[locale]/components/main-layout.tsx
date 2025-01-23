@@ -8,7 +8,7 @@ type Props = {
 
 export default function MainLayout({ children, locale }: Props) {
   return (
-    <div className="flex flex-col h-full bg-slate-800 items-center">
+    <div className="flex flex-col h-full bg-gray-100 items-center">
       <SubLayout params={{ locale }}>
         <Header />
       </SubLayout>

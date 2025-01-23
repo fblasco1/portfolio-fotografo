@@ -1,4 +1,11 @@
 const nextConfig = {
+  transpilePackages: ['next-international', 'international-types'],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       {

@@ -16,7 +16,7 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="relative min-h-screen bg-slate-900">
+    <div className="relative min-h-screen bg-gray-100">
        {/* Image Container */}
       <div className="fixed inset-0 z-0">
         {imagesSlide.map((src, index) => (
