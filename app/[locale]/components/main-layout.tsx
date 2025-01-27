@@ -1,18 +1,18 @@
-import Header from "@/app/[locale]/components/Header";
-import SubLayout from "../client/layout";
+import Header from "@/app/[locale]/components/Header"
+import Footer from "@/app/[locale]/components/Footer"
 
 type Props = {
-  children: React.ReactNode;
-  locale: string;
-};
+  children: React.ReactNode
+  locale: string
+}
 
 export default function MainLayout({ children, locale }: Props) {
   return (
-    <div className="flex flex-col h-full bg-gray-100 items-center">
-      <SubLayout params={{ locale }}>
-        <Header />
-      </SubLayout>
-      <main className="flex-grow flex justify-center">{children}</main>
+    <div className="flex flex-col min-h-screen bg-gray-100">
+      <Header locale={locale} />
+      <main className="flex-grow">{children}</main>
+      <Footer locale={locale} />
     </div>
-  );
+  )
 }
+

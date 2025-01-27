@@ -41,12 +41,16 @@ export default {
         "p2": "He is the founder of Músicas del Mundo magazine and co-director and co-producer of the film Yallah Yallah, the first official co-production between Argentina and Palestine, premiered in 2018 and screened in 25 countries across America, Europe, and Oceania, as well as being broadcast by Al Jazeera in 22 countries.",
         "p3": "Currently, he is finalizing his most recent project, the photography book On the Other Side of the Wall, a work of the same name as his photographic exhibition. This project focuses on daily life in Palestine under Israeli occupation and is based on more than ten years of documentary work, aiming to convey, through images and testimonies, what it means to live under occupation."
     },
-    "contactForm": {
+    "contact": {
+        "title": "Contact Us",
         "name": "Full Name:",
         "email": "Email:",
         "subject": "Subject:",
         "message": "Message:",
-        "submitBtn": "Send Message"
+        "submit": "Send Message",
+        "submitting": "Submitting...",
+        "success": "Your message has been sent successfully!",
+        "error": "Something went wrong. Please try again."
     },
     "shop": {
         "addToCart": "Add to Cart",

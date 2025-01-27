@@ -41,12 +41,16 @@ export default {
         "p2": "Es fundador de la revista Músicas del Mundo y codirector y coproductor de la película Yallah Yallah, la primera coproducción oficial entre Argentina y Palestina, estrenada en 2018 y proyectada en 25 países de América, Europa y Oceanía, además de ser transmitida por Al Jazeera en 22 países.",
         "p3": "Actualmente, está finalizando su proyecto más reciente, el libro de fotografía Del otro lado del muro, una obra homónima de su exposición fotográfica. Este proyecto se centra en la vida cotidiana en Palestina bajo la ocupación israelí y se basa en más de diez años de trabajo documental, con el objetivo de transmitir, mediante imágenes y testimonios, lo que implica vivir bajo ocupación."
     },
-    "contactForm": {
+    "contact": {
+        "title": "Contáctanos",
         "name": "Nombre Completo:",
         "email": "Email:",
         "subject": "Asunto:",
         "message": "Mensaje:",
-        "submitBtn": "Enviar Mensaje"
+        "submit": "Enviar Mensaje",
+        "submitting": "Enviando...",
+        "success": "¡Tu mensaje ha sido enviado exitosamente!",
+        "error": "Algo salió mal. Por favor, intenta de nuevo."
     },
     "shop": {
         "addToCart": "Agregar al carrito",
