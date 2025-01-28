@@ -35,8 +35,8 @@ export default function PhotoSlider({ photos, onClose }: PhotoSliderProps) {
       </button>
       <div className="relative w-full max-w-4xl h-full max-h-[80vh]">
         <Image
-          src={photos[currentIndex].src || "/placeholder.svg"}
-          alt={photos[currentIndex].alt}
+          src={photos[currentIndex].url || "/placeholder.svg"}
+          alt={photos[currentIndex].description}
           layout="fill"
           objectFit="contain"
         />
