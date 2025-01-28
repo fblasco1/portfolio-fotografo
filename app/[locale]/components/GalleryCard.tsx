@@ -12,7 +12,7 @@ export default function GalleryCard({ folder, onClick }: GalleryCardProps) {
 
   return (
     <div
-      className="cursor-pointer overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 ease-in-out"
+      className="cursor-pointer overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 ease-in-out bg-white"
       onClick={onClick}
     >
       <Image

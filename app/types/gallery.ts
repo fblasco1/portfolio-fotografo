@@ -1,12 +1,14 @@
 export interface Photo {
-    id: string
-    src: string
-    alt: string
+    id: number
+    url?: string
+    title: string
+    description: string
 }
 
 export interface Folder {
-    id: string
-    name: string
-    coverPhoto: Photo
+    id: number
+    title: string
+    location: string
+    cover: string
     photos: Photo[]
 }
