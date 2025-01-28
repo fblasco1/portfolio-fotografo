@@ -41,6 +41,16 @@ export default {
         "p2": "Es fundador de la revista Músicas del Mundo y codirector y coproductor de la película Yallah Yallah, la primera coproducción oficial entre Argentina y Palestina, estrenada en 2018 y proyectada en 25 países de América, Europa y Oceanía, además de ser transmitida por Al Jazeera en 22 países.",
         "p3": "Actualmente, está finalizando su proyecto más reciente, el libro de fotografía Del otro lado del muro, una obra homónima de su exposición fotográfica. Este proyecto se centra en la vida cotidiana en Palestina bajo la ocupación israelí y se basa en más de diez años de trabajo documental, con el objetivo de transmitir, mediante imágenes y testimonios, lo que implica vivir bajo ocupación."
     },
+    "book": {
+        "title": "Del Otro Lado Del Muro",
+        "author": "Cristian Pirovano",
+        "description": "Del otro lado del muro es una aproximación a la vida cotidiana en Palestina bajo la ocupación israelí, documentada a través de fotografías y textos recopilados a lo largo de más de una década. Estas imágenes y relatos se entrelazan, buscando explorar y comprender cómo es y qué implica vivir bajo ocupación.",
+        "coming_soon": "Próximo Lanzamiento",
+        "availability": "El libro estará disponible en formato físico a inicios de 2025.",
+        "stay_informed": "Mantente informado",
+        "email_placeholder": "Tu correo electrónico",
+        "subscribe": "Suscribirse",
+    },
     "contact": {
         "title": "Contáctanos",
         "name": "Nombre Completo:",

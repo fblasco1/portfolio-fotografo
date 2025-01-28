@@ -1,8 +1,8 @@
-import Image from "next/image"
-import { getScopedI18n } from "@/locales/server"
+import Image from "next/image";
+import { getScopedI18n } from "@/locales/server";
 
 export default async function Bio() {
-  const t = await getScopedI18n("bio")
+  const t = await getScopedI18n("bio");
 
   return (
     <div className="relative z-20 min-h-screen">
@@ -17,9 +17,9 @@ export default async function Bio() {
               <Image
                 src="https://res.cloudinary.com/dnc5bzm8o/image/upload/v1737639045/cristian-pirovano_gbsiqd.jpg"
                 alt="Cristian Pirovano Profile"
-                width={500}
-                height={400}
-                className="rounded-lg shadow-md w-full max-w-md h-auto object-cover"
+                width={400}
+                height={150}
+                className="rounded-lg shadow-md h-auto object-cover"
               />
             </div>
             <div className="space-y-4 text-gray-700 text-sm sm:text-base">
@@ -28,7 +28,7 @@ export default async function Bio() {
               <p className="mt-4">{t("p3")}</p>
             </div>
           </div>
-            
+
           <div className="mt-6 sm:mt-8">
             <div className="aspect-w-16 aspect-h-9">
               <iframe
@@ -38,11 +38,10 @@ export default async function Bio() {
                 allowFullScreen
                 className="w-full h-[200px] sm:h-[300px] md:h-[400px] rounded-lg shadow-lg"
               ></iframe>
-            </div>          
+            </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
-
