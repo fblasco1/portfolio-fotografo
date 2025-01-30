@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { getScopedI18n } from "@/locales/server";
 
-export default async function Bio() {
-  const t = await getScopedI18n("bio");
+export default async function Bio({ params }: { params: { locale: string } }) {
+  const t = await getScopedI18n("bio", params.locale);
 
   return (
     <div className="relative z-20 min-h-screen">
