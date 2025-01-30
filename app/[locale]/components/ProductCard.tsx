@@ -19,7 +19,7 @@ export default function ProductCard({ item, onAddToCart }: ProductCardProps) {
       <div className="cursor-pointer" onClick={() => setShowFullImage(true)}>
         <Image
           src={item.url || "/placeholder.svg"}
-          alt={item.title}
+          alt={t(item.titleKey)}
           width={300}
           height={200}
           className="w-full h-48 object-cover"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useI18n } from "@/locales/client";
 import type { Photo } from "@/types/gallery";
@@ -13,7 +13,21 @@ interface PhotoSliderProps {
 
 export default function PhotoSlider({ photos, onClose }: PhotoSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const t = useI18n();
+
+  const preloadImages = () => {
+    const nextIndex = (currentIndex + 1) % photos.length;
+    const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
+    [nextIndex, prevIndex].forEach((index) => {
+      const img = new Image();
+      img.src = photos[index].url || "/placeholder.svg";
+    });
+  };
+
+  useEffect(() => {
+    preloadImages();
+  }, [currentIndex]);
 
   const goToPrevious = () => {
     setCurrentIndex((prevIndex) =>
@@ -38,12 +52,20 @@ export default function PhotoSlider({ photos, onClose }: PhotoSliderProps) {
         <ChevronLeft size={24} />
       </button>
       <div className="relative w-full max-w-4xl h-full max-h-[80vh] flex items-center justify-center">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
+          </div>
+        )}
         {currentPhoto.url ? (
           <Image
             src={currentPhoto.url || "/placeholder.svg"}
-            alt=""
+            alt={t(currentPhoto.description)}
             layout="fill"
             objectFit="contain"
+            priority
+            loading="eager"
+            onLoadingComplete={() => setIsLoading(false)}
           />
         ) : (
           <div className="bg-white p-8 rounded-lg max-w-2xl max-h-full overflow-y-auto">
