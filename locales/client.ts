@@ -8,6 +8,12 @@ export const {
     useChangeLocale,
     useCurrentLocale,
 } = createI18nClient({
-    en: () => import("./en"),
-    es: () => import("./es"),
+    en: async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return import('./en');
+    },
+    es: async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return import('./es');
+    },
 });

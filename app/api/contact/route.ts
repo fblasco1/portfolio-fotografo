@@ -8,11 +8,10 @@ export async function POST(request: Request) {
 
     try {
         await resend.emails.send({
-            from: "cristianpirovano@resend.dev",
-            to: "cristianpirovano@gmail.com",
+            from: "Contacto <noreply@contacto.cristianpirovano.com>",
+            to: "cristianpirovanoportfolio@gmail.com",
             subject: "Contacto desde el sitio web",
             html: `
-                <h1>Nuevo mensaje de contacto</h1>
                 <p><strong>Nombre:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>
                 <p><strong>Mensaje:</strong> ${message}</p>

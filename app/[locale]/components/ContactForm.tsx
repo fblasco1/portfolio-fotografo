@@ -50,7 +50,7 @@ const ContactForm: React.FC = () => {
     }
 
     try {
-      const res = await fetch("/api/send", {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

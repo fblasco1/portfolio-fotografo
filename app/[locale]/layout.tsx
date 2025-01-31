@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import MainLayout from "@/app/[locale]/components/main-layout";
 import { I18nProviderClient } from "@/locales/client";
-import { setStaticParamsLocale } from "next-international/server";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,15 +10,6 @@ export const metadata: Metadata = {
   title: "Cristian Pirovano",
   description: "Portfolio of Cristian Pirovano, photojournalist",
 };
-
-export async function generateStaticParams() {
-  const locales = ["en", "es"];
-
-  return locales.map((locale) => {
-    setStaticParamsLocale(locale);
-    return { locale };
-  });
-}
 
 type Props = {
   children: React.ReactNode;
