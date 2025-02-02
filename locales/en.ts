@@ -73,9 +73,12 @@ export default {
             "title": "Complete Purchase",
             "name": "Full Name:",
             "email": "Email Address:",
-            "address": "Address:",
-            "selectedPhotos": "Selected Photos",
-            "submit": "Complete Purchase",
+            "country": "Country:",
+            "selectCountry": "Select Country",
+            "items": "Selected Photos",
+            "confirm": "Complete Purchase",
+            "cancel": "Cancel",
+            "submitting": "Submitting...",
             "success": "Thank you for your order! We will be in touch soon."
         },
         "photo1": {

@@ -73,9 +73,12 @@ export default {
             "title": "Finalizar compra",
             "name": "Nombre completo:",
             "email": "Correo electrónico:",
-            "address": "Dirección:",
-            "selectedPhotos": "Fotos seleccionadas",
-            "submit": "Completar compra",
+            "country": "Pais de Residencia:",
+            "selectCountry": "Selecciona tu país",
+            "items": "Fotos seleccionadas",
+            "confirm": "Completar compra",
+            "cancel": "Cancelar",
+            "submitting": "Enviando...",
             "success": "¡Gracias por su pedido! Nos pondremos en contacto pronto."
         },
         "photo1": {
