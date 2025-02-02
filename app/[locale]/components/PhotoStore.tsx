@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { StoreItem } from "@/types/store";
+import type { StoreItem } from "../../types/store";
 import ProductCard from "./ProductCard";
 import Cart from "./Cart";
 

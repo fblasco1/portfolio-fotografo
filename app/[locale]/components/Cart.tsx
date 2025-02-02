@@ -1,7 +1,7 @@
 import { useScopedI18n } from "@/locales/client";
 import Image from "next/image";
 import { useState } from "react";
-import type { StoreItem } from "@/types/store";
+import type { StoreItem } from "../../types/store";
 import { countries } from "@/constants/store";
 
 interface CartProps {
@@ -54,7 +54,7 @@ export default function Cart({ items, onRemove }: CartProps) {
         {items.map((item, index) => (
           <div key={index} className="flex items-center mb-2">
             <Image
-              src={item.url || "/placeholder.svg"}
+              src={item.url}
               alt={t(item.titleKey)}
               width={50}
               height={50}

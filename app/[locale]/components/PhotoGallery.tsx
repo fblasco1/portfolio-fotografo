@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Folder } from "@/types/gallery";
+import type { Folder } from "../../types/gallery";
 import GalleryCard from "./GalleryCard";
 import PhotoSlider from "./PhotoSlider";
 

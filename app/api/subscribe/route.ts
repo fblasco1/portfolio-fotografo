@@ -5,7 +5,6 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 export async function POST(req: Request) {
     try {
         const { email } = await req.json();
-        console.log("Datos recibidos:", email);
 
         if (!email) {
             return Response.json({ error: "El email es obligatorio" }, { status: 400 });
@@ -16,8 +15,6 @@ export async function POST(req: Request) {
             unsubscribed: false,
             audienceId: '63c905c4-6e5a-4bfa-936f-48f6da4a4fc9',
         });
-
-        console.log("Respuesta de Resend:", response);
 
         return Response.json({ success: true, data: response });
     } catch (error) {

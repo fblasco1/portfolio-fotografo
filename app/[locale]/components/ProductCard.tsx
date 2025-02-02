@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useScopedI18n } from "@/locales/client";
-import type { StoreItem } from "@/types/store";
+import type { StoreItem } from "../../types/store";
 
 interface ProductCardProps {
   item: StoreItem;
@@ -18,7 +18,7 @@ export default function ProductCard({ item, onAddToCart }: ProductCardProps) {
     <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full">
       <div className="cursor-pointer" onClick={() => setShowFullImage(true)}>
         <Image
-          src={item.url || "/placeholder.svg"}
+          src={item.url}
           alt={t(item.titleKey)}
           width={300}
           height={200}

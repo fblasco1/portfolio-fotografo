@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useI18n } from "@/locales/client";
-import type { Photo } from "@/types/gallery";
+import type { Photo } from "../../types/gallery";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 interface PhotoSliderProps {
@@ -20,8 +20,8 @@ export default function PhotoSlider({ photos, onClose }: PhotoSliderProps) {
     const nextIndex = (currentIndex + 1) % photos.length;
     const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
     [nextIndex, prevIndex].forEach((index) => {
-      const img = new Image();
-      img.src = photos[index].url || "/placeholder.svg";
+      const img = new window.Image();
+      img.src = photos[index].url;
     });
   };
 
@@ -60,7 +60,7 @@ export default function PhotoSlider({ photos, onClose }: PhotoSliderProps) {
         {currentPhoto.url ? (
           <Image
             src={currentPhoto.url || "/placeholder.svg"}
-            alt={t(currentPhoto.description)}
+            alt={t(currentPhoto.description as any)}
             layout="fill"
             objectFit="contain"
             priority
@@ -69,7 +69,9 @@ export default function PhotoSlider({ photos, onClose }: PhotoSliderProps) {
           />
         ) : (
           <div className="bg-white p-8 rounded-lg max-w-2xl max-h-full overflow-y-auto">
-            <p className="text-gray-700">{t(currentPhoto.description)}</p>
+            <p className="text-gray-700">
+              {t(currentPhoto.description as any)}
+            </p>
           </div>
         )}
       </div>
