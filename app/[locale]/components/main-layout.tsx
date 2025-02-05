@@ -10,7 +10,7 @@ export default function MainLayout({ children, locale }: Props) {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header locale={locale} />
-      <main className="flex-grow">{children}</main>
+      <main className="grow">{children}</main>
       <Footer locale={locale} />
     </div>
   )

@@ -67,7 +67,7 @@ export default function Header() {
             <LanguageSwitcher />
           </div>
 
-          <button onClick={toggleMenu} className={`lg:hidden ${textClass} focus:outline-none`} aria-label="Toggle menu">
+          <button onClick={toggleMenu} className={`lg:hidden ${textClass} focus:outline-hidden`} aria-label="Toggle menu">
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
