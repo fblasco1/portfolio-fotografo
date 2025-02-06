@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin 'tailwindcss-animate';
 
@@ -6,9 +6,9 @@
 
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
-    Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -125,8 +125,7 @@
       rgba(100, 100, 100, 0.3) 50%,
       rgba(100, 100, 100, 0) 100%
     );
-    box-shadow:
-      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }
@@ -134,5 +133,13 @@
 @layer base {
   :root {
     --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  html,
+  body {
+    width: 100%;
+    overflow-x: hidden;
   }
 }

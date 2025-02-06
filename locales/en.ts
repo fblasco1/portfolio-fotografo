@@ -65,9 +65,14 @@ export default {
     "shop": {
         "addToCart": "Add to Cart",
         "remove": "Remove",
+        "tabs": {
+            "photos": "Photos",
+            "postcards": "Postcards"
+        },
         "cart": {
             "title": "Cart",
-            "checkout": "Generate Purchase Order"
+            "checkout": "Generate Purchase Order",
+            "empty": "Cart is empty",
         },
         "checkout": {
             "title": "Complete Purchase",
@@ -131,6 +136,21 @@ export default {
         },
         "photo17": {
             "title": "Jodhpur"
-        }
+        },
+        "postcard1": {
+            "title": "Ahed Tamimi"
+        },
+        "postcard2": {
+            "title": "Miryam's Key"
+        },
+        "postcard3": {
+            "title": "Return"
+        },
+        "postcard4": {
+            "title": "My olive tree, my flag"
+        },
+        "postcard5": {
+            "title": "Our flight is higher than their Walls"
+        },
     }
 } as const

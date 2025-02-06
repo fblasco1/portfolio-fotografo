@@ -21,7 +21,7 @@ export default function RootLayout({
   params: { locale },
 }: Readonly<Props>) {
   return (
-    <html className="h-full" lang={locale}>
+    <html className="h-full w-full overflow-x-hidden" lang={locale}>
       <body className={`${inter.className} h-full`}>
         <I18nProviderClient locale={locale} fallback={<div>Loading...</div>}>
           <MainLayout locale={locale}>{children}</MainLayout>

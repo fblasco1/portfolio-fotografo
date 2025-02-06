@@ -41,8 +41,6 @@ export default function Header() {
           ? "bg-white shadow-md"
           : isHomePage
           ? "bg-transparent"
-          : isScrolled
-          ? "bg-black bg-opacity-80 backdrop-blur-md"
           : "bg-white shadow-md"
       }`}
     >

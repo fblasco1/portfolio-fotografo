@@ -65,9 +65,14 @@ export default {
     "shop": {
         "addToCart": "Agregar al carrito",
         "remove": "Eliminar",
+        "tabs": {
+            "photos": "Fotos",
+            "postcards": "Postales"
+        },
         "cart": {
             "title": "Carrito",
-            "checkout": "Generar orden de compra"
+            "checkout": "Generar orden de compra",
+            "empty": "El carrito está vacío",
         },
         "checkout": {
             "title": "Finalizar compra",
@@ -131,6 +136,21 @@ export default {
         },
         "photo17": {
             "title": "Jodhpur"
-        }
+        },
+        "postcard1": {
+            "title": "Ahed Tamimi"
+        },
+        "postcard2": {
+            "title": "La llave de Miryam"
+        },
+        "postcard3": {
+            "title": "Devolucion"
+        },
+        "postcard4": {
+            "title": "Mi olivo, mi bandera."
+        },
+        "postcard5": {
+            "title": "Nuestro vuelo es más alto que sus muros"
+        },
     }
 } as const

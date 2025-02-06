@@ -977,109 +977,143 @@ const imagesGallery = [
     },
 ];
 
-const imagesShop = [
-    {
-        id: 1,
-        titleKey: "photo1.title",
-        subtitle: "Buenos Aires, Argentina 2022",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/1.jpg",
-    },
-    {
-        id: 2,
-        titleKey: "photo2.title",
-        subtitle: "Buenos Aires, Argentina 2023",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/2.jpg",
-    },
-    {
-        id: 3,
-        titleKey: "photo3.title",
-        subtitle: "Buenos Aires, Argentina 2022",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/3.jpg",
-    },
-    {
-        id: 4,
-        titleKey: "photo4.title",
-        subtitle: "Buenos Aires, Argentina 2023",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/4.jpg",
-    },
-    {
-        id: 5,
-        titleKey: "photo5.title",
-        subtitle: "Gorongosa, Mozambique 2010",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/5.jpg",
-    },
-    {
-        id: 6,
-        titleKey: "photo6.title",
-        subtitle: "Belén, Palestina 2022",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/6.jpg",
-    },
-    {
-        id: 7,
-        titleKey: "photo7.title",
-        subtitle: "Pushkar, India 2011",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/7.jpg",
-    },
-    {
-        id: 8,
-        titleKey: "photo8.title",
-        subtitle: "Don Khong, Laos 2012",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/8.jpg",
-    },
-    {
-        id: 9,
-        titleKey: "photo9.title",
-        subtitle: "Vian Xai, Laos 2012",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/9.jpg",
-    },
-    {
-        id: 10,
-        titleKey: "photo10.title",
-        subtitle: "Buenos Aires, Argentina 2024",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/10.jpg",
-    },
-    {
-        id: 11,
-        titleKey: "photo11.title",
-        subtitle: "Myanmar 2017",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/11.jpg",
-    },
-    {
-        id: 12,
-        titleKey: "photo12.title",
-        subtitle: "Myanmar 2012",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441074/Tienda/Fotos/12.jpg",
-    },
-    {
-        id: 13,
-        titleKey: "photo13.title",
-        subtitle: "Myanmar 2012",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441074/Tienda/Fotos/13.jpg",
-    },
-    {
-        id: 14,
-        titleKey: "photo14.title",
-        subtitle: "India 2011",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441075/Tienda/Fotos/14.jpg",
-    },
-    {
-        id: 15,
-        titleKey: "photo15.title",
-        subtitle: "Marruecos 2009",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441075/Tienda/Fotos/15.jpg",
-    },
-    {
-        id: 16,
-        titleKey: "photo16.title",
-        subtitle: "Palestina 2013",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441075/Tienda/Fotos/16.jpg",
-    },
-    {
-        id: 17,
-        titleKey: "photo17.title",
-        subtitle: "India 2011",
-        url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441071/Tienda/Fotos/17.jpg",
-    },
-];
+const products = {
+    photos: [
+        {
+            id: 1,
+            titleKey: "photo1.title",
+            subtitle: "Buenos Aires, Argentina 2022",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/1.jpg",
+        },
+        {
+            id: 2,
+            titleKey: "photo2.title",
+            subtitle: "Buenos Aires, Argentina 2023",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/2.jpg",
+        },
+        {
+            id: 3,
+            titleKey: "photo3.title",
+            subtitle: "Buenos Aires, Argentina 2022",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/3.jpg",
+        },
+        {
+            id: 4,
+            titleKey: "photo4.title",
+            subtitle: "Buenos Aires, Argentina 2023",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/4.jpg",
+        },
+        {
+            id: 5,
+            titleKey: "photo5.title",
+            subtitle: "Gorongosa, Mozambique 2010",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/5.jpg",
+        },
+        {
+            id: 6,
+            titleKey: "photo6.title",
+            subtitle: "Belén, Palestina 2022",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441072/Tienda/Fotos/6.jpg",
+        },
+        {
+            id: 7,
+            titleKey: "photo7.title",
+            subtitle: "Pushkar, India 2011",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/7.jpg",
+        },
+        {
+            id: 8,
+            titleKey: "photo8.title",
+            subtitle: "Don Khong, Laos 2012",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/8.jpg",
+        },
+        {
+            id: 9,
+            titleKey: "photo9.title",
+            subtitle: "Vian Xai, Laos 2012",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/9.jpg",
+        },
+        {
+            id: 10,
+            titleKey: "photo10.title",
+            subtitle: "Buenos Aires, Argentina 2024",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/10.jpg",
+        },
+        {
+            id: 11,
+            titleKey: "photo11.title",
+            subtitle: "Myanmar 2017",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441073/Tienda/Fotos/11.jpg",
+        },
+        {
+            id: 12,
+            titleKey: "photo12.title",
+            subtitle: "Myanmar 2012",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441074/Tienda/Fotos/12.jpg",
+        },
+        {
+            id: 13,
+            titleKey: "photo13.title",
+            subtitle: "Myanmar 2012",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441074/Tienda/Fotos/13.jpg",
+        },
+        {
+            id: 14,
+            titleKey: "photo14.title",
+            subtitle: "India 2011",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441075/Tienda/Fotos/14.jpg",
+        },
+        {
+            id: 15,
+            titleKey: "photo15.title",
+            subtitle: "Marruecos 2009",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441075/Tienda/Fotos/15.jpg",
+        },
+        {
+            id: 16,
+            titleKey: "photo16.title",
+            subtitle: "Palestina 2013",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441075/Tienda/Fotos/16.jpg",
+        },
+        {
+            id: 17,
+            titleKey: "photo17.title",
+            subtitle: "India 2011",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734441071/Tienda/Fotos/17.jpg",
+        },
+    ],
+    postcards: [
+        {
+            id: 1,
+            titleKey: "postcard1.title",
+            subtitle: "Nabi Saleh, Palestina, 2014",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442342/Tienda/Postales/20.jpg",
+        },
+        {
+            id: 2,
+            titleKey: "postcard2.title",
+            subtitle: "Campo de refugiados de Qalandia, Palestina, 2019",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442343/Tienda/Postales/21.jpg",
+        },
+        {
+            id: 3,
+            titleKey: "postcard3.title",
+            subtitle: "Bil’in, Palestina, 2015",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442343/Tienda/Postales/22.jpg",
+        },
+        {
+            id: 4,
+            titleKey: "postcard4.title",
+            subtitle: "Bil’in, Palestina, 2014",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442344/Tienda/Postales/23.jpg",
+        },
+        {
+            id: 5,
+            titleKey: "postcard5.title",
+            subtitle: "Campo de refugiados de Aida, Palestina, 2013",
+            url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442343/Tienda/Postales/24.jpg",
+        },
+    ]
+}
 
-export { imagesSlide, imagesGallery, imagesShop };
+export { imagesSlide, imagesGallery, products };

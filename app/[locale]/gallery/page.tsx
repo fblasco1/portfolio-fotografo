@@ -3,7 +3,7 @@ import { imagesGallery } from "@/constants/images";
 
 export default function Gallery() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen">
       <PhotoGallery folders={imagesGallery} />
     </div>
   );
