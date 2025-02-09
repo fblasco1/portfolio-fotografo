@@ -74,7 +74,7 @@ export default {
             "checkout": "Generate Purchase Order",
             "empty": "Cart is empty",
         },
-        "checkout": {
+        "order": {
             "title": "Complete Purchase",
             "name": "Full Name:",
             "email": "Email Address:",
@@ -84,7 +84,8 @@ export default {
             "confirm": "Complete Purchase",
             "cancel": "Cancel",
             "submitting": "Submitting...",
-            "success": "Thank you for your order! We will be in touch soon."
+            "success": "Thank you for your order! We will be in touch soon.",
+            "error": "An error occurred. Please try again."
         },
         "photo1": {
             "title": "World Cup Celebrations"

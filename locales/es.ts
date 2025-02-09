@@ -74,7 +74,7 @@ export default {
             "checkout": "Generar orden de compra",
             "empty": "El carrito está vacío",
         },
-        "checkout": {
+        "order": {
             "title": "Finalizar compra",
             "name": "Nombre completo:",
             "email": "Correo electrónico:",
@@ -84,7 +84,8 @@ export default {
             "confirm": "Completar compra",
             "cancel": "Cancelar",
             "submitting": "Enviando...",
-            "success": "¡Gracias por su pedido! Nos pondremos en contacto pronto."
+            "success": "¡Gracias por su pedido! Nos pondremos en contacto pronto.",
+            "error": "Algo salió mal. Por favor, intenta de nuevo."
         },
         "photo1": {
             "title": "Festejos de la copa del mundo"

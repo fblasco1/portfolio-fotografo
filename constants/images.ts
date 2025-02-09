@@ -1084,31 +1084,31 @@ const products = {
     ],
     postcards: [
         {
-            id: 1,
+            id: 18,
             titleKey: "postcard1.title",
             subtitle: "Nabi Saleh, Palestina, 2014",
             url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442342/Tienda/Postales/20.jpg",
         },
         {
-            id: 2,
+            id: 19,
             titleKey: "postcard2.title",
             subtitle: "Campo de refugiados de Qalandia, Palestina, 2019",
             url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442343/Tienda/Postales/21.jpg",
         },
         {
-            id: 3,
+            id: 20,
             titleKey: "postcard3.title",
             subtitle: "Bil’in, Palestina, 2015",
             url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442343/Tienda/Postales/22.jpg",
         },
         {
-            id: 4,
+            id: 21,
             titleKey: "postcard4.title",
             subtitle: "Bil’in, Palestina, 2014",
             url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442344/Tienda/Postales/23.jpg",
         },
         {
-            id: 5,
+            id: 22,
             titleKey: "postcard5.title",
             subtitle: "Campo de refugiados de Aida, Palestina, 2013",
             url: "https://res.cloudinary.com/dnc5bzm8o/image/upload/v1734442343/Tienda/Postales/24.jpg",
