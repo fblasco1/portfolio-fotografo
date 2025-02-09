@@ -11,7 +11,7 @@ export default function Home() {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 1024);
     };
 
     handleResize();
@@ -31,7 +31,7 @@ export default function Home() {
   }, [isMobile]);
 
   return (
-    <div className="relative min-h-screen bg-gray-100">
+    <div className="relative min-h-screen">
       {!isMobile ? (
         <div className="fixed inset-0 z-0">
           {imagesSlide.map((src, index) => (

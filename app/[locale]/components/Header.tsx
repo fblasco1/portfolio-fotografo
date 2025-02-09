@@ -7,7 +7,12 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const navItems = [
   { name: "nav.home", href: "/" },
@@ -19,19 +24,18 @@ const navItems = [
 ];
 
 export default function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const t = useI18n();
   const pathname = usePathname();
   const isHomePage = pathname === "/" || pathname === "/es";
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const checkScreenSize = () => setIsMobile(window.innerWidth < 1024);
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
   return (
@@ -89,6 +93,7 @@ export default function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent>
+              <SheetTitle className="sr-only">Menu</SheetTitle>
               <div className="flex flex-col space-y-4 mt-4 font-sans">
                 {navItems.map((item) => (
                   <Link
