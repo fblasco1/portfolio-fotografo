@@ -67,14 +67,18 @@ export const bookQuery = `
         author,
         description,
         comingSoon,
-        availability
+        availability,
+        emailPlaceholder,
+        subscribe
       },
       en {
         title,
         author,
         description,
         comingSoon,
-        availability
+        availability,
+        emailPlaceholder,
+        subscribe
       }
     }
   }

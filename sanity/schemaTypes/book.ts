@@ -18,7 +18,9 @@ export default {
             { name: 'author', title: 'Autor', type: 'string', validation: (Rule: any) => Rule.required() },
             { name: 'description', title: 'Descripción', type: 'text', validation: (Rule: any) => Rule.required() },
             { name: 'comingSoon', title: 'Próximo lanzamiento', type: 'string', validation: (Rule: any) => Rule.required() },
-            { name: 'availability', title: 'Disponibilidad', type: 'text', validation: (Rule: any) => Rule.required() }
+            { name: 'availability', title: 'Disponibilidad', type: 'text', validation: (Rule: any) => Rule.required() },
+            { name: 'emailPlaceholder', title: 'Placeholder del email', type: 'string', validation: (Rule: any) => Rule.required() },
+            { name: 'subscribe', title: 'Texto del botón suscribir', type: 'string', validation: (Rule: any) => Rule.required() }
           ]
         },
         {
@@ -30,7 +32,9 @@ export default {
             { name: 'author', title: 'Author', type: 'string', validation: (Rule: any) => Rule.required() },
             { name: 'description', title: 'Description', type: 'text', validation: (Rule: any) => Rule.required() },
             { name: 'comingSoon', title: 'Coming Soon', type: 'string', validation: (Rule: any) => Rule.required() },
-            { name: 'availability', title: 'Availability', type: 'text', validation: (Rule: any) => Rule.required() }
+            { name: 'availability', title: 'Availability', type: 'text', validation: (Rule: any) => Rule.required() },
+            { name: 'emailPlaceholder', title: 'Email placeholder', type: 'string', validation: (Rule: any) => Rule.required() },
+            { name: 'subscribe', title: 'Subscribe button text', type: 'string', validation: (Rule: any) => Rule.required() }
           ]
         }
       ]

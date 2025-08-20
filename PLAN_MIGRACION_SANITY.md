@@ -588,17 +588,17 @@ export default defineConfig({
 - [ x ] Crear esquemas de contenido
 
 ### **Migración de Datos**
-- [ ] Migrar imágenes del slideshow
-- [ ] Migrar galerías de fotos
-- [ ] Migrar productos de la tienda
-- [ ] Migrar biografía
-- [ ] Migrar información del libro
+- [ x ] Migrar imágenes del slideshow
+- [ x ] Migrar galerías de fotos
+- [ x ] Migrar productos de la tienda
+- [ x ] Migrar biografía
+- [ x ] Migrar información del libro
 
 ### **Desarrollo**
-- [ ] Actualizar queries de datos
-- [ ] Modificar componentes
-- [ ] Implementar optimización de imágenes
-- [ ] Configurar internacionalización
+- [ x ] Actualizar queries de datos
+- [ x ] Modificar componentes
+- [ x ] Implementar optimización de imágenes
+- [ x ] Configurar internacionalización
 
 ### **Testing**
 - [ ] Probar todas las páginas
