@@ -21,7 +21,7 @@ const LATIN_AMERICA_COUNTRIES = [
   'VE', // Venezuela
 ];
 
-// Configuración de monedas por país
+// Configuración de monedas por país (solo Latinoamérica)
 const CURRENCY_CONFIG = {
   AR: { currency: 'ARS', symbol: '$', name: 'Peso Argentino' },
   BR: { currency: 'BRL', symbol: 'R$', name: 'Real Brasileño' },
@@ -30,7 +30,7 @@ const CURRENCY_CONFIG = {
   MX: { currency: 'MXN', symbol: '$', name: 'Peso Mexicano' },
   PE: { currency: 'PEN', symbol: 'S/', name: 'Sol Peruano' },
   UY: { currency: 'UYU', symbol: '$', name: 'Peso Uruguayo' },
-  // Por defecto USD para otros países
+  // Por defecto USD para otros países (no soportados por ahora)
   DEFAULT: { currency: 'USD', symbol: '$', name: 'Dólar Estadounidense' }
 };
 
@@ -40,7 +40,8 @@ export interface RegionInfo {
   symbol: string;
   currencyName: string;
   isLatinAmerica: boolean;
-  paymentProvider: 'mercadopago' | 'stripe';
+  paymentProvider: 'mercadopago' | 'unsupported';
+  isSupported: boolean;
 }
 
 /**
@@ -58,7 +59,8 @@ export function detectRegion(countryCode: string): RegionInfo {
     symbol: currencyInfo.symbol,
     currencyName: currencyInfo.name,
     isLatinAmerica,
-    paymentProvider: isLatinAmerica ? 'mercadopago' : 'stripe'
+    paymentProvider: isLatinAmerica ? 'mercadopago' : 'unsupported',
+    isSupported: isLatinAmerica
   };
 }
 
@@ -73,8 +75,8 @@ export async function detectRegionByIP(): Promise<RegionInfo> {
     return detectRegion(data.country_code);
   } catch (error) {
     console.error('Error detectando región por IP:', error);
-    // Fallback a USD
-    return detectRegion('US');
+    // Fallback a Argentina (soportado)
+    return detectRegion('AR');
   }
 }
 
@@ -83,7 +85,7 @@ export async function detectRegionByIP(): Promise<RegionInfo> {
  */
 export function detectRegionByBrowser(): RegionInfo {
   const language = navigator.language || navigator.languages?.[0] || 'en-US';
-  const countryCode = language.split('-')[1] || 'US';
+  const countryCode = language.split('-')[1] || 'AR';
   
   return detectRegion(countryCode);
 }

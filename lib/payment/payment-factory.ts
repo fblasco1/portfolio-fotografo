@@ -35,16 +35,21 @@ export class PaymentFactory {
   }
 
   static getProvider(region: RegionInfo): PaymentProvider | null {
-    const providerName = region.paymentProvider;
-    const provider = this.providers.get(providerName);
+    // Solo soportamos Mercado Pago para Latinoamérica
+    if (!region.isSupported) {
+      console.error(`❌ Región no soportada: ${region.country}`);
+      return null;
+    }
+
+    const provider = this.providers.get('mercadopago');
     
     if (!provider) {
-      console.error(`❌ Proveedor de pago no encontrado: ${providerName}`);
+      console.error('❌ Proveedor de pago Mercado Pago no encontrado');
       return null;
     }
 
     if (!provider.isAvailable(region)) {
-      console.error(`❌ Proveedor ${providerName} no disponible para la región: ${region.country}`);
+      console.error(`❌ Mercado Pago no disponible para la región: ${region.country}`);
       return null;
     }
 
@@ -52,6 +57,10 @@ export class PaymentFactory {
   }
 
   static getAvailableProviders(region: RegionInfo): PaymentProvider[] {
+    if (!region.isSupported) {
+      return [];
+    }
+    
     return Array.from(this.providers.values()).filter(provider => 
       provider.isAvailable(region)
     );

@@ -1,28 +1,21 @@
 import { PaymentFactory } from './payment-factory';
 import { MercadoPagoProvider } from './mercadopago.service';
-import { StripeProvider } from './stripe.service';
 
 // Registrar proveedores de pago
 export function initializePaymentProviders() {
   console.log('🔧 Inicializando proveedores de pago...');
   
-  // Registrar Mercado Pago para Latinoamérica
+  // Registrar solo Mercado Pago para Latinoamérica
   const mercadopagoProvider = new MercadoPagoProvider();
   PaymentFactory.registerProvider('mercadopago', mercadopagoProvider);
   console.log('✅ Mercado Pago registrado');
   
-  // Registrar Stripe para el resto del mundo
-  const stripeProvider = new StripeProvider();
-  PaymentFactory.registerProvider('stripe', stripeProvider);
-  console.log('✅ Stripe registrado');
-  
   console.log('🎉 Proveedores de pago inicializados correctamente');
 }
 
-// Configuración de precios por región (en USD)
+// Configuración de precios por región (solo Latinoamérica)
 export const PRICE_CONFIG = {
   photos: {
-    USD: 50,
     ARS: 50000, // Convertido a pesos argentinos
     BRL: 250,   // Convertido a reales brasileños
     CLP: 47500, // Convertido a pesos chilenos
@@ -32,7 +25,6 @@ export const PRICE_CONFIG = {
     UYU: 2000   // Convertido a pesos uruguayos
   },
   postcards: {
-    USD: 15,
     ARS: 15000,
     BRL: 75,
     CLP: 14250,
@@ -43,9 +35,8 @@ export const PRICE_CONFIG = {
   }
 };
 
-// Configuración de envío por región
+// Configuración de envío por región (solo Latinoamérica)
 export const SHIPPING_CONFIG = {
-  USD: { cost: 10, name: 'International Shipping' },
   ARS: { cost: 10000, name: 'Envío Nacional' },
   BRL: { cost: 50, name: 'Envio Nacional' },
   CLP: { cost: 9500, name: 'Envío Nacional' },
@@ -55,9 +46,8 @@ export const SHIPPING_CONFIG = {
   UYU: { cost: 400, name: 'Envío Nacional' }
 };
 
-// Configuración de impuestos por región
+// Configuración de impuestos por región (solo Latinoamérica)
 export const TAX_CONFIG = {
-  USD: 0, // Sin impuestos para envíos internacionales
   ARS: 0.21, // 21% IVA en Argentina
   BRL: 0.17, // 17% ICMS en Brasil
   CLP: 0.19, // 19% IVA en Chile
@@ -99,6 +89,13 @@ export function calculateTotalPrice(
  */
 export function getProductPrice(productType: 'photos' | 'postcards', currency: string): number {
   const prices = PRICE_CONFIG[productType];
-  return prices[currency as keyof typeof prices] || prices.USD;
+  return prices[currency as keyof typeof prices] || 0;
+}
+
+/**
+ * Verifica si una moneda está soportada
+ */
+export function isCurrencySupported(currency: string): boolean {
+  return Object.keys(TAX_CONFIG).includes(currency);
 }
 

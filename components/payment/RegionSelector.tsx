@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useRegion } from '@/hooks/useRegion';
-import { detectRegion } from '@/lib/payment/region-detector';
 
-const COUNTRIES = [
+const LATIN_AMERICA_COUNTRIES = [
   { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
   { code: 'BR', name: 'Brasil', flag: '🇧🇷' },
   { code: 'CL', name: 'Chile', flag: '🇨🇱' },
@@ -12,14 +11,6 @@ const COUNTRIES = [
   { code: 'MX', name: 'México', flag: '🇲🇽' },
   { code: 'PE', name: 'Perú', flag: '🇵🇪' },
   { code: 'UY', name: 'Uruguay', flag: '🇺🇾' },
-  { code: 'US', name: 'Estados Unidos', flag: '🇺🇸' },
-  { code: 'CA', name: 'Canadá', flag: '🇨🇦' },
-  { code: 'ES', name: 'España', flag: '🇪🇸' },
-  { code: 'FR', name: 'Francia', flag: '🇫🇷' },
-  { code: 'DE', name: 'Alemania', flag: '🇩🇪' },
-  { code: 'IT', name: 'Italia', flag: '🇮🇹' },
-  { code: 'GB', name: 'Reino Unido', flag: '🇬🇧' },
-  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
 ];
 
 interface RegionSelectorProps {
@@ -36,13 +27,39 @@ export default function RegionSelector({ className = '', showLabel = true }: Reg
     setIsOpen(false);
   };
 
-  const currentCountry = COUNTRIES.find(c => c.code === region?.country);
+  const currentCountry = LATIN_AMERICA_COUNTRIES.find(c => c.code === region?.country);
 
   if (loading) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
         <span className="text-sm text-gray-600">Detectando ubicación...</span>
+      </div>
+    );
+  }
+
+  // Si la región detectada no es de Latinoamérica, mostrar mensaje
+  if (region && !region.isSupported) {
+    return (
+      <div className={`${className}`}>
+        {showLabel && (
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Ubicación
+          </label>
+        )}
+        <div className="p-3 border border-orange-300 rounded-md bg-orange-50">
+          <div className="flex items-center space-x-2">
+            <span className="text-orange-600">⚠️</span>
+            <div>
+              <p className="text-sm font-medium text-orange-800">
+                Región no soportada
+              </p>
+              <p className="text-xs text-orange-600">
+                Actualmente solo soportamos pagos en Latinoamérica. Selecciona un país de la región.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -79,7 +96,7 @@ export default function RegionSelector({ className = '', showLabel = true }: Reg
       {isOpen && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
           <div className="py-1">
-            {COUNTRIES.map((country) => (
+            {LATIN_AMERICA_COUNTRIES.map((country) => (
               <button
                 key={country.code}
                 type="button"
@@ -101,11 +118,11 @@ export default function RegionSelector({ className = '', showLabel = true }: Reg
         </div>
       )}
 
-      {region && (
+      {region && region.isSupported && (
         <div className="mt-2 text-xs text-gray-500">
           <span>Moneda: {region.currencyName} ({region.currency})</span>
           <span className="mx-2">•</span>
-          <span>Proveedor: {region.paymentProvider === 'mercadopago' ? 'Mercado Pago' : 'Stripe'}</span>
+          <span>Proveedor: Mercado Pago</span>
         </div>
       )}
     </div>

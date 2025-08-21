@@ -1,8 +1,8 @@
-# 🌟 Rama Feature/Payment - Sistema de Pagos Multi-Plataforma
+# 🌟 Rama Feature/Payment - Sistema de Pagos con Mercado Pago
 
 ## 📋 Resumen
 
-Esta rama contiene la implementación completa del sistema de pagos multi-plataforma para el portfolio del fotógrafo. El sistema soporta diferentes proveedores de pago según la región del usuario.
+Esta rama contiene la implementación del sistema de pagos con Mercado Pago para el portfolio del fotógrafo. El sistema está optimizado para Latinoamérica y soporta 7 países de la región.
 
 ## 🎯 Características Implementadas
 
@@ -10,12 +10,12 @@ Esta rama contiene la implementación completa del sistema de pagos multi-plataf
 - Geolocalización por IP
 - Detección por navegador
 - Selección manual de país
-- Configuración automática de moneda y proveedor
+- Configuración automática de moneda
 
-### ✅ **Proveedores de Pago**
-- **Latinoamérica**: Mercado Pago
-- **Internacional**: Stripe
+### ✅ **Proveedor de Pago**
+- **Mercado Pago** para Latinoamérica
 - Factory pattern para gestión unificada
+- Integración completa con API de Mercado Pago
 
 ### ✅ **APIs del Backend**
 - `/api/payment/region` - Detección de región
@@ -23,7 +23,7 @@ Esta rama contiene la implementación completa del sistema de pagos multi-plataf
 - Estructura preparada para webhooks
 
 ### ✅ **Componentes Frontend**
-- `RegionSelector` - Selector de país
+- `RegionSelector` - Selector de país (solo Latinoamérica)
 - Hooks personalizados para región y pagos
 - Integración con el carrito existente
 
@@ -35,27 +35,17 @@ Esta rama contiene la implementación completa del sistema de pagos multi-plataf
 ## 🌍 Regiones Soportadas
 
 ### Latinoamérica (Mercado Pago)
-| País | Moneda | Código |
-|------|--------|--------|
-| 🇦🇷 Argentina | Peso Argentino | ARS |
-| 🇧🇷 Brasil | Real Brasileño | BRL |
-| 🇨🇱 Chile | Peso Chileno | CLP |
-| 🇨🇴 Colombia | Peso Colombiano | COP |
-| 🇲🇽 México | Peso Mexicano | MXN |
-| 🇵🇪 Perú | Sol Peruano | PEN |
-| 🇺🇾 Uruguay | Peso Uruguayo | UYU |
+| País | Moneda | Código | Impuesto |
+|------|--------|--------|----------|
+| 🇦🇷 Argentina | Peso Argentino | ARS | 21% IVA |
+| 🇧🇷 Brasil | Real Brasileño | BRL | 17% ICMS |
+| 🇨🇱 Chile | Peso Chileno | CLP | 19% IVA |
+| 🇨🇴 Colombia | Peso Colombiano | COP | 19% IVA |
+| 🇲🇽 México | Peso Mexicano | MXN | 16% IVA |
+| 🇵🇪 Perú | Sol Peruano | PEN | 18% IGV |
+| 🇺🇾 Uruguay | Peso Uruguayo | UYU | 22% IVA |
 
-### Internacional (Stripe)
-| País | Moneda | Código |
-|------|--------|--------|
-| 🇺🇸 Estados Unidos | Dólar Estadounidense | USD |
-| 🇨🇦 Canadá | Dólar Canadiense | CAD |
-| 🇪🇸 España | Euro | EUR |
-| 🇫🇷 Francia | Euro | EUR |
-| 🇩🇪 Alemania | Euro | EUR |
-| 🇮🇹 Italia | Euro | EUR |
-| 🇬🇧 Reino Unido | Libra Esterlina | GBP |
-| 🇦🇺 Australia | Dólar Australiano | AUD |
+**Nota**: Solo se soportan países de Latinoamérica. Para otras regiones se mostrará un mensaje de región no soportada.
 
 ## 📁 Estructura de Archivos
 
@@ -66,15 +56,14 @@ feature/payment/
 ├── 📄 PAYMENT_BRANCH_README.md        # Este archivo
 ├── 🔧 lib/payment/
 │   ├── config.ts                      # Configuración de precios e impuestos
-│   ├── payment-factory.ts             # Factory pattern para proveedores
+│   ├── payment-factory.ts             # Factory pattern para Mercado Pago
 │   ├── region-detector.ts             # Detección de región
-│   ├── mercadopago.service.ts         # Servicio de Mercado Pago
-│   └── stripe.service.ts              # Servicio de Stripe
+│   └── mercadopago.service.ts         # Servicio de Mercado Pago
 ├── 🪝 hooks/
 │   ├── useRegion.ts                   # Hook para gestión de región
 │   └── usePayment.ts                  # Hook para gestión de pagos
 ├── 🎨 components/payment/
-│   └── RegionSelector.tsx             # Selector de país
+│   └── RegionSelector.tsx             # Selector de país (solo Latinoamérica)
 └── 🔌 app/api/payment/
     ├── region/route.ts                # API de detección de región
     └── create-intent/route.ts         # API de creación de sesiones
@@ -86,10 +75,6 @@ feature/payment/
 ```bash
 # Mercado Pago (Latinoamérica)
 MERCADOPAGO_ACCESS_TOKEN=your_mercadopago_access_token
-
-# Stripe (Internacional)
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
 # URL base de la aplicación
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -107,13 +92,7 @@ npm install
 # Tarjeta de prueba: 4509 9535 6623 3704
 # CVV: 123
 # Fecha: 12/25
-```
-
-### Stripe Test Mode
-```bash
-# Tarjeta de prueba: 4242 4242 4242 4242
-# CVV: 123
-# Fecha: 12/25
+# Nombre: APRO
 ```
 
 ## 📖 Uso Rápido
@@ -127,11 +106,15 @@ function MyComponent() {
   
   if (loading) return <div>Detectando...</div>;
   
+  if (!region?.isSupported) {
+    return <div>Región no soportada</div>;
+  }
+  
   return (
     <div>
-      <p>País: {region?.country}</p>
-      <p>Moneda: {region?.currency}</p>
-      <p>Proveedor: {region?.paymentProvider}</p>
+      <p>País: {region.country}</p>
+      <p>Moneda: {region.currency}</p>
+      <p>Proveedor: Mercado Pago</p>
     </div>
   );
 }
@@ -146,19 +129,20 @@ function CheckoutComponent() {
 
   const handleCheckout = async () => {
     const items = [
-      { id: '1', title: 'Foto 1', price: 50, quantity: 1 }
+      { id: '1', title: 'Foto 1', price: 50000, quantity: 1 }
     ];
 
     const paymentIntent = await createPaymentIntent(items);
     
-    if (paymentIntent?.provider === 'mercadopago') {
+    if (paymentIntent) {
+      // Redirigir a Mercado Pago
       window.location.href = paymentIntent.paymentUrl;
     }
   };
 
   return (
     <button onClick={handleCheckout} disabled={loading}>
-      {loading ? 'Procesando...' : 'Pagar'}
+      {loading ? 'Procesando...' : 'Pagar con Mercado Pago'}
     </button>
   );
 }
@@ -183,13 +167,13 @@ function CheckoutPage() {
 
 ### 1. **Configuración Inicial**
 - [ ] Configurar variables de entorno
-- [ ] Crear cuentas en Mercado Pago y Stripe
-- [ ] Obtener tokens de acceso
+- [ ] Crear cuenta en Mercado Pago
+- [ ] Obtener token de acceso
 
 ### 2. **Testing Local**
 - [ ] Probar detección de región
 - [ ] Verificar creación de sesiones de pago
-- [ ] Testear flujos de Mercado Pago y Stripe
+- [ ] Testear flujo de Mercado Pago
 
 ### 3. **Integración con Carrito**
 - [ ] Conectar con el carrito existente
@@ -221,9 +205,29 @@ function CheckoutPage() {
 - ✅ PCI-DSS compliance
 - ✅ Protección de datos personales
 
+## 💰 Configuración de Precios
+
+Los precios se configuran en `lib/payment/config.ts`:
+
+```typescript
+export const PRICE_CONFIG = {
+  photos: {
+    ARS: 50000,  // $50 USD en pesos argentinos
+    BRL: 250,    // $50 USD en reales brasileños
+    CLP: 47500,  // $50 USD en pesos chilenos
+    // ... más monedas
+  },
+  postcards: {
+    ARS: 15000,  // $15 USD en pesos argentinos
+    BRL: 75,     // $15 USD en reales brasileños
+    // ... más monedas
+  }
+};
+```
+
 ## 🚀 Próximos Pasos
 
-1. **Configurar cuentas de pago** en Mercado Pago y Stripe
+1. **Configurar cuenta de Mercado Pago** y obtener token de acceso
 2. **Personalizar precios** según necesidades del negocio
 3. **Implementar webhooks** para confirmación de pagos
 4. **Agregar gestión de órdenes** en base de datos
@@ -235,11 +239,11 @@ function CheckoutPage() {
 Para dudas o problemas:
 1. Revisar logs en consola del navegador y servidor
 2. Verificar variables de entorno
-3. Consultar documentación oficial de Mercado Pago y Stripe
+3. Consultar documentación oficial de Mercado Pago
 4. Revisar `PAYMENT_USAGE_GUIDE.md` para ejemplos detallados
 
 ---
 
 **Rama creada**: `feature/payment`  
-**Último commit**: `f6e9862` - feat: implementar sistema de pagos multi-plataforma  
-**Estado**: ✅ Listo para testing y configuración
+**Último commit**: `e77aa96` - docs: agregar README específico para rama feature/payment  
+**Estado**: ✅ Listo para testing y configuración con Mercado Pago
