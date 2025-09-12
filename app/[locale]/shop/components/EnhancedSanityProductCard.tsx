@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { urlFor } from "@/lib/sanity";
 import type { SanityProduct } from "@/app/types/store";
-import { AddToCartButton } from "../../../components/payment";
+import { AddToCartButton } from "../../../../components/payment";
 import { useRegion } from "@/hooks/useRegion";
 
 interface EnhancedSanityProductCardProps {
