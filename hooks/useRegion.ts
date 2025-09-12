@@ -28,12 +28,19 @@ export function useRegion(): UseRegionReturn {
     try {
       let detectedRegion: RegionInfo;
 
-      // Intentar detectar por IP primero
+      // Usar nuestro endpoint de geolocalización
       try {
-        detectedRegion = await detectRegionByIP();
-        console.log('🌍 Región detectada por IP:', detectedRegion);
-      } catch (ipError) {
-        console.log('⚠️ Error detectando por IP, usando navegador:', ipError);
+        const response = await fetch('/api/geolocation');
+        const result = await response.json();
+        
+        if (result.success) {
+          detectedRegion = detectRegion(result.data.country_code);
+          console.log('🌍 Región detectada por servidor:', detectedRegion);
+        } else {
+          throw new Error('Error en la respuesta del servidor');
+        }
+      } catch (serverError) {
+        console.log('⚠️ Error detectando por servidor, usando navegador:', serverError);
         // Fallback a detección por navegador
         detectedRegion = detectRegionByBrowser();
         console.log('🌍 Región detectada por navegador:', detectedRegion);
@@ -43,8 +50,8 @@ export function useRegion(): UseRegionReturn {
     } catch (err) {
       console.error('❌ Error detectando región:', err);
       setError('Error detectando tu ubicación');
-      // Fallback a USD
-      setRegionState(detectRegion('US'));
+      // Fallback a Argentina
+      setRegionState(detectRegion('AR'));
     } finally {
       setLoading(false);
     }
