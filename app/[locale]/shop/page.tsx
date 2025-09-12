@@ -1,7 +1,7 @@
 import { client } from "@/lib/sanity";
 import { productsQuery } from "@/lib/queries";
 import type { SanityProduct } from "@/app/types/store";
-import SanityPhotoStore from "./components/SanityPhotoStore";
+import HybridSanityPhotoStore from "./components/HybridSanityPhotoStore";
 
 interface ShopPageProps {
   params: Promise<{ locale: string }>;
@@ -45,7 +45,7 @@ export default async function StorePage({ params }: ShopPageProps) {
 
     return (
       <div className="min-h-screen">
-        <SanityPhotoStore 
+        <HybridSanityPhotoStore 
           photos={photos} 
           postcards={postcards} 
           locale={locale} 
