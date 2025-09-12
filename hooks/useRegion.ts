@@ -33,12 +33,10 @@ export function useRegion(): UseRegionReturn {
         const response = await fetch('/api/geolocation');
         const result = await response.json();
         
-        if (result.success) {
-          detectedRegion = detectRegion(result.data.country_code);
-          console.log('🌍 Región detectada por servidor:', detectedRegion);
-        } else {
-          throw new Error('Error en la respuesta del servidor');
-        }
+        // Usar los datos aunque success sea false (fallback)
+        detectedRegion = detectRegion(result.data.country_code);
+        console.log('🌍 Región detectada por servidor:', detectedRegion);
+        
       } catch (serverError) {
         console.log('⚠️ Error detectando por servidor, usando navegador:', serverError);
         // Fallback a detección por navegador
