@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
 import type { SanityProduct } from "@/app/types/store";
-import { CheckoutForm, OrderSummary } from "@/components/payment";
+import { CheckoutForm, OrderSummary } from "../../../components/payment";
 import { useRegion } from "@/hooks/useRegion";
 import { formatPrice } from "@/lib/payment/region-detector";
 import { getProductPrice } from "@/lib/payment/config";

@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import EnhancedSanityProductCard from "./EnhancedSanityProductCard";
 import EnhancedSanityCart from "./EnhancedSanityCart";
 import { useRegion } from "@/hooks/useRegion";
-import { CartButton } from "@/components/payment";
+import { CartButton } from "../../../components/payment";
 
 interface CartItem extends SanityProduct {
   quantity: number;
