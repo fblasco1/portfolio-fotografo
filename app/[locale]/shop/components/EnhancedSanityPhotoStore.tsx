@@ -23,24 +23,7 @@ export default function EnhancedSanityPhotoStore({
   postcards, 
   locale 
 }: EnhancedSanityPhotoStoreProps) {
-  const [cart, setCart] = useState<CartItem[]>([]);
   const { region, loading: regionLoading } = useRegion();
-
-  const addToCart = (product: SanityProduct) => {
-    setCart((prevCart) => {
-      const existingIndex = prevCart.findIndex(
-        (item) => item._id === product._id
-      );
-
-      if (existingIndex !== -1) {
-        const newCart = [...prevCart];
-        newCart[existingIndex].quantity += 1;
-        return newCart;
-      } else {
-        return [...prevCart, { ...product, quantity: 1 }];
-      }
-    });
-  };
 
   // Textos internacionalizados
   const getTabText = (key: string) => {
@@ -160,7 +143,6 @@ export default function EnhancedSanityPhotoStore({
                 key={product._id}
                 product={product}
                 locale={locale}
-                addToCart={addToCart}
               />
             ))}
           </div>
@@ -173,7 +155,6 @@ export default function EnhancedSanityPhotoStore({
                 key={product._id}
                 product={product}
                 locale={locale}
-                addToCart={addToCart}
               />
             ))}
           </div>
@@ -181,7 +162,7 @@ export default function EnhancedSanityPhotoStore({
       </Tabs>
 
       {/* Carrito mejorado */}
-      <EnhancedSanityCart cart={cart} setCart={setCart} locale={locale} />
+      <EnhancedSanityCart locale={locale} />
     </div>
   );
 }

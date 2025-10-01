@@ -9,13 +9,11 @@ import { useRegion } from "@/hooks/useRegion";
 interface EnhancedSanityProductCardProps {
   product: SanityProduct;
   locale: string;
-  addToCart: (product: SanityProduct) => void;
 }
 
 export default function EnhancedSanityProductCard({ 
   product, 
-  locale, 
-  addToCart 
+  locale
 }: EnhancedSanityProductCardProps) {
   const { region, loading } = useRegion();
   
@@ -34,9 +32,6 @@ export default function EnhancedSanityProductCard({
     productType: product.category as 'photos' | 'postcards'
   };
 
-  const handleAddToCart = () => {
-    addToCart(product);
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">

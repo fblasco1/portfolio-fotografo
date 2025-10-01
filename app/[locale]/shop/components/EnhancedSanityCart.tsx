@@ -12,6 +12,7 @@ import { ShoppingCart, X, Plus, Minus } from "lucide-react";
 import type { SanityProduct } from "@/app/types/store";
 import { CheckoutForm, OrderSummary } from "../../../../components/payment";
 import { useRegion } from "@/hooks/useRegion";
+import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/payment/region-detector";
 import { getProductPrice } from "@/lib/payment/config";
 
@@ -20,25 +21,31 @@ interface CartItem extends SanityProduct {
 }
 
 interface EnhancedSanityCartProps {
-  cart: CartItem[];
-  setCart: (cart: CartItem[]) => void;
   locale: string;
 }
 
-export default function EnhancedSanityCart({ cart, setCart, locale }: EnhancedSanityCartProps) {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+export default function EnhancedSanityCart({ locale }: EnhancedSanityCartProps) {
   const [showCheckout, setShowCheckout] = useState(false);
   const { region, loading: regionLoading } = useRegion();
+  const { 
+    items: cart, 
+    isOpen: isDrawerOpen, 
+    setIsOpen: setIsDrawerOpen,
+    removeItem,
+    updateQuantity,
+    getTotalItems
+  } = useCart();
 
-  const updateQuantity = (index: number, delta: number) => {
-    const newCart = [...cart];
-    newCart[index].quantity += delta;
-
-    if (newCart[index].quantity <= 0) {
-      newCart.splice(index, 1); // Eliminar si la cantidad es 0
+  const handleUpdateQuantity = (itemId: string, delta: number) => {
+    const item = cart.find(item => item.id === itemId);
+    if (item) {
+      const newQuantity = item.quantity + delta;
+      if (newQuantity <= 0) {
+        removeItem(itemId);
+      } else {
+        updateQuantity(itemId, newQuantity);
+      }
     }
-
-    setCart(newCart);
   };
 
   // Textos internacionalizados
@@ -104,9 +111,9 @@ export default function EnhancedSanityCart({ cart, setCart, locale }: EnhancedSa
             className="fixed bottom-4 right-4 w-14 h-14 rounded-full bg-white hover:bg-stone shadow-lg flex items-center justify-center"
           >
             <ShoppingCart size={24} />
-            {cart.length > 0 && (
+            {getTotalItems() > 0 && (
               <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                {getTotalItems()}
               </span>
             )}
           </Button>
@@ -170,7 +177,7 @@ export default function EnhancedSanityCart({ cart, setCart, locale }: EnhancedSa
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateQuantity(index, -1)}
+                          onClick={() => handleUpdateQuantity(item.id, -1)}
                           className="w-8 h-8 p-0"
                         >
                           <Minus size={14} />
@@ -181,7 +188,7 @@ export default function EnhancedSanityCart({ cart, setCart, locale }: EnhancedSa
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateQuantity(index, 1)}
+                          onClick={() => handleUpdateQuantity(item.id, 1)}
                           className="w-8 h-8 p-0"
                         >
                           <Plus size={14} />

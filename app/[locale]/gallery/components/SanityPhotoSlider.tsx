@@ -85,15 +85,16 @@ export default function SanityPhotoSlider({ gallery, locale, onClose }: SanityPh
         )}
 
         {/* Imagen actual */}
-        <div className="relative max-w-4xl max-h-full p-4">
+        <div className="relative w-full h-[60vh] flex items-center justify-center overflow-hidden bg-black rounded-lg">
           <Image
             src={urlFor(photos[currentPhotoIndex]).url()}
             alt={`${content.title} - Foto ${currentPhotoIndex + 1}`}
-            width={800}
-            height={600}
-            className="max-w-full max-h-full object-contain"
+            fill
+            sizes="(max-width: 768px) 80vw, 800px"
+            className="object-contain"
           />
         </div>
+
 
         {/* Información de la galería */}
         <div className="absolute bottom-4 left-4 right-4 text-white text-center">
