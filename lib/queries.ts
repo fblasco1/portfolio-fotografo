@@ -24,9 +24,42 @@ export const productsQuery = `
     _type,
     category,
     image,
-    price,
     order,
     isAvailable,
+    description {
+      es,
+      en
+    },
+    pricing {
+      argentina {
+        price,
+        enabled
+      },
+      brazil {
+        price,
+        enabled
+      },
+      chile {
+        price,
+        enabled
+      },
+      colombia {
+        price,
+        enabled
+      },
+      mexico {
+        price,
+        enabled
+      },
+      peru {
+        price,
+        enabled
+      },
+      uruguay {
+        price,
+        enabled
+      }
+    },
     content {
       es {
         title,
@@ -36,6 +69,12 @@ export const productsQuery = `
         title,
         subtitle
       }
+    },
+    tags,
+    metadata {
+      createdAt,
+      updatedAt,
+      featured
     }
   }
 `

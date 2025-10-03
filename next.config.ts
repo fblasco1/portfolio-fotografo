@@ -1,5 +1,13 @@
 const nextConfig = {
-  transpilePackages: ['next-international', 'international-types'],
+  transpilePackages: [
+    'next-international', 
+    'international-types',
+    'next-sanity',
+    '@sanity/client',
+    '@sanity/image-url',
+    '@sanity/vision',
+    'sanity'
+  ],
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -23,6 +31,9 @@ const nextConfig = {
     ],
   },
   reactStrictMode: true,
+  experimental: {
+    serverComponentsExternalPackages: ['@sanity/client', '@sanity/image-url']
+  }
 }
 
 module.exports = nextConfig
