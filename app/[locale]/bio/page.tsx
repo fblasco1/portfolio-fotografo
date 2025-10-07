@@ -1,7 +1,6 @@
 import Image from "next/image";
-import { client } from "@/lib/sanity";
+import { client, urlFor } from "@/lib/sanity";
 import { bioQuery } from "@/lib/queries";
-import { urlFor } from "@/lib/sanity";
 
 interface BioPageProps {
   params: Promise<{ locale: string }>;

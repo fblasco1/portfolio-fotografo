@@ -1,10 +1,41 @@
 "use client";
 
 import Image from "next/image";
-import { urlFor } from "@/lib/sanity";
 import type { SanityProduct } from "@/app/types/store";
 import { AddToCartButton } from "../../../../components/payment";
 import { useRegion } from "@/hooks/useRegion";
+import { urlFor } from "@/lib/sanity";
+
+// Función segura para obtener URL de imagen
+const getImageUrl = (image: any) => {
+  try {
+    // Si no hay imagen, usar placeholder
+    if (!image || !image.asset) {
+      return "/placeholder.svg";
+    }
+    
+    // Si ya es una URL, usarla directamente
+    if (typeof image === 'string') {
+      return image;
+    }
+    
+    // Usar urlFor seguro
+    try {
+      const builder = (urlFor as any)(image);
+      if (builder && builder.width && builder.height && builder.url) {
+        return builder.width(400).height(400).url() || "/placeholder.svg";
+      }
+    } catch (urlError) {
+      console.warn('Error using urlFor:', urlError);
+    }
+    
+    // Fallback a URL directa si está disponible
+    return image.asset?.url || "/placeholder.svg";
+  } catch (error) {
+    console.warn('Error getting image URL:', error);
+    return "/placeholder.svg";
+  }
+};
 
 interface EnhancedSanityProductCardProps {
   product: SanityProduct;
@@ -18,10 +49,13 @@ export default function EnhancedSanityProductCard({
   const { region, loading } = useRegion();
   
   // Obtener contenido según el idioma
-  const content = product.content[locale as keyof typeof product.content] || product.content.es;
+  const content = product.content?.[locale as keyof typeof product.content] || product.content?.es || {
+    title: 'Producto',
+    subtitle: 'Descripción del producto'
+  };
   
   // Obtener URL de la imagen
-  const imageUrl = product.image ? urlFor(product.image).url() : "/placeholder.svg";
+  const imageUrl = getImageUrl(product.image);
 
   // Convertir producto al formato esperado por AddToCartButton
   const productData = {
@@ -31,6 +65,7 @@ export default function EnhancedSanityProductCard({
     image: imageUrl,
     productType: product.category as 'photos' | 'postcards'
   };
+
 
 
   return (

@@ -209,27 +209,23 @@ export default {
         }
       ],
       validation: (Rule: any) => Rule.custom((pricing: any) => {
-        // Verificar que al menos una región tenga precio
-        const regions = ['argentina', 'brazil', 'chile', 'colombia', 'mexico', 'peru', 'uruguay'];
-        const hasAtLeastOnePrice = regions.some(region => 
-          pricing?.[region]?.enabled && pricing[region].price > 0
-        );
+        if (!pricing) return 'Los precios son obligatorios';
         
-        if (!hasAtLeastOnePrice) {
-          return 'Debe configurar al menos un precio para una región habilitada';
+        try {
+          // Verificar que al menos una región tenga precio
+          const regions = ['argentina', 'brazil', 'chile', 'colombia', 'mexico', 'peru', 'uruguay'];
+          const hasAtLeastOnePrice = regions.some(region => 
+            pricing[region]?.enabled && pricing[region].price > 0
+          );
+          
+          if (!hasAtLeastOnePrice) {
+            return 'Debe configurar al menos un precio para una región habilitada';
+          }
+          
+          return true;
+        } catch (error) {
+          return 'Error en la validación de precios';
         }
-        
-        // Verificar que los precios habilitados sean válidos
-        const invalidRegions = regions.filter(region => {
-          const regionData = pricing?.[region];
-          return regionData?.enabled && (!regionData.price || regionData.price <= 0);
-        });
-        
-        if (invalidRegions.length > 0) {
-          return `Las regiones habilitadas deben tener precios válidos: ${invalidRegions.join(', ')}`;
-        }
-        
-        return true;
       })
     },
     {
@@ -329,20 +325,28 @@ export default {
       mexicoPrice: 'pricing.mexico.price'
     },
     prepare(selection: any) {
-      const { title, category, media, isAvailable, featured, argentinaPrice, brazilPrice, mexicoPrice } = selection
-      const prices = [];
-      if (argentinaPrice) prices.push(`ARS: ${argentinaPrice}`);
-      if (brazilPrice) prices.push(`BRL: ${brazilPrice}`);
-      if (mexicoPrice) prices.push(`MXN: ${mexicoPrice}`);
-      
-      const status = [];
-      if (featured) status.push('⭐ Destacado');
-      if (!isAvailable) status.push('❌ No disponible');
-      
-      return {
-        title: title || 'Sin título',
-        subtitle: `${category === 'photo' ? 'Fotografía' : 'Postal'} ${prices.length > 0 ? `- ${prices.join(', ')}` : ''} ${status.length > 0 ? `- ${status.join(' ')}` : ''}`,
-        media: media
+      try {
+        const { title, category, media, isAvailable, featured, argentinaPrice, brazilPrice, mexicoPrice } = selection || {}
+        const prices = [];
+        if (argentinaPrice) prices.push(`ARS: ${argentinaPrice}`);
+        if (brazilPrice) prices.push(`BRL: ${brazilPrice}`);
+        if (mexicoPrice) prices.push(`MXN: ${mexicoPrice}`);
+        
+        const status = [];
+        if (featured) status.push('⭐ Destacado');
+        if (!isAvailable) status.push('❌ No disponible');
+        
+        return {
+          title: title || 'Sin título',
+          subtitle: `${category === 'photo' ? 'Fotografía' : 'Postal'} ${prices.length > 0 ? `- ${prices.join(', ')}` : ''} ${status.length > 0 ? `- ${status.join(' ')}` : ''}`,
+          media: media
+        }
+      } catch (error) {
+        return {
+          title: 'Error en preview',
+          subtitle: 'Error al generar preview',
+          media: null
+        }
       }
     }
   },

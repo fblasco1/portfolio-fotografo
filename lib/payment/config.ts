@@ -14,7 +14,8 @@ export function initializePaymentProviders() {
 }
 
 // Configuración de precios por región (solo Latinoamérica)
-export const PRICE_CONFIG = {
+// Estos precios se obtienen ahora desde Sanity, pero mantenemos valores por defecto
+export const DEFAULT_PRICE_CONFIG = {
   photos: {
     ARS: 50000, // Convertido a pesos argentinos
     BRL: 250,   // Convertido a reales brasileños
@@ -86,10 +87,77 @@ export function calculateTotalPrice(
 
 /**
  * Obtiene el precio de un producto en la moneda especificada
+ * @param productType Tipo de producto ('photos' | 'postcards')
+ * @param currency Moneda del producto
+ * @param productPricing Información de precios por región desde Sanity (opcional)
  */
-export function getProductPrice(productType: 'photos' | 'postcards', currency: string): number {
-  const prices = PRICE_CONFIG[productType];
-  return prices[currency as keyof typeof prices] || 0;
+export function getProductPrice(
+  productType: 'photos' | 'postcards', 
+  currency: string, 
+  productPricing?: any
+): number {
+  // Verificaciones de seguridad
+  if (!productType || !currency) {
+    console.warn('getProductPrice: productType o currency no están definidos', { productType, currency });
+    return 0;
+  }
+  
+  // Si tenemos precios por región desde Sanity, los usamos
+  if (productPricing) {
+    const regionMap: Record<string, string> = {
+      'ARS': 'argentina',
+      'BRL': 'brazil', 
+      'CLP': 'chile',
+      'COP': 'colombia',
+      'MXN': 'mexico',
+      'PEN': 'peru',
+      'UYU': 'uruguay'
+    };
+
+    const region = regionMap[currency];
+    if (region && productPricing[region]) {
+      const regionPricing = productPricing[region];
+      if (regionPricing.enabled && regionPricing.price > 0) {
+        return regionPricing.price;
+      }
+    }
+  }
+  
+  // Fallback a precios por defecto
+  const prices = DEFAULT_PRICE_CONFIG[productType];
+  if (!prices) {
+    console.warn('getProductPrice: productType no encontrado en DEFAULT_PRICE_CONFIG', { productType });
+    return 0;
+  }
+  
+  const price = prices[currency as keyof typeof prices];
+  if (price === undefined) {
+    console.warn('getProductPrice: currency no encontrada en precios', { productType, currency });
+    return 0;
+  }
+  
+  return price;
+}
+
+/**
+ * Convierte un precio base (en USD) a la moneda local
+ * @param basePrice Precio base en USD
+ * @param targetCurrency Moneda objetivo
+ */
+function convertPriceToCurrency(basePrice: number, targetCurrency: string): number {
+  // Tasa de conversión aproximada desde USD a monedas locales
+  const exchangeRates: Record<string, number> = {
+    ARS: 1000,   // 1 USD = 1000 ARS
+    BRL: 5,      // 1 USD = 5 BRL
+    CLP: 950,    // 1 USD = 950 CLP
+    COP: 4000,   // 1 USD = 4000 COP
+    MXN: 18,     // 1 USD = 18 MXN
+    PEN: 3.7,    // 1 USD = 3.7 PEN
+    UYU: 40      // 1 USD = 40 UYU
+  };
+  
+  const rate = exchangeRates[targetCurrency] || 1;
+  return Math.round(basePrice * rate);
 }
 
 /**

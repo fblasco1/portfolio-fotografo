@@ -4,9 +4,9 @@ import { useState } from "react";
 import type { SanityProduct } from "@/app/types/store";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import EnhancedSanityProductCard from "./EnhancedSanityProductCard";
-import EnhancedSanityCart from "./EnhancedSanityCart";
+import UnifiedCart from "./UnifiedCart";
 import { useRegion } from "@/hooks/useRegion";
-import { CartButton, RegionSelector } from "../../../../components/payment";
+import { RegionSelector } from "../../../../components/payment";
 
 interface CartItem extends SanityProduct {
   quantity: number;
@@ -26,8 +26,8 @@ export default function EnhancedSanityPhotoStore({
   const { region, loading: regionLoading } = useRegion();
 
   // Textos internacionalizados
-  const getTabText = (key: string) => {
-    const texts = {
+  const getTabText = (key: string): string => {
+    const texts: Record<string, { es: string; en: string }> = {
       photos: {
         es: "Fotos",
         en: "Photos"
@@ -57,7 +57,7 @@ export default function EnhancedSanityPhotoStore({
         en: "We currently only support payments in Latin America. Please select a country from the region to continue."
       }
     };
-    return texts[key as keyof typeof texts]?.[locale as keyof typeof texts[key]] || texts[key as keyof typeof texts]?.es;
+    return texts[key]?.[locale as 'es' | 'en'] || texts[key]?.es || '';
   };
 
   if (regionLoading) {
@@ -91,17 +91,14 @@ export default function EnhancedSanityPhotoStore({
 
   return (
     <div className="container mx-auto px-4 pt-32 pb-16">
-      {/* Header con información de región y botón de carrito */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {getTabText("shopTitle")}
-          </h1>
-          <p className="text-gray-600 mt-2">
-            {getTabText("shopSubtitle")}
-          </p>
-        </div>
-        <CartButton locale={locale} />
+      {/* Header con información de región */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">
+          {getTabText("shopTitle")}
+        </h1>
+        <p className="text-gray-600 mt-2">
+          {getTabText("shopSubtitle")}
+        </p>
       </div>
 
       {/* Información de región */}
@@ -161,8 +158,8 @@ export default function EnhancedSanityPhotoStore({
         </TabsContent>
       </Tabs>
 
-      {/* Carrito mejorado */}
-      <EnhancedSanityCart locale={locale} />
+      {/* Carrito unificado */}
+      <UnifiedCart locale={locale} variant="floating" />
     </div>
   );
 }

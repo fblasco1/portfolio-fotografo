@@ -9,23 +9,24 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
-import type { SanityProduct } from "@/app/types/store";
-import { CheckoutForm, OrderSummary } from "../../../../components/payment";
+// Removed OrderSummary and CheckoutForm imports - now using separate checkout page
 import { useRegion } from "@/hooks/useRegion";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/payment/region-detector";
 import { getProductPrice } from "@/lib/payment/config";
 
-interface CartItem extends SanityProduct {
-  quantity: number;
-}
-
-interface EnhancedSanityCartProps {
+interface UnifiedCartProps {
   locale: string;
+  className?: string;
+  variant?: 'button' | 'floating';
 }
 
-export default function EnhancedSanityCart({ locale }: EnhancedSanityCartProps) {
-  const [showCheckout, setShowCheckout] = useState(false);
+export default function UnifiedCart({ 
+  locale, 
+  className = '',
+  variant = 'floating'
+}: UnifiedCartProps) {
+  // Removed showCheckout state - now using separate checkout page
   const { region, loading: regionLoading } = useRegion();
   const { 
     items: cart, 
@@ -50,8 +51,12 @@ export default function EnhancedSanityCart({ locale }: EnhancedSanityCartProps) 
 
   // Textos internacionalizados
   const getText = (key: string) => {
-    const texts = {
+    const texts: Record<string, { es: string; en: string }> = {
       cartTitle: {
+        es: "Carrito",
+        en: "Cart"
+      },
+      cart: {
         es: "Carrito",
         en: "Cart"
       },
@@ -72,52 +77,59 @@ export default function EnhancedSanityCart({ locale }: EnhancedSanityCartProps) 
         en: "We only support payments in Latin America"
       }
     };
-    return texts[key as keyof typeof texts]?.[locale as keyof typeof texts[key]] || texts[key as keyof typeof texts]?.es;
+    return texts[key]?.[locale as 'es' | 'en'] || texts[key]?.es;
   };
 
-  // Convertir items del carrito al formato esperado por CheckoutForm
-  const convertCartItems = () => {
-    return cart.map(item => {
-      const content = item.content[locale as keyof typeof item.content] || item.content.es;
-      return {
-        id: item._id,
-        title: content.title,
-        subtitle: content.subtitle,
-        image: item.image ? item.image.asset?.url || "/placeholder.svg" : "/placeholder.svg",
-        productType: item.category as 'photos' | 'postcards',
-        quantity: item.quantity
-      };
-    });
-  };
+  // Removed convertCartItems, handleCheckout, and handleCloseCheckout functions
+  // Now using separate checkout page instead of inline forms
 
-  const handleCheckout = () => {
-    if (!region || !region.isSupported) {
-      alert(getText("regionMessage"));
-      return;
+  const totalItems = getTotalItems();
+  const isDisabled = regionLoading || !region || !region.isSupported;
+
+  // Renderizar botón de carrito
+  const renderCartButton = () => {
+    if (variant === 'button') {
+      return (
+        <Button
+          onClick={() => setIsDrawerOpen(true)}
+          disabled={isDisabled}
+          className={`relative inline-flex items-center space-x-2 px-4 py-2 bg-stone-600 text-white rounded-md hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${className}`}
+        >
+          <ShoppingCart size={20} />
+          <span className="hidden sm:inline">
+            {getText("cart")}
+          </span>
+          {totalItems > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-medium">
+              {totalItems > 99 ? '99+' : totalItems}
+            </span>
+          )}
+        </Button>
+      );
     }
-    setShowCheckout(true);
-  };
 
-  const handleCloseCheckout = () => {
-    setShowCheckout(false);
+    // Variante flotante (por defecto)
+    return (
+      <Button
+        variant="outline"
+        className={`fixed bottom-4 right-4 w-14 h-14 rounded-full bg-white hover:bg-stone-50 shadow-lg flex items-center justify-center ${className}`}
+        onClick={() => setIsDrawerOpen(true)}
+      >
+        <ShoppingCart size={24} />
+        {totalItems > 0 && (
+          <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {totalItems}
+          </span>
+        )}
+      </Button>
+    );
   };
 
   return (
     <>
+      {renderCartButton()}
+
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerTrigger asChild>
-          <Button
-            variant="outline"
-            className="fixed bottom-4 right-4 w-14 h-14 rounded-full bg-white hover:bg-stone shadow-lg flex items-center justify-center"
-          >
-            <ShoppingCart size={24} />
-            {getTotalItems() > 0 && (
-              <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {getTotalItems()}
-              </span>
-            )}
-          </Button>
-        </DrawerTrigger>
         <DrawerContent className="p-4">
           <div className="flex justify-between items-center mb-4">
             <DrawerTitle>{getText("cartTitle")}</DrawerTitle>
@@ -147,8 +159,9 @@ export default function EnhancedSanityCart({ locale }: EnhancedSanityCartProps) 
               {/* Items del carrito */}
               <ul className="space-y-3">
                 {cart.map((item, index) => {
-                  const content = item.content[locale as keyof typeof item.content] || item.content.es;
-                  const price = getProductPrice(item.category as 'photos' | 'postcards', region.currency);
+                  const price = region && region.currency && item.productType 
+                    ? getProductPrice(item.productType, region.currency) 
+                    : 0;
                   
                   return (
                     <li
@@ -156,19 +169,19 @@ export default function EnhancedSanityCart({ locale }: EnhancedSanityCartProps) 
                       className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg"
                     >
                       <img
-                        src={item.image?.asset?.url || "/placeholder.svg"}
-                        alt={content.title}
+                        src={item.image}
+                        alt={item.title}
                         className="w-16 h-16 object-cover rounded-md"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-900 truncate">
-                          {content.title}
+                          {item.title}
                         </div>
                         <div className="text-sm text-gray-600 truncate">
-                          {content.subtitle}
+                          {item.subtitle}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {formatPrice(price, region.currency, region.symbol)} x {item.quantity}
+                          {region ? formatPrice(price, region.currency, region.symbol) : `$${price}`} x {item.quantity}
                         </div>
                       </div>
                       
@@ -199,26 +212,26 @@ export default function EnhancedSanityCart({ locale }: EnhancedSanityCartProps) 
                 })}
               </ul>
 
-              {/* Resumen de pedido */}
-              <OrderSummary
-                items={convertCartItems()}
-                locale={locale}
-                showCheckoutButton={true}
-                onCheckout={handleCheckout}
-              />
+              {/* Botón de finalizar compra */}
+              <div className="pt-4 border-t">
+                <Button
+                  onClick={() => {
+                    console.log('Navegando a checkout...');
+                    // Navegar a página de checkout
+                    window.location.href = `/${locale}/checkout`;
+                  }}
+                  className="w-full bg-stone-600 hover:bg-stone-700 text-white"
+                  size="lg"
+                >
+                  {locale === 'es' ? 'Finalizar Compra' : 'Checkout'}
+                </Button>
+              </div>
             </div>
           )}
         </DrawerContent>
       </Drawer>
 
-      {/* Formulario de checkout */}
-      {showCheckout && (
-        <CheckoutForm
-          items={convertCartItems()}
-          onClose={handleCloseCheckout}
-          locale={locale}
-        />
-      )}
+      {/* CheckoutForm removed - now using separate checkout page */}
     </>
   );
 }

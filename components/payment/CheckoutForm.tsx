@@ -14,6 +14,7 @@ interface CartItem {
   image: string;
   productType: 'photos' | 'postcards';
   quantity: number;
+  pricing?: any; // Precios por región desde Sanity
 }
 
 interface CheckoutFormProps {
@@ -37,7 +38,7 @@ export default function CheckoutForm({ items, onClose, locale }: CheckoutFormPro
 
   // Calcular totales
   const subtotal = items.reduce((total, item) => {
-    const price = getProductPrice(item.productType, region?.currency || 'ARS');
+    const price = getProductPrice(item.productType, region?.currency || 'ARS', item.pricing);
     return total + (price * item.quantity);
   }, 0);
 
@@ -92,13 +93,13 @@ export default function CheckoutForm({ items, onClose, locale }: CheckoutFormPro
       const paymentItems = items.map(item => ({
         id: item.id,
         title: item.title,
-        price: getProductPrice(item.productType, region.currency),
+        price: getProductPrice(item.productType, region?.currency || 'ARS', item.pricing),
         quantity: item.quantity
-      }));
+      })).filter(item => item.price > 0); // Filtrar items con precio válido
 
       const paymentIntent = await createPaymentIntent(paymentItems);
 
-      if (paymentIntent) {
+      if (paymentIntent && paymentIntent.paymentUrl) {
         // Redirigir a Mercado Pago
         window.location.href = paymentIntent.paymentUrl;
       }
@@ -289,7 +290,7 @@ export default function CheckoutForm({ items, onClose, locale }: CheckoutFormPro
               <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                 {/* Items */}
                 {items.map((item) => {
-                  const price = getProductPrice(item.productType, region.currency);
+                  const price = getProductPrice(item.productType, region.currency, item.pricing);
                   return (
                     <div key={item.id} className="flex items-center space-x-3">
                       <img

@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRegion } from './useRegion';
 import { getProductPrice } from '@/lib/payment/config';
 
+// Crear un singleton del carrito para evitar múltiples instancias
+let globalCartState: CartItem[] = [];
+let globalListeners: Array<(items: CartItem[]) => void> = [];
+
+const notifyListeners = () => {
+  globalListeners.forEach(listener => listener(globalCartState));
+};
+
 interface CartItem {
   id: string;
   title: string;
@@ -11,6 +19,7 @@ interface CartItem {
   image: string;
   productType: 'photos' | 'postcards';
   quantity: number;
+  pricing?: any; // Precios por región desde Sanity
 }
 
 interface CartTotals {
@@ -27,42 +36,76 @@ export function useCart() {
 
   // Cargar carrito desde localStorage al inicializar
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
+    const loadCartFromStorage = () => {
       try {
-        setItems(JSON.parse(savedCart));
+        const savedCart = localStorage.getItem('cart');
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart);
+          // Validar que el carrito tenga la estructura correcta
+          if (Array.isArray(parsedCart)) {
+            globalCartState = parsedCart;
+            setItems(parsedCart);
+            console.log('🛒 Carrito cargado desde localStorage:', parsedCart.length, 'items');
+          } else {
+            console.warn('Formato de carrito inválido, iniciando carrito vacío');
+            globalCartState = [];
+            setItems([]);
+          }
+        }
       } catch (error) {
         console.error('Error loading cart from localStorage:', error);
+        globalCartState = [];
         setItems([]);
+        // Limpiar localStorage corrupto
+        localStorage.removeItem('cart');
       }
-    }
+    };
+
+    loadCartFromStorage();
   }, []);
+
+  // Sincronizar con el estado global
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (JSON.stringify(globalCartState) !== JSON.stringify(items)) {
+        setItems([...globalCartState]);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [items]);
 
   // Guardar carrito en localStorage cuando cambie
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
+    try {
+      localStorage.setItem('cart', JSON.stringify(items));
+      console.log('🛒 Carrito guardado en localStorage:', items.length, 'items');
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
+    }
   }, [items]);
 
   // Agregar item al carrito
   const addItem = (item: Omit<CartItem, 'quantity'>) => {
-    setItems(prevItems => {
-      const existingItem = prevItems.find(i => i.id === item.id);
-      
-      if (existingItem) {
-        return prevItems.map(i =>
-          i.id === item.id
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
-        );
-      } else {
-        return [...prevItems, { ...item, quantity: 1 }];
-      }
-    });
+    const existingItem = globalCartState.find(i => i.id === item.id);
+    
+    if (existingItem) {
+      globalCartState = globalCartState.map(i =>
+        i.id === item.id
+          ? { ...i, quantity: i.quantity + 1 }
+          : i
+      );
+    } else {
+      globalCartState = [...globalCartState, { ...item, quantity: 1 }];
+    }
+    
+    setItems([...globalCartState]);
   };
 
   // Remover item del carrito
   const removeItem = (itemId: string) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+    globalCartState = globalCartState.filter(item => item.id !== itemId);
+    setItems([...globalCartState]);
   };
 
   // Actualizar cantidad de un item
@@ -72,18 +115,27 @@ export function useCart() {
       return;
     }
 
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === itemId
-          ? { ...item, quantity }
-          : item
-      )
+    globalCartState = globalCartState.map(item =>
+      item.id === itemId
+        ? { ...item, quantity }
+        : item
     );
+    setItems([...globalCartState]);
   };
 
   // Limpiar carrito
   const clearCart = () => {
+    globalCartState = [];
     setItems([]);
+    localStorage.removeItem('cart');
+    console.log('🛒 Carrito limpiado completamente');
+  };
+
+  // Limpiar carrito después de compra exitosa
+  const clearCartAfterPurchase = () => {
+    clearCart();
+    // Opcional: mostrar mensaje de confirmación
+    console.log('✅ Carrito limpiado después de compra exitosa');
   };
 
   // Calcular totales
@@ -92,8 +144,8 @@ export function useCart() {
       return null;
     }
 
-    const subtotal = items.reduce((total, item) => {
-      const price = getProductPrice(item.productType, region.currency);
+    const subtotal = globalCartState.reduce((total, item) => {
+      const price = getProductPrice(item.productType, region.currency, item.pricing);
       return total + (price * item.quantity);
     }, 0);
 
@@ -114,20 +166,20 @@ export function useCart() {
 
   // Obtener cantidad total de items
   const getTotalItems = () => {
-    return items.reduce((total, item) => total + item.quantity, 0);
+    return globalCartState.reduce((total, item) => total + item.quantity, 0);
   };
 
   // Verificar si el carrito está vacío
-  const isEmpty = items.length === 0;
+  const isEmpty = globalCartState.length === 0;
 
   // Obtener item por ID
   const getItem = (itemId: string) => {
-    return items.find(item => item.id === itemId);
+    return globalCartState.find(item => item.id === itemId);
   };
 
   // Verificar si un item está en el carrito
   const hasItem = (itemId: string) => {
-    return items.some(item => item.id === itemId);
+    return globalCartState.some(item => item.id === itemId);
   };
 
   // Obtener cantidad de un item específico
@@ -144,6 +196,7 @@ export function useCart() {
     removeItem,
     updateQuantity,
     clearCart,
+    clearCartAfterPurchase,
     getTotals,
     getTotalItems,
     isEmpty,

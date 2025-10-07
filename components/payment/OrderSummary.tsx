@@ -11,11 +11,13 @@ interface CartItem {
   image: string;
   productType: 'photos' | 'postcards';
   quantity: number;
+  pricing?: any; // Precios por región desde Sanity
 }
 
 interface OrderSummaryProps {
   items: CartItem[];
   locale: string;
+  region?: any; // Añadido para compatibilidad con CheckoutPage
   showCheckoutButton?: boolean;
   onCheckout?: () => void;
   checkoutLoading?: boolean;
@@ -24,13 +26,15 @@ interface OrderSummaryProps {
 export default function OrderSummary({ 
   items, 
   locale, 
+  region: propRegion,
   showCheckoutButton = false, 
   onCheckout,
   checkoutLoading = false 
 }: OrderSummaryProps) {
-  const { region, loading } = useRegion();
+  const { region: hookRegion, loading } = useRegion();
+  const region = propRegion || hookRegion;
 
-  if (loading) {
+  if (loading && !propRegion) {
     return (
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="animate-pulse space-y-4">
@@ -67,11 +71,11 @@ export default function OrderSummary({
 
   // Calcular totales
   const subtotal = items.reduce((total, item) => {
-    const price = getProductPrice(item.productType, region.currency);
+    const price = region ? getProductPrice(item.productType, region.currency, item.pricing) : 0;
     return total + (price * item.quantity);
   }, 0);
 
-  const totals = calculateTotalPrice(subtotal, region.currency);
+  const totals = region ? calculateTotalPrice(subtotal, region.currency) : null;
 
   return (
     <div className="bg-gray-50 rounded-lg p-4 space-y-4">
@@ -82,7 +86,7 @@ export default function OrderSummary({
       {/* Items */}
       <div className="space-y-3">
         {items.map((item) => {
-          const price = getProductPrice(item.productType, region.currency);
+          const price = region ? getProductPrice(item.productType, region.currency, item.pricing) : 0;
           return (
             <div key={item.id} className="flex items-center space-x-3">
               <img
@@ -103,10 +107,10 @@ export default function OrderSummary({
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
-                  {formatPrice(price * item.quantity, region.currency, region.symbol)}
+                  {region ? formatPrice(price * item.quantity, region.currency, region.symbol) : `$${price * item.quantity}`}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {formatPrice(price, region.currency, region.symbol)} c/u
+                  {region ? formatPrice(price, region.currency, region.symbol) : `$${price}`} c/u
                 </p>
               </div>
             </div>
@@ -115,51 +119,59 @@ export default function OrderSummary({
       </div>
 
       {/* Totales */}
-      <div className="border-t pt-4 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">
-            {locale === 'es' ? 'Subtotal' : 'Subtotal'}:
-          </span>
-          <span>{formatPrice(totals.subtotal, region.currency, region.symbol)}</span>
+      {totals && region ? (
+        <div className="border-t pt-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">
+              {locale === 'es' ? 'Subtotal' : 'Subtotal'}:
+            </span>
+            <span>{formatPrice(totals.subtotal, region.currency, region.symbol)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">
+              {locale === 'es' ? 'Envío' : 'Shipping'}:
+            </span>
+            <span>{formatPrice(totals.shipping, region.currency, region.symbol)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">
+              {locale === 'es' ? 'Impuestos' : 'Taxes'}:
+            </span>
+            <span>{formatPrice(totals.tax, region.currency, region.symbol)}</span>
+          </div>
+          <div className="flex justify-between text-lg font-semibold border-t pt-2">
+            <span className="text-gray-900">
+              {locale === 'es' ? 'Total' : 'Total'}:
+            </span>
+            <span className="text-stone-600">
+              {formatPrice(totals.total, region.currency, region.symbol)}
+            </span>
+          </div>
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">
-            {locale === 'es' ? 'Envío' : 'Shipping'}:
-          </span>
-          <span>{formatPrice(totals.shipping, region.currency, region.symbol)}</span>
+      ) : (
+        <div className="border-t pt-4 text-center text-gray-500">
+          {locale === 'es' ? 'Cargando precios...' : 'Loading prices...'}
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">
-            {locale === 'es' ? 'Impuestos' : 'Taxes'}:
-          </span>
-          <span>{formatPrice(totals.tax, region.currency, region.symbol)}</span>
-        </div>
-        <div className="flex justify-between text-lg font-semibold border-t pt-2">
-          <span className="text-gray-900">
-            {locale === 'es' ? 'Total' : 'Total'}:
-          </span>
-          <span className="text-stone-600">
-            {formatPrice(totals.total, region.currency, region.symbol)}
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Información de región */}
-      <div className="text-xs text-gray-500 border-t pt-2">
-        <div className="flex items-center justify-between">
-          <span>
-            {locale === 'es' ? 'Ubicación' : 'Location'}: {region.country}
-          </span>
-          <span>
-            {locale === 'es' ? 'Moneda' : 'Currency'}: {region.currency}
-          </span>
+      {region && (
+        <div className="text-xs text-gray-500 border-t pt-2">
+          <div className="flex items-center justify-between">
+            <span>
+              {locale === 'es' ? 'Ubicación' : 'Location'}: {region.country}
+            </span>
+            <span>
+              {locale === 'es' ? 'Moneda' : 'Currency'}: {region.currency}
+            </span>
+          </div>
+          <div className="text-center mt-1">
+            <span>
+              {locale === 'es' ? 'Proveedor' : 'Provider'}: Mercado Pago
+            </span>
+          </div>
         </div>
-        <div className="text-center mt-1">
-          <span>
-            {locale === 'es' ? 'Proveedor' : 'Provider'}: Mercado Pago
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Botón de checkout */}
       {showCheckoutButton && onCheckout && (

@@ -11,6 +11,7 @@ interface AddToCartButtonProps {
     subtitle: string;
     image: string;
     productType: 'photos' | 'postcards';
+    pricing?: any; // Precios por región desde Sanity
   };
   locale: string;
   className?: string;
