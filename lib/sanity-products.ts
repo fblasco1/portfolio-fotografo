@@ -3,7 +3,7 @@ import { productsQuery } from './queries';
 
 export interface SanityProduct {
   _id: string;
-  _type: string;
+  _type: 'product';
   category: 'photo' | 'postcard';
   image: any;
   order: number;
@@ -12,7 +12,7 @@ export interface SanityProduct {
     es?: string;
     en?: string;
   };
-  pricing: {
+  pricing?: {
     argentina?: {
       price: number;
       enabled: boolean;
@@ -148,7 +148,7 @@ export function convertSanityProductToCartItem(
     subtitle: product.content[locale].subtitle,
     image: product.image?.asset?.url || '',
     productType: product.category === 'photo' ? 'photos' : 'postcards' as 'photos' | 'postcards',
-    pricing: product.pricing // Incluir toda la información de precios
+    pricing: product.pricing || {} // Incluir toda la información de precios o objeto vacío
   };
 }
 
@@ -159,6 +159,12 @@ export function getProductPriceForRegion(
   product: SanityProduct, 
   currency: string
 ): number {
+  // Validar que el producto tenga pricing
+  if (!product || !product.pricing) {
+    console.warn(`Product ${product?._id || 'unknown'} has no pricing information`);
+    return 0;
+  }
+
   const regionMap: Record<string, string> = {
     'ARS': 'argentina',
     'BRL': 'brazil', 
@@ -170,13 +176,18 @@ export function getProductPriceForRegion(
   };
 
   const region = regionMap[currency];
-  if (!region || !product.pricing[region as keyof typeof product.pricing]) {
-    console.warn(`No pricing found for currency ${currency} in product ${product._id}`);
+  if (!region) {
+    console.warn(`Unsupported currency: ${currency}`);
     return 0;
   }
 
   const regionPricing = product.pricing[region as keyof typeof product.pricing];
-  if (!regionPricing?.enabled || !regionPricing?.price) {
+  if (!regionPricing) {
+    console.warn(`No pricing found for currency ${currency} in product ${product._id}`);
+    return 0;
+  }
+
+  if (!regionPricing.enabled || !regionPricing.price) {
     console.warn(`Pricing not enabled or price not set for ${currency} in product ${product._id}`);
     return 0;
   }
@@ -191,6 +202,11 @@ export function isProductAvailableInRegion(
   product: SanityProduct, 
   currency: string
 ): boolean {
+  // Validar que el producto tenga pricing
+  if (!product || !product.pricing) {
+    return false;
+  }
+
   const regionMap: Record<string, string> = {
     'ARS': 'argentina',
     'BRL': 'brazil', 
@@ -202,10 +218,14 @@ export function isProductAvailableInRegion(
   };
 
   const region = regionMap[currency];
-  if (!region || !product.pricing[region as keyof typeof product.pricing]) {
+  if (!region) {
     return false;
   }
 
   const regionPricing = product.pricing[region as keyof typeof product.pricing];
-  return Boolean(regionPricing?.enabled && regionPricing?.price > 0);
+  if (!regionPricing) {
+    return false;
+  }
+
+  return Boolean(regionPricing.enabled && regionPricing.price > 0);
 }

@@ -1,16 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import type { SanityProduct } from "@/app/types/store";
+import type { SanityProduct } from "@/lib/sanity-products";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import EnhancedSanityProductCard from "./EnhancedSanityProductCard";
 import UnifiedCart from "./UnifiedCart";
 import { useRegion } from "@/hooks/useRegion";
 import { RegionSelector } from "../../../../components/payment";
-
-interface CartItem extends SanityProduct {
-  quantity: number;
-}
 
 interface EnhancedSanityPhotoStoreProps {
   photos: SanityProduct[];

@@ -30,11 +30,12 @@ export async function POST(request: NextRequest) {
       return total + (item.price * item.quantity);
     }, 0);
 
-    // Crear intent de pago usando el factory
+    // Crear intent de pago usando el factory con información del cliente
     const paymentIntent = await PaymentFactory.createPaymentIntent(
       region as RegionInfo,
       subtotal,
-      items
+      items,
+      customerInfo 
     );
 
     if (!paymentIntent) {

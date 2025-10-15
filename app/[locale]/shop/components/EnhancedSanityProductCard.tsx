@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import type { SanityProduct } from "@/app/types/store";
+import type { SanityProduct } from "@/lib/sanity-products";
 import { AddToCartButton } from "../../../../components/payment";
 import { useRegion } from "@/hooks/useRegion";
 import { urlFor } from "@/lib/sanity";
+import { getProductPriceForRegion, isProductAvailableInRegion } from "@/lib/sanity-products";
 
 // Función segura para obtener URL de imagen
 const getImageUrl = (image: any) => {
@@ -57,16 +58,28 @@ export default function EnhancedSanityProductCard({
   // Obtener URL de la imagen
   const imageUrl = getImageUrl(product.image);
 
+  // Verificar si el producto tiene precios configurados
+  const hasPricing = Boolean(product.pricing);
+
+  // Obtener precio según la región del usuario
+  const productPrice = region && region.currency && hasPricing
+    ? getProductPriceForRegion(product, region.currency)
+    : 0;
+
+  // Verificar si el producto está disponible en la región
+  const isAvailableInRegion = region && region.currency && hasPricing
+    ? isProductAvailableInRegion(product, region.currency)
+    : false;
+
   // Convertir producto al formato esperado por AddToCartButton
   const productData = {
     id: product._id,
     title: content.title,
     subtitle: content.subtitle,
     image: imageUrl,
-    productType: product.category as 'photos' | 'postcards'
+    productType: product.category as 'photos' | 'postcards',
+    pricing: product.pricing
   };
-
-
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -79,12 +92,20 @@ export default function EnhancedSanityProductCard({
           className="w-full h-64 object-cover"
         />
         <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
-          {region && region.isSupported ? (
+          {!hasPricing ? (
+            <span className="text-yellow-400">
+              {locale === 'es' ? 'Sin precio' : 'No price'}
+            </span>
+          ) : region && region.isSupported && isAvailableInRegion ? (
             <span>
-              {region.symbol}{product.price}
+              {region.symbol}{productPrice.toLocaleString()}
+            </span>
+          ) : region && region.isSupported ? (
+            <span className="text-gray-400">
+              {locale === 'es' ? 'No disponible' : 'Not available'}
             </span>
           ) : (
-            <span>${product.price}</span>
+            <span className="text-gray-400">-</span>
           )}
         </div>
       </div>
@@ -98,15 +119,40 @@ export default function EnhancedSanityProductCard({
         </p>
         
         {/* Botón de agregar al carrito mejorado */}
-        <AddToCartButton
-          product={productData}
-          locale={locale}
-          variant="default"
-          size="md"
-        />
+        {!hasPricing ? (
+          <button
+            disabled
+            className="w-full px-4 py-2 bg-yellow-200 text-yellow-800 rounded-md cursor-not-allowed"
+          >
+            {locale === 'es' ? 'Precios no configurados' : 'Prices not configured'}
+          </button>
+        ) : region && region.isSupported && isAvailableInRegion ? (
+          <AddToCartButton
+            product={productData}
+            locale={locale}
+            variant="default"
+            size="md"
+          />
+        ) : (
+          <button
+            disabled
+            className="w-full px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
+          >
+            {locale === 'es' ? 'No disponible' : 'Not available'}
+          </button>
+        )}
+        
+        {/* Mensaje de precios no configurados */}
+        {!hasPricing && (
+          <div className="mt-2 text-xs text-yellow-600 text-center">
+            <span>
+              {locale === 'es' ? 'Configure los precios en Sanity' : 'Configure prices in Sanity'}
+            </span>
+          </div>
+        )}
         
         {/* Información de región */}
-        {region && region.isSupported && (
+        {hasPricing && region && region.isSupported && isAvailableInRegion && (
           <div className="mt-2 text-xs text-gray-500 text-center">
             <span>
               {locale === 'es' ? 'Disponible en' : 'Available in'} {region.country}
@@ -114,8 +160,17 @@ export default function EnhancedSanityProductCard({
           </div>
         )}
         
+        {/* Mensaje de producto no disponible en región */}
+        {hasPricing && region && region.isSupported && !isAvailableInRegion && (
+          <div className="mt-2 text-xs text-orange-600 text-center">
+            <span>
+              {locale === 'es' ? 'No disponible en tu región' : 'Not available in your region'}
+            </span>
+          </div>
+        )}
+        
         {/* Mensaje de región no soportada */}
-        {!loading && (!region || !region.isSupported) && (
+        {hasPricing && !loading && (!region || !region.isSupported) && (
           <div className="mt-2 text-xs text-orange-600 text-center">
             <span>
               {locale === 'es' ? 'Solo en Latinoamérica' : 'Latin America only'}

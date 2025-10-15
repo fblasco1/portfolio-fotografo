@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import MainLayout from "@/app/[locale]/components/main-layout";
 import { I18nProviderClient } from "@/locales/client";
+import { AppProviders } from "@/contexts/AppProviders";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,9 +26,11 @@ export default async function RootLayout({
   return (
     <html className="h-full w-full overflow-x-hidden" lang={locale}>
       <body className={`${inter.className} h-full`}>
-        <I18nProviderClient locale={locale} fallback={<div>Loading...</div>}>
-          <MainLayout locale={locale}>{children}</MainLayout>
-        </I18nProviderClient>
+        <AppProviders>
+          <I18nProviderClient locale={locale} fallback={<div>Loading...</div>}>
+            <MainLayout locale={locale}>{children}</MainLayout>
+          </I18nProviderClient>
+        </AppProviders>
       </body>
     </html>
   );

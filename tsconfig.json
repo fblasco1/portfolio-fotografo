@@ -26,9 +26,6 @@
       "@/constants/*": [
         "./constants/*"
       ],
-      "@/components/*": [
-        "app/[locale]/components/*"
-      ],
       "@/*": [
         "./*"
       ]

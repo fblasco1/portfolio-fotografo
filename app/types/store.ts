@@ -24,7 +24,7 @@ export interface SanityProduct {
     es?: string;
     en?: string;
   };
-  pricing: {
+  pricing?: {
     argentina?: {
       price: number;
       enabled: boolean;

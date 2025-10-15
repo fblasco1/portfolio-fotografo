@@ -160,7 +160,7 @@ export default function UnifiedCart({
               <ul className="space-y-3">
                 {cart.map((item, index) => {
                   const price = region && region.currency && item.productType 
-                    ? getProductPrice(item.productType, region.currency) 
+                    ? getProductPrice(item.productType, region.currency, item.pricing) 
                     : 0;
                   
                   return (

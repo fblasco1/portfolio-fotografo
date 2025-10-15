@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/hooks/useCart';
 import { useRegion } from '@/hooks/useRegion';
-import { OrderSummary, CheckoutForm } from '../../../../components/payment';
-import { Button } from '@/components/ui/button';
+import { PaymentForm } from '@/components/payment/PaymentForm';
+import { PaymentResultModal } from '@/components/payment/PaymentResultModal';
+import { Button } from '@/app/[locale]/components/ui/button';
+import { Card } from '@/app/[locale]/components/ui/card';
 import { ArrowLeft, ShoppingCart } from 'lucide-react';
+import { getProductPrice } from '@/lib/payment/config';
 
 interface CheckoutPageProps {
   locale: string;
@@ -14,9 +17,26 @@ interface CheckoutPageProps {
 
 export default function CheckoutPage({ locale }: CheckoutPageProps) {
   const router = useRouter();
-  const { items: cart, getTotalItems, isEmpty } = useCart();
+  const { items: cart, getTotalItems, isEmpty, getTotals } = useCart();
   const { region, loading: regionLoading } = useRegion();
-  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
+  
+  // Calcular totales
+  const totals = getTotals();
+  const total = totals?.total || 0;
+  
+  // Estado para el modal de resultado
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'approved' | 'pending' | 'rejected' | 'in_process' | 'cancelled' | null>(null);
+  const [paymentId, setPaymentId] = useState<number | undefined>();
+  
+  // Estado para datos del cliente
+  const [customerInfo, setCustomerInfo] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+  });
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Redirigir si el carrito está vacío
   useEffect(() => {
@@ -126,17 +146,32 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
     );
   }
 
-  // Convertir items del carrito al formato esperado por OrderSummary
-  const convertCartItems = () => {
-    return cart.map(item => ({
-      id: item.id,
-      title: item.title,
-      subtitle: item.subtitle,
-      image: item.image,
-      productType: item.productType,
-      quantity: item.quantity,
-      pricing: item.pricing // Incluir precios por región desde Sanity
-    }));
+  // Handlers para el flujo de pago
+  const handlePaymentSuccess = (id: number, status: string) => {
+    setPaymentId(id);
+    setPaymentStatus(status as any);
+    setShowResultModal(true);
+  };
+
+  const handlePaymentError = (error: string) => {
+    setPaymentError(error);
+    // Auto-ocultar después de 5 segundos
+    setTimeout(() => setPaymentError(null), 5000);
+  };
+
+  // Pedir información del cliente antes de mostrar formulario
+  const handleContinueToPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    setCustomerInfo({
+      email: formData.get('email') as string,
+      firstName: formData.get('firstName') as string,
+      lastName: formData.get('lastName') as string,
+    });
+    
+    setShowPaymentForm(true);
   };
 
   return (
@@ -156,32 +191,130 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
         </h1>
       </div>
 
+      {paymentError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+          {paymentError}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Resumen del pedido */}
         <div className="order-2 lg:order-1">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {getText("reviewOrder")}
-          </h2>
-          <OrderSummary
-            items={convertCartItems()}
-            region={region}
-            locale={locale}
-            showCheckoutButton={false}
-          />
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {getText("reviewOrder")}
+            </h2>
+            <div className="space-y-4">
+              {cart.map((item) => {
+                const itemPrice = region ? getProductPrice(item.productType, region.currency, item.pricing) : 0;
+                return (
+                  <div key={item.id} className="flex gap-4">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-20 h-20 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-medium">{item.title}</h3>
+                      <p className="text-sm text-gray-600">{item.subtitle}</p>
+                      <p className="text-sm">
+                        Cantidad: {item.quantity} × {new Intl.NumberFormat('es-AR', {
+                          style: 'currency',
+                          currency: region?.currency || 'ARS',
+                        }).format(itemPrice)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Total:</span>
+                  <span>
+                    {new Intl.NumberFormat('es-AR', {
+                      style: 'currency',
+                      currency: region?.currency || 'ARS',
+                    }).format(total)}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  * Envío e IVA se acordarán con el vendedor después del pago
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
 
-        {/* Formulario de checkout */}
+        {/* Formulario de pago */}
         <div className="order-1 lg:order-2">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {getText("proceedToPayment")}
-          </h2>
-          <CheckoutForm
-            items={convertCartItems()}
-            onClose={() => router.push(`/${locale}/shop`)}
-            locale={locale}
-          />
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {showPaymentForm ? 'Datos de Pago' : 'Información de Contacto'}
+            </h2>
+            
+            {!showPaymentForm ? (
+              <form onSubmit={handleContinueToPayment} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="tu@email.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+                    Nombre
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+                    Apellido
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  Continuar al Pago
+                </Button>
+              </form>
+            ) : (
+              <PaymentForm
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+                customerInfo={customerInfo}
+              />
+            )}
+          </Card>
         </div>
       </div>
+
+      {/* Modal de resultado */}
+      <PaymentResultModal
+        isOpen={showResultModal}
+        status={paymentStatus}
+        paymentId={paymentId}
+        onClose={() => setShowResultModal(false)}
+        onGoHome={() => router.push(`/${locale}`)}
+        onContinueShopping={() => router.push(`/${locale}/shop`)}
+      />
     </div>
   );
 }

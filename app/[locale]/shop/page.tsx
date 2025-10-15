@@ -1,5 +1,5 @@
-import { getProducts, isSanityConfigured } from "@/lib/sanity";
-import type { SanityProduct } from "@/app/types/store";
+import { getProducts, type SanityProduct } from "@/lib/sanity-products";
+import { isSanityConfigured } from "@/lib/sanity";
 import EnhancedSanityPhotoStore from "./components/EnhancedSanityPhotoStore";
 
 interface ShopPageProps {
@@ -10,8 +10,8 @@ export default async function StorePage({ params }: ShopPageProps) {
   const { locale } = await params;
   
   try {
-    // Obtener productos de manera segura
-    const products = await getProducts() as SanityProduct[];
+    // Obtener productos desde Sanity con la función correcta
+    const products = await getProducts();
     
     // Separar productos por tipo
     const photos = products.filter(product => product.category === 'photo');
