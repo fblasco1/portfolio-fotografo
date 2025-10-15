@@ -25,6 +25,7 @@ export interface PaymentMethod {
   id: string;
   name: string;
   payment_type_id: string;
+  type?: string;
   thumbnail: string;
   secure_thumbnail: string;
   status: string;

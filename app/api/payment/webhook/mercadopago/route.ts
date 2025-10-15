@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { EmailNotificationService, PaymentNotificationData } from '@/lib/email';
 
 /**
  * Webhook handler para notificaciones de Mercado Pago
@@ -110,18 +111,98 @@ async function processPaymentNotification(paymentId: string) {
       payer_email: payment.payer?.email
     });
 
-    // Aquí puedes implementar tu lógica de negocio:
-    // - Actualizar base de datos
-    // - Enviar email de confirmación
-    // - Generar facturas
-    // - Actualizar inventario
-    // etc.
+    // Procesar emails automáticos solo para pagos aprobados
+    if (payment.status === 'approved') {
+      await processApprovedPayment(payment);
+    }
 
     return payment;
   } catch (error) {
     console.error('❌ Error procesando notificación de pago:', error);
     throw error;
   }
+}
+
+/**
+ * Procesa pagos aprobados enviando emails automáticos
+ */
+async function processApprovedPayment(payment: any) {
+  try {
+    console.log('🎉 Procesando pago aprobado:', payment.id);
+
+    // Extraer información del pago
+    const notificationData: PaymentNotificationData = {
+      paymentId: payment.id.toString(),
+      status: payment.status,
+      statusDetail: payment.status_detail,
+      transactionAmount: payment.transaction_amount,
+      currency: payment.currency_id,
+      paymentMethod: payment.payment_method_id,
+      installments: payment.installments || 1,
+      customerEmail: payment.payer?.email || '',
+      customerName: payment.payer?.first_name && payment.payer?.last_name 
+        ? `${payment.payer.first_name} ${payment.payer.last_name}`.trim()
+        : payment.payer?.first_name || '',
+      customerPhone: payment.payer?.phone?.number ? 
+        `${payment.payer.phone.area_code || ''}${payment.payer.phone.number}`.trim() : undefined,
+      customerAddress: payment.payer?.address ? {
+        street_name: payment.payer.address.street_name,
+        street_number: payment.payer.address.street_number,
+        city: payment.payer.address.city,
+        zip_code: payment.payer.address.zip_code,
+        country: payment.payer.address.federal_unit
+      } : undefined,
+      products: extractProductsFromPayment(payment),
+      orderId: payment.external_reference || `order_${payment.id}`,
+      dateCreated: payment.date_created,
+      dateApproved: payment.date_approved
+    };
+
+    // Inicializar servicio de emails
+    const emailService = new EmailNotificationService();
+
+    // Enviar emails en paralelo
+    const [photographerEmailSent, customerEmailSent] = await Promise.allSettled([
+      emailService.sendPhotographerNotification(notificationData),
+      emailService.sendCustomerConfirmation(notificationData)
+    ]);
+
+    // Log resultados
+    if (photographerEmailSent.status === 'fulfilled' && photographerEmailSent.value) {
+      console.log('✅ Email enviado al fotógrafo exitosamente');
+    } else {
+      console.error('❌ Error enviando email al fotógrafo:', photographerEmailSent.status === 'rejected' ? photographerEmailSent.reason : 'Error desconocido');
+    }
+
+    if (customerEmailSent.status === 'fulfilled' && customerEmailSent.value) {
+      console.log('✅ Email enviado al cliente exitosamente');
+    } else {
+      console.error('❌ Error enviando email al cliente:', customerEmailSent.status === 'rejected' ? customerEmailSent.reason : 'Error desconocido');
+    }
+
+  } catch (error) {
+    console.error('❌ Error procesando pago aprobado:', error);
+    // No lanzar el error para no afectar el webhook
+  }
+}
+
+/**
+ * Extrae información de productos del pago
+ * Nota: Esta función es básica ya que Mercado Pago no incluye detalles de productos en el webhook
+ * En una implementación completa, deberías almacenar los productos en tu base de datos
+ * y recuperarlos usando el external_reference o metadata
+ */
+function extractProductsFromPayment(payment: any): Array<{title: string, quantity: number, price: number}> {
+  // Por ahora, creamos un producto genérico basado en la descripción
+  // En el futuro, esto debería venir de tu base de datos usando payment.external_reference
+  const description = payment.description || 'Producto del Portfolio';
+  const amount = payment.transaction_amount || 0;
+  
+  return [{
+    title: description,
+    quantity: 1,
+    price: amount
+  }];
 }
 
 /**

@@ -9,24 +9,22 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
-// Removed OrderSummary and CheckoutForm imports - now using separate checkout page
 import { useRegion } from "@/hooks/useRegion";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice } from "@/lib/payment/region-detector";
 import { getProductPrice } from "@/lib/payment/config";
 
-interface UnifiedCartProps {
+interface CartProps {
   locale: string;
   className?: string;
   variant?: 'button' | 'floating';
 }
 
-export default function UnifiedCart({ 
+export default function Cart({ 
   locale, 
   className = '',
   variant = 'floating'
-}: UnifiedCartProps) {
-  // Removed showCheckout state - now using separate checkout page
+}: CartProps) {
   const { region, loading: regionLoading } = useRegion();
   const { 
     items: cart, 
@@ -79,9 +77,6 @@ export default function UnifiedCart({
     };
     return texts[key]?.[locale as 'es' | 'en'] || texts[key]?.es;
   };
-
-  // Removed convertCartItems, handleCheckout, and handleCloseCheckout functions
-  // Now using separate checkout page instead of inline forms
 
   const totalItems = getTotalItems();
   const isDisabled = regionLoading || !region || !region.isSupported;
@@ -230,8 +225,6 @@ export default function UnifiedCart({
           )}
         </DrawerContent>
       </Drawer>
-
-      {/* CheckoutForm removed - now using separate checkout page */}
     </>
   );
 }

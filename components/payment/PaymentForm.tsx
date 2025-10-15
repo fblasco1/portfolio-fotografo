@@ -36,8 +36,7 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
   
   const [identificationTypes, setIdentificationTypes] = useState<IdentificationType[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
-  // const [installments, setInstallments] = useState<Installment[]>([]); // Removido - solo pago único
-  const selectedInstallment = 1; // Siempre 1 cuota
+  const selectedInstallment = 1;
   const [bin, setBin] = useState<string>('');
 
   const {
@@ -45,7 +44,6 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
     error: mpError,
     getIdentificationTypes,
     getPaymentMethods,
-    // getInstallments: fetchInstallments, // Removido - solo pago único
     createCardToken,
   } = useMercadoPago({ publicKey, locale: region?.country === 'BR' ? 'pt-BR' : 'es-AR' });
 
@@ -63,77 +61,51 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
   // Detectar método de pago cuando cambia el BIN
   useEffect(() => {
     if (bin.length >= 6 && isReady) {
-      console.log('🔍 Detectando método de pago para BIN:', bin);
       getPaymentMethods(bin)
-        .then((methods) => {
-          console.log('📋 Métodos de pago encontrados:', methods);
-          if (methods.length > 0) {
-            setPaymentMethod(methods[0]);
-            console.log('✅ Método de pago establecido:', methods[0].id);
-            // Cuotas fijas en 1 (pago único)
-            return [];
-          } else {
-            console.log('⚠️ No se encontraron métodos de pago para el BIN, usando detección automática');
-            // Detectar método de pago automáticamente basado en el BIN
-            const detectedMethod = detectPaymentMethodFromBin(bin);
-            if (detectedMethod) {
-              setPaymentMethod(detectedMethod);
-              console.log('✅ Método de pago detectado automáticamente:', detectedMethod.id);
-            }
+        .then((response: any) => {
+          // La API devuelve un objeto con estructura { paging: {...}, results: [...] }
+          let methodsArray = [];
+          if (response && response.results && Array.isArray(response.results)) {
+            methodsArray = response.results;
+          } else if (Array.isArray(response)) {
+            methodsArray = response;
+          } else if (response && response.id) {
+            // Si es un objeto individual con id
+            methodsArray = [response];
           }
-          return [];
-        })
-        .then(() => {
-          // Solo pago único - no necesitamos manejar cuotas
-          console.log('✅ Pago único configurado');
+          
+          if (methodsArray.length > 0) {
+            const method = methodsArray[0];
+            setPaymentMethod(method);
+          } else {
+            setPaymentMethod(null);
+          }
         })
         .catch((err) => {
-          console.error('❌ Error obteniendo información de la tarjeta:', err);
-          // Detectar método de pago automáticamente como fallback
-          const detectedMethod = detectPaymentMethodFromBin(bin);
-          if (detectedMethod) {
-            setPaymentMethod(detectedMethod);
-            console.log('✅ Método de pago detectado automáticamente (fallback):', detectedMethod.id);
-          }
+          console.error('Error obteniendo información de la tarjeta:', err);
+          setPaymentMethod(null);
         });
-    } else if (bin.length < 6) {
+    } else {
       setPaymentMethod(null);
     }
-  }, [bin, total, isReady, getPaymentMethods]);
+  }, [bin, isReady, getPaymentMethods]);
 
-  // Función para detectar método de pago basado en BIN
-  const detectPaymentMethodFromBin = (bin: string) => {
-    const binPrefixes: Record<string, any> = {
-      '4': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '5': { id: 'master', name: 'Mastercard', type: 'credit_card' },
-      '3': { id: 'amex', name: 'American Express', type: 'credit_card' },
-      '6': { id: 'elo', name: 'Elo', type: 'credit_card' },
-      '5041': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '5031': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '4013': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '4509': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '4916': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '4177': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '4658': { id: 'visa', name: 'Visa', type: 'credit_card' },
-      '5078': { id: 'master', name: 'Mastercard', type: 'credit_card' },
-    };
-
-    // Buscar por prefijo exacto primero
-    for (const prefix in binPrefixes) {
-      if (bin.startsWith(prefix)) {
-        return binPrefixes[prefix];
-      }
+  // Función para obtener el payment_method_id correcto
+  const getCorrectPaymentMethodId = (method: any) => {
+    if (!method || !method.id) {
+      return undefined;
     }
 
-    return null;
+    // El id que devuelve la API de Mercado Pago YA ES el payment_method_id correcto
+    return method.id;
   };
+
 
   // Validar si el formulario está completo
   const isFormValid = (): boolean => {
     if (!cardData) return false;
     
-    // Validación básica sin requerir paymentMethod (se detectará en el backend)
-    const isValid = !!(
+    return !!(
       cardData.cardNumber &&
       cardData.cardNumber.length >= 13 &&
       cardData.cardholderName &&
@@ -145,22 +117,6 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
       cardData.identificationType &&
       cardData.identificationNumber
     );
-    
-    // Debug: mostrar estado de validación
-    if (!isValid) {
-      console.log('🔍 Validación del formulario:', {
-        cardNumber: cardData.cardNumber?.length,
-        cardholderName: cardData.cardholderName?.length,
-        cardExpirationMonth: cardData.cardExpirationMonth,
-        cardExpirationYear: cardData.cardExpirationYear,
-        securityCode: cardData.securityCode?.length,
-        identificationType: cardData.identificationType,
-        identificationNumber: cardData.identificationNumber,
-        paymentMethod: paymentMethod
-      });
-    }
-    
-    return isValid;
   };
 
   // Validar formulario
@@ -208,7 +164,7 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm() || !cardData || !paymentMethod || !region || !customerInfo) {
+    if (!validateForm() || !cardData || !region || !customerInfo) {
       return;
     }
 
@@ -216,14 +172,13 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
     setErrors({});
 
     try {
-      console.log('🔒 Iniciando proceso de pago...');
-
       // 1. Tokenizar tarjeta
       const token = await createCardToken(cardData);
 
-      console.log('✅ Token creado, procesando pago...');
+      // 2. Obtener método de pago correcto (si está disponible)
+             const correctPaymentMethodId = paymentMethod ? getCorrectPaymentMethodId(paymentMethod) : undefined;
 
-      // 2. Enviar pago al backend
+      // 3. Enviar pago al backend
       const response = await fetch('/api/payment/create-payment', {
         method: 'POST',
         headers: {
@@ -235,7 +190,7 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
             token: token.id,
             transaction_amount: total,
             installments: selectedInstallment,
-            payment_method_id: paymentMethod.id,
+            ...(correctPaymentMethodId && { payment_method_id: correctPaymentMethodId }),
             payer: {
               email: customerInfo.email,
               first_name: customerInfo.firstName,
@@ -261,16 +216,29 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
       const data = await response.json();
 
       if (!data.success || !data.payment) {
-        throw new Error(data.error || 'Error procesando el pago');
+        let errorMessage = data.error || 'Error procesando el pago';
+        
+        // Manejar errores específicos de Mercado Pago
+        if (data.error && data.error.includes('bin_exclusion')) {
+          errorMessage = 'La tarjeta ingresada no es válida o no está permitida para este tipo de transacción. Por favor, intenta con otra tarjeta de crédito o débito.';
+        } else if (data.error && data.error.includes('invalid_card_number')) {
+          errorMessage = 'El número de tarjeta ingresado no es válido. Verifica los datos e intenta nuevamente.';
+        } else if (data.error && data.error.includes('invalid_expiration_date')) {
+          errorMessage = 'La fecha de vencimiento de la tarjeta no es válida. Verifica el mes y año.';
+        } else if (data.error && data.error.includes('invalid_security_code')) {
+          errorMessage = 'El código de seguridad (CVV) ingresado no es válido.';
+        } else if (data.error && data.error.includes('card_disabled')) {
+          errorMessage = 'La tarjeta ingresada está deshabilitada. Contacta a tu banco o intenta con otra tarjeta.';
+        } else if (data.error && data.error.includes('expired_card')) {
+          errorMessage = 'La tarjeta ingresada ha expirado. Verifica la fecha de vencimiento.';
+        } else if (data.error && data.error.includes('call_for_authorize')) {
+          errorMessage = 'La transacción requiere autorización. Contacta a tu banco para autorizar el pago.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const payment = data.payment;
-
-      console.log('✅ Pago procesado:', {
-        id: payment.id,
-        status: payment.status,
-        statusDetail: payment.status_detail,
-      });
 
       // Limpiar carrito si el pago fue aprobado
       if (payment.status === 'approved') {

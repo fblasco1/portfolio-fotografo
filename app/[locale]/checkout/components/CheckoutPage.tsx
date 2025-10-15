@@ -38,6 +38,25 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
+  // Cargar datos del cliente desde localStorage si están disponibles
+  useEffect(() => {
+    const savedCustomerData = localStorage.getItem('customerData');
+    if (savedCustomerData) {
+      try {
+        const data = JSON.parse(savedCustomerData);
+        setCustomerInfo({
+          email: data.email || '',
+          firstName: data.name ? data.name.split(' ')[0] : '',
+          lastName: data.name ? data.name.split(' ').slice(1).join(' ') : '',
+        });
+        // Limpiar los datos del localStorage después de usarlos
+        localStorage.removeItem('customerData');
+      } catch (error) {
+        console.warn('Error parsing customer data from localStorage:', error);
+      }
+    }
+  }, []);
+
   // Redirigir si el carrito está vacío
   useEffect(() => {
     if (!regionLoading && isEmpty) {
@@ -263,6 +282,8 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                     id="email"
                     name="email"
                     required
+                    value={customerInfo.email}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-md"
                     placeholder="tu@email.com"
                   />
@@ -276,6 +297,8 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                     id="firstName"
                     name="firstName"
                     required
+                    value={customerInfo.firstName}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, firstName: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>
@@ -288,6 +311,8 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                     id="lastName"
                     name="lastName"
                     required
+                    value={customerInfo.lastName}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, lastName: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>

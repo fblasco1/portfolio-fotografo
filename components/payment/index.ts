@@ -1,8 +1,6 @@
 // Componentes de pago
-export { default as CheckoutForm } from './CheckoutForm';
 export { default as OrderSummary } from './OrderSummary';
 export { default as PaymentConfirmation } from './PaymentConfirmation';
-export { default as EnhancedCart } from './EnhancedCart';
 export { default as CartButton } from './CartButton';
 export { default as AddToCartButton } from './AddToCartButton';
 export { default as RegionSelector } from './RegionSelector';

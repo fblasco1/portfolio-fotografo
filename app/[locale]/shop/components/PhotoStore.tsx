@@ -2,22 +2,22 @@
 
 import type { SanityProduct } from "@/lib/sanity-products";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import EnhancedSanityProductCard from "./EnhancedSanityProductCard";
-import UnifiedCart from "./UnifiedCart";
+import ProductCard from "../../components/ProductCard";
+import Cart from "./Cart";
 import { useRegion } from "@/hooks/useRegion";
 import { RegionSelector } from "../../../../components/payment";
 
-interface EnhancedSanityPhotoStoreProps {
+interface PhotoStoreProps {
   photos: SanityProduct[];
   postcards: SanityProduct[];
   locale: string;
 }
 
-export default function EnhancedSanityPhotoStore({ 
+export default function PhotoStore({ 
   photos, 
   postcards, 
   locale 
-}: EnhancedSanityPhotoStoreProps) {
+}: PhotoStoreProps) {
   const { region, loading: regionLoading } = useRegion();
 
   // Textos internacionalizados
@@ -131,10 +131,11 @@ export default function EnhancedSanityPhotoStore({
         <TabsContent value="photos">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {photos.map((product) => (
-              <EnhancedSanityProductCard
+              <ProductCard
                 key={product._id}
                 product={product}
                 locale={locale}
+                variant="enhanced"
               />
             ))}
           </div>
@@ -143,18 +144,19 @@ export default function EnhancedSanityPhotoStore({
         <TabsContent value="postcards">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {postcards.map((product) => (
-              <EnhancedSanityProductCard
+              <ProductCard
                 key={product._id}
                 product={product}
                 locale={locale}
+                variant="enhanced"
               />
             ))}
           </div>
         </TabsContent>
       </Tabs>
 
-      {/* Carrito unificado */}
-      <UnifiedCart locale={locale} variant="floating" />
+      {/* Carrito */}
+      <Cart locale={locale} variant="floating" />
     </div>
   );
 }

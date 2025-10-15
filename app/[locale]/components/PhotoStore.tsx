@@ -1,15 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import type { StoreItem } from "@/app/types/store";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/[locale]/components/ui/tabs";
 import { useScopedI18n } from "@/locales/client";
 import ProductCard from "./ProductCard";
-import Cart from "./Cart";
-
-interface CartItem extends StoreItem {
-  quantity: number;
-}
+import Cart from "@/app/[locale]/shop/components/Cart";
+import { AddToCartButton } from "@/components/payment";
 
 interface Products {
   photos: StoreItem[];
@@ -18,23 +14,6 @@ interface Products {
 
 export default function PhotoStore({ items }: { items: Products }) {
   const t = useScopedI18n("shop");
-  const [cart, setCart] = useState<StoreItem[]>([]);
-
-  const addToCart = (product: StoreItem) => {
-    setCart((prevCart) => {
-      const existingIndex = prevCart.findIndex(
-        (item) => item.id === product.id
-      );
-
-      if (existingIndex !== -1) {
-        const newCart = [...prevCart];
-        newCart[existingIndex].quantity += 1;
-        return newCart;
-      } else {
-        return [...prevCart, { ...product, quantity: 1 }];
-      }
-    });
-  };
 
   return (
     <div className="container mx-auto px-4 pt-32 pb-16">
@@ -61,7 +40,9 @@ export default function PhotoStore({ items }: { items: Products }) {
                 key={product.id}
                 product={product}
                 t={t}
-                addToCart={addToCart}
+                locale="es"
+                productType="photos"
+                variant="basic"
               />
             ))}
           </div>
@@ -74,7 +55,9 @@ export default function PhotoStore({ items }: { items: Products }) {
                 key={product.id}
                 product={product}
                 t={t}
-                addToCart={addToCart}
+                locale="es"
+                productType="postcards"
+                variant="basic"
               />
             ))}
           </div>
@@ -82,7 +65,7 @@ export default function PhotoStore({ items }: { items: Products }) {
       </Tabs>
 
       {/* Carrito */}
-      <Cart cart={cart} setCart={setCart} />
+      <Cart locale="es" variant="floating" />
     </div>
   );
 }

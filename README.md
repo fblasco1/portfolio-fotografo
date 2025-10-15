@@ -1,16 +1,16 @@
 # 📸 Portfolio Fotográfico - E-commerce con Mercado Pago
 
-Portfolio fotográfico profesional con tienda online integrada con **Mercado Pago Checkout API (Transparente)**.
+Portfolio fotográfico profesional con tienda online integrada con **Mercado Pago Checkout API**.
 
 ## 🚀 Características
 
 - ✅ **Next.js 15** con App Router
 - ✅ **Sanity CMS** para gestión de contenido
-- ✅ **Mercado Pago Checkout API** (Transparente)
+- ✅ **Mercado Pago Checkout API** 
 - ✅ **Internacionalización** (ES/EN)
 - ✅ **Responsive Design**
 - ✅ **Pago único** sin cuotas
-- ✅ **Sin envío/IVA** (se acuerda con vendedor)
+- ✅ **Sin envío/IVA** 
 
 ## 🛠️ Tecnologías
 
@@ -113,6 +113,78 @@ vercel --prod
 2. **Configurar webhook**:
    - URL: `https://tu-dominio.com/api/payment/webhook/mercadopago`
    - Eventos: `payment`
+   - **Secret (opcional)**: Configurar `MERCADOPAGO_WEBHOOK_SECRET` para validación de firmas
+
+### 4. Configurar Notificaciones por Email
+
+1. **Configurar Resend**:
+   - Obtener API key de [Resend](https://resend.com)
+   - Configurar `RESEND_API_KEY` en variables de entorno
+
+2. **Probar emails automáticos**:
+   ```bash
+   node scripts/test-email-notifications.js
+   ```
+
+## 🛒 Sistema de Carrito Unificado
+
+El proyecto utiliza un sistema de carrito unificado que integra:
+
+### 🎯 **Componentes Principales:**
+- **`Cart.tsx`**: Carrito principal con integración completa
+- **`ProductCard.tsx`**: Tarjeta de producto unificada para ambos tipos
+- **`AddToCartButton.tsx`**: Botón para agregar productos al carrito
+- **`CartButton.tsx`**: Botón flotante del carrito
+- **`CheckoutPage.tsx`**: Página dedicada de checkout
+
+### 🔄 **Flujo Unificado:**
+```
+Tienda → AddToCartButton → Cart → CheckoutPage → Mercado Pago → Webhook → Emails
+```
+
+### ✅ **Beneficios:**
+- **Sistema único**: Un solo carrito y ProductCard para toda la aplicación
+- **Integración completa**: Con hooks de región y pagos
+- **UX consistente**: Misma experiencia en todas las páginas
+- **Mantenimiento simple**: Un solo sistema que mantener
+- **Sin duplicación**: Componentes unificados para ambos tipos de productos
+
+## 🔔 Sistema de Notificaciones Automáticas
+
+El sistema envía emails automáticamente cuando un pago es aprobado:
+
+### 📧 Email al Fotógrafo
+- **Contenido**: Detalles del pago, información del cliente, productos comprados, dirección de envío
+- **Propósito**: Notificar nueva venta y coordinar envío
+- **Destinatario**: `pirovanofotografia@gmail.com`
+
+### 📧 Email al Cliente
+- **Contenido**: Confirmación de compra, detalles de productos, próximos pasos
+- **Propósito**: Confirmar compra y generar confianza
+- **Destinatario**: Email del cliente que realizó la compra
+
+### 🧪 Probar Notificaciones
+
+#### Probar solo los emails:
+```bash
+node scripts/test-email-notifications.js
+```
+
+#### Probar el webhook completo:
+```bash
+# Configurar variables de entorno (opcional)
+export WEBHOOK_URL="http://localhost:3000/api/payment/webhook/mercadopago"
+export MERCADOPAGO_WEBHOOK_SECRET="tu_secret_aqui"
+
+# Ejecutar prueba del webhook
+node scripts/test-webhook-complete.js
+```
+
+#### Probar en producción:
+```bash
+export WEBHOOK_URL="https://tu-dominio.com/api/payment/webhook/mercadopago"
+node scripts/test-webhook-complete.js
+```
 
 ## 📁 Estructura del Proyecto
 
@@ -124,11 +196,16 @@ vercel --prod
 │   │   └── components/    # Componentes UI
 │   ├── api/
 │   │   └── payment/       # APIs de pago
+│   │       └── webhook/   # Webhook de Mercado Pago
 │   └── types/             # Tipos TypeScript
 ├── components/
-│   └── payment/           # Componentes de pago
+│   └── payment/           # Componentes de pago unificados
 ├── lib/
+│   ├── email/             # Servicio de notificaciones por email
 │   └── payment/           # Servicios de pago
+├── scripts/
+│   ├── test-email-notifications.js  # Script de prueba de emails
+│   └── test-webhook-complete.js     # Script de prueba del webhook completo
 ├── hooks/                 # React hooks
 ├── contexts/              # React contexts
 └── sanity/                # Configuración Sanity

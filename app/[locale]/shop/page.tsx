@@ -1,6 +1,6 @@
 import { getProducts, type SanityProduct } from "@/lib/sanity-products";
 import { isSanityConfigured } from "@/lib/sanity";
-import EnhancedSanityPhotoStore from "./components/EnhancedSanityPhotoStore";
+import PhotoStore from "./components/PhotoStore";
 
 interface ShopPageProps {
   params: Promise<{ locale: string }>;
@@ -70,7 +70,7 @@ export default async function StorePage({ params }: ShopPageProps) {
 
     return (
       <div className="min-h-screen">
-        <EnhancedSanityPhotoStore 
+        <PhotoStore 
           photos={photos} 
           postcards={postcards} 
           locale={locale} 

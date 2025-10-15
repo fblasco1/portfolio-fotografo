@@ -1,64 +1,8 @@
 import { client } from './sanity';
 import { productsQuery } from './queries';
 
-export interface SanityProduct {
-  _id: string;
-  _type: 'product';
-  category: 'photo' | 'postcard';
-  image: any;
-  order: number;
-  isAvailable: boolean;
-  description?: {
-    es?: string;
-    en?: string;
-  };
-  pricing?: {
-    argentina?: {
-      price: number;
-      enabled: boolean;
-    };
-    brazil?: {
-      price: number;
-      enabled: boolean;
-    };
-    chile?: {
-      price: number;
-      enabled: boolean;
-    };
-    colombia?: {
-      price: number;
-      enabled: boolean;
-    };
-    mexico?: {
-      price: number;
-      enabled: boolean;
-    };
-    peru?: {
-      price: number;
-      enabled: boolean;
-    };
-    uruguay?: {
-      price: number;
-      enabled: boolean;
-    };
-  };
-  content: {
-    es: {
-      title: string;
-      subtitle: string;
-    };
-    en: {
-      title: string;
-      subtitle: string;
-    };
-  };
-  tags?: string[];
-  metadata?: {
-    createdAt?: string;
-    updatedAt?: string;
-    featured?: boolean;
-  };
-}
+// Re-export SanityProduct from types/store to avoid duplication
+export type { SanityProduct } from '@/app/types/store';
 
 /**
  * Obtiene todos los productos disponibles desde Sanity

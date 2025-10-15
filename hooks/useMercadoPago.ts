@@ -71,17 +71,14 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
   // Obtener métodos de pago según BIN
   const getPaymentMethods = useCallback(async (bin: string): Promise<PaymentMethod[]> => {
     if (!mp) {
-      console.error('❌ Mercado Pago SDK no está inicializado');
       throw new Error('Mercado Pago SDK no está inicializado');
     }
 
     try {
-      console.log('🔍 Obteniendo métodos de pago para BIN:', bin);
       const methods = await mp.getPaymentMethods({ bin });
-      console.log('📋 Respuesta de métodos de pago:', methods);
       return methods;
     } catch (err) {
-      console.error('❌ Error obteniendo métodos de pago:', err);
+      console.error('Error obteniendo métodos de pago:', err);
       throw err;
     }
   }, [mp]);
