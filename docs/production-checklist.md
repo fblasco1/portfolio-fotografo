@@ -40,12 +40,12 @@ NEXT_PUBLIC_BASE_URL=https://tudominio.com
 - [ ] Obtener `Public Key` de producción
 - [ ] Verificar que las credenciales sean de **producción** (no test)
 
-### **2.2. Webhook de Producción**
-- [ ] Configurar webhook en el panel de Mercado Pago:
-  - **URL**: `https://tudominio.com/api/payment/webhook/mercadopago`
-  - **Eventos**: `payment`, `merchant_order`
-- [ ] Obtener el `Webhook Secret` para validación
-- [ ] Probar el webhook con notificaciones de prueba
+### **2.2. Webhook de Producción (Checkout API)**
+- [ ] **NO configurar en el panel de Mercado Pago** (Checkout API se configura en código)
+- [ ] Verificar que `NEXT_PUBLIC_BASE_URL` esté configurado correctamente
+- [ ] Los webhooks se configuran automáticamente en cada pago
+- [ ] Obtener el `Webhook Secret` para validación (opcional)
+- [ ] Probar el webhook con pagos de prueba
 
 ### **2.3. Configuración de la Aplicación**
 - [ ] Verificar que `MERCADOPAGO_ENVIRONMENT=production`
@@ -98,11 +98,11 @@ NEXT_PUBLIC_BASE_URL=https://tudominio.com
 - [ ] Verificar que los emails se envíen
 
 ### **6.2. Funcionalidades**
-- [ ] Probar carrito de compras
-- [ ] Verificar galería de fotos
-- [ ] Probar formulario de contacto
-- [ ] Verificar newsletter
-- [ ] Probar cambio de idioma
+- [ X ] Probar carrito de compras
+- [ X ] Verificar galería de fotos
+- [ X ] Probar formulario de contacto
+- [ X ] Verificar newsletter
+- [ X ] Probar cambio de idioma
 
 ## ✅ **7. Monitoreo y Logs**
 
@@ -167,11 +167,16 @@ curl -X GET "https://api.mercadopago.com/v1/payment_methods" \
 curl -X GET "https://tu_proyecto_id.api.sanity.io/v2024-01-01/data/query/production?query=*[_type == 'product']"
 ```
 
-### **Verificar Webhook**
+### **Verificar Webhook (Checkout API)**
 ```bash
-# Probar webhook localmente con ngrok
+# Verificar que NEXT_PUBLIC_BASE_URL esté configurado
+echo $NEXT_PUBLIC_BASE_URL
+
+# En desarrollo, usar ngrok para testing
 ngrok http 3000
-# Luego configurar la URL de ngrok en Mercado Pago para testing
+# Configurar temporalmente: NEXT_PUBLIC_BASE_URL=https://abc123.ngrok.io
+
+# En producción, los webhooks se configuran automáticamente
 ```
 
 ## 📞 **Contactos de Emergencia**
@@ -185,16 +190,16 @@ ngrok http 3000
 
 ## ✅ **Checklist Final**
 
-- [ ] Todas las variables de entorno configuradas
-- [ ] Credenciales de producción activas
-- [ ] Webhook configurado y funcionando
+- [ X ] Todas las variables de entorno configuradas
+- [ X ] Credenciales de producción activas
+- [ X ] Webhook configurado automáticamente en código (Checkout API)
 - [ ] Emails funcionando correctamente
-- [ ] Sanity configurado para producción
-- [ ] Dominio y SSL configurados
+- [ X ] Sanity configurado para producción
+- [ X ] Dominio y SSL configurados
 - [ ] Testing completo realizado
 - [ ] Monitoreo configurado
 - [ ] Seguridad implementada
 - [ ] Backup configurado
-- [ ] Documentación actualizada
+- [ X ] Documentación actualizada
 
 **🎉 ¡Listo para producción!**

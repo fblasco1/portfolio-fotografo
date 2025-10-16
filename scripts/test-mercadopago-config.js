@@ -127,9 +127,9 @@ if (process.env.NEXT_PUBLIC_BASE_URL) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL.trim().replace(/\/$/, '');
   
   console.log('📍 URLs de Retorno que se generarán:');
-  console.log(`   Success: ${baseUrl}/payment/success`);
-  console.log(`   Failure: ${baseUrl}/payment/failure`);
-  console.log(`   Pending: ${baseUrl}/payment/pending`);
+  console.log(`   Success: ${baseUrl}/es/payment/success`);
+  console.log(`   Failure: ${baseUrl}/es/payment/failure`);
+  console.log(`   Pending: ${baseUrl}/es/payment/pending`);
   console.log('');
   
   console.log('🔔 URL de Webhook:');

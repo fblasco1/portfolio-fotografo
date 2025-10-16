@@ -6,8 +6,8 @@ import {
   DrawerTrigger,
   DrawerContent,
   DrawerTitle,
-} from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
+} from "../../components/ui/drawer";
+import { Button } from "../../components/ui/button";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
 import { useRegion } from "@/hooks/useRegion";
 import { useCart } from "@/hooks/useCart";

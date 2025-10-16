@@ -1,7 +1,7 @@
 "use client";
 
 import type { SanityProduct } from "@/lib/sanity-products";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
 import ProductCard from "../../components/ProductCard";
 import Cart from "./Cart";
 import { useRegion } from "@/hooks/useRegion";

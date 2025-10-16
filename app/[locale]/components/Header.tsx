@@ -6,13 +6,13 @@ import { useI18n } from "@/locales/client";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
+} from "./ui/sheet";
 
 const navItems = [
   { name: "nav.home", href: "/" },

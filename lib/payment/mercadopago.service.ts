@@ -21,6 +21,30 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
   }
 
+  /**
+   * Obtener la URL de notificación para Checkout API
+   * En Checkout API, la notification_url se configura por transacción
+   * y tiene prioridad sobre cualquier configuración global de webhook
+   */
+  private getNotificationUrl(): string | null {
+    // Solo configurar notification_url en producción
+    if (!this.baseUrl || this.baseUrl.includes('localhost')) {
+      return null;
+    }
+
+    // Construir URL de webhook para Checkout API
+    const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
+    
+    // Agregar parámetros de identificación para Checkout API
+    const params = new URLSearchParams({
+      source_news: 'webhooks',
+      integration_type: 'checkout_api',
+      version: '2.0.0'
+    });
+
+    return `${webhookUrl}?${params.toString()}`;
+  }
+
   isAvailable(region: RegionInfo): boolean {
     // Mercado Pago está disponible en Latinoamérica
     return region.isLatinAmerica && !!this.accessToken;
@@ -75,10 +99,11 @@ export class MercadoPagoProvider implements PaymentProvider {
           order_id: orderId,
           created_at: new Date().toISOString(),
         },
-        // Solo incluir notification_url en producción (no en localhost)
-        ...(this.baseUrl && !this.baseUrl.includes('localhost') ? {
-          notification_url: paymentData.notification_url || 
-            `${this.baseUrl}/api/payment/webhook/mercadopago?source_news=webhooks`
+        // Configurar notification_url para Checkout API
+        // En Checkout API, la notification_url se configura por transacción
+        // y tiene prioridad sobre cualquier configuración global de webhook
+        ...(this.getNotificationUrl() ? {
+          notification_url: this.getNotificationUrl()
         } : {}),
       };
 
@@ -90,6 +115,7 @@ export class MercadoPagoProvider implements PaymentProvider {
             installments: payload.installments,
             payment_method: payload.payment_method_id,
             email: payload.payer.email,
+            notification_url: payload.notification_url || 'No configurada (desarrollo)',
           });
         }
 
