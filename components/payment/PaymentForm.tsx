@@ -190,6 +190,7 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
             token: token.id,
             transaction_amount: total,
             installments: selectedInstallment,
+            currency_id: region?.currency || 'ARS', // NUEVO
             ...(correctPaymentMethodId && { payment_method_id: correctPaymentMethodId }),
             payer: {
               email: customerInfo.email,
@@ -218,8 +219,14 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
       if (!data.success || !data.payment) {
         let errorMessage = data.error || 'Error procesando el pago';
         
+        // Manejar errores específicos de creación de orden
+        if (data.error && data.error.includes('crear la orden')) {
+          errorMessage = 'Error al iniciar el proceso de pago. Por favor, intenta nuevamente. Si el problema persiste, contacta al soporte.';
+        } else if (data.error && data.error.includes('El carrito está vacío')) {
+          errorMessage = 'El carrito está vacío. Agrega productos antes de proceder al pago.';
+        }
         // Manejar errores específicos de Mercado Pago
-        if (data.error && data.error.includes('bin_exclusion')) {
+        else if (data.error && data.error.includes('bin_exclusion')) {
           errorMessage = 'La tarjeta ingresada no es válida o no está permitida para este tipo de transacción. Por favor, intenta con otra tarjeta de crédito o débito.';
         } else if (data.error && data.error.includes('invalid_card_number')) {
           errorMessage = 'El número de tarjeta ingresado no es válido. Verifica los datos e intenta nuevamente.';

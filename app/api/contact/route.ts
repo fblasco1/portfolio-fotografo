@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function POST(request: Request) {
     const { name, email, message } = await request.json()
+
+    if (!resend) {
+        console.warn('⚠️ RESEND_API_KEY no configurada, saltando envío de email de contacto');
+        return NextResponse.json({ success: false, error: 'Servicio de email no configurado' }, { status: 500 });
+    }
 
     try {
         await resend.emails.send({

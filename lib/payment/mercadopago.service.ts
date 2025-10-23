@@ -6,6 +6,7 @@ import type {
   PaymentMethod,
   Issuer,
 } from '@/app/types/payment';
+import { getProductPrice } from './config';
 
 export class MercadoPagoProvider implements PaymentProvider {
   name = 'mercadopago';
@@ -18,31 +19,75 @@ export class MercadoPagoProvider implements PaymentProvider {
     
     if (!this.accessToken) {
       console.warn('⚠️ MERCADOPAGO_ACCESS_TOKEN no está configurada');
+    } else {
+      console.log('✅ MERCADOPAGO_ACCESS_TOKEN configurado:', this.accessToken.substring(0, 20) + '...');
     }
   }
 
   /**
-   * Obtener la URL de notificación para Checkout API
-   * En Checkout API, la notification_url se configura por transacción
-   * y tiene prioridad sobre cualquier configuración global de webhook
+   * Obtener la URL de notificación para API Orders
+   * La notification_url se configura en la orden y tiene prioridad sobre configuración global
    */
   private getNotificationUrl(): string | null {
-    // Solo configurar notification_url en producción
-    if (!this.baseUrl || this.baseUrl.includes('localhost')) {
+    // Configurar notification_url si tenemos una URL base válida
+    if (!this.baseUrl) {
       return null;
     }
 
-    // Construir URL de webhook para Checkout API
+    // Construir URL de webhook para API Orders
     const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
     
-    // Agregar parámetros de identificación para Checkout API
+    // Agregar parámetros de identificación para API Orders
     const params = new URLSearchParams({
       source_news: 'webhooks',
-      integration_type: 'checkout_api',
-      version: '2.0.0'
+      integration_type: 'orders_api',
+      version: '3.0.0'
     });
 
     return `${webhookUrl}?${params.toString()}`;
+  }
+
+  /**
+   * Construir array de items para la orden de Mercado Pago
+   * a partir de los items del carrito
+   */
+  private buildOrderItems(
+    cartItems: Array<{
+      id: string;
+      title: string;
+      quantity: number;
+      productType: 'photos' | 'postcards' | 'photo' | 'postcard';
+    }>,
+    region: string,
+    totalAmount: number
+  ): Array<{
+    id: string;
+    title: string;
+    description: string;
+    category_id: string;
+    quantity: number;
+    unit_price: number;
+  }> {
+    return cartItems.map((item) => {
+      // Normalizar productType (el frontend puede enviar 'photo' en lugar de 'photos')
+      const normalizedProductType = item.productType === 'photo' ? 'photos' : 
+                                   item.productType === 'postcard' ? 'postcards' : 
+                                   item.productType;
+      
+      // Usar el precio que viene del frontend (totalAmount / cantidad total de items)
+      // Esto asegura consistencia entre frontend y backend
+      const totalQuantity = cartItems.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+      const unitPrice = Math.round(totalAmount / totalQuantity);
+      
+      return {
+        id: item.id,
+        title: item.title,
+        description: `${normalizedProductType === 'photos' ? 'Fotografía' : 'Postal'} del Portfolio`,
+        category_id: normalizedProductType === 'photos' ? 'photography' : 'postcard',
+        quantity: item.quantity,
+        unit_price: unitPrice,
+      };
+    });
   }
 
   isAvailable(region: RegionInfo): boolean {
@@ -61,25 +106,148 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
-   * Crear un pago usando Checkout API (Transparente)
+   * Crear una orden de Mercado Pago (Paso A)
+   */
+  private async createOrder(
+    paymentData: PaymentRequest,
+    orderId: string
+  ): Promise<{ id: number }> {
+    const cartItems = paymentData.metadata?.cart_items || [];
+    
+    if (cartItems.length === 0) {
+      throw new Error('El carrito está vacío. No se puede crear la orden.');
+    }
+
+    // Construir items de la orden
+      const region = paymentData.currency_id || 'ARS';
+      const totalAmount = paymentData.transaction_amount;
+      console.log('🔍 Debug buildOrderItems:', { cartItems, region, paymentData });
+      console.log('🔍 Debug payer data:', paymentData.payer);
+      const items = this.buildOrderItems(cartItems, region, totalAmount);
+
+    const orderPayload = {
+      type: 'online', // Requerido para API Orders
+      items: items.map(item => ({
+        title: item.title,
+        description: item.description,
+        category_id: item.category_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price.toString(), // Convertir a string
+      })),
+      total_amount: totalAmount.toString(), // Convertir a string
+      external_reference: paymentData.external_reference || orderId,
+      transactions: {
+        payments: [
+          {
+            amount: totalAmount.toString(),
+            payment_method: {
+              id: paymentData.payment_method_id || 'visa',
+              type: 'credit_card',
+              token: paymentData.token,
+              installments: paymentData.installments,
+              statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO'
+            }
+          }
+        ]
+      },
+      payer: {
+        email: paymentData.payer.email,
+        entity_type: 'individual',
+        first_name: paymentData.payer.first_name,
+        last_name: paymentData.payer.last_name,
+        identification: paymentData.payer.identification,
+        ...(paymentData.payer.phone && { phone: paymentData.payer.phone }),
+        ...(paymentData.payer.address && { address: paymentData.payer.address })
+      },
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🛒 Creando orden de Mercado Pago:', {
+        orderId,
+        items: items.length,
+        totalAmount,
+        external_reference: orderPayload.external_reference,
+      });
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔑 Enviando request a MP con token:', this.accessToken ? `${this.accessToken.substring(0, 20)}...` : 'NO TOKEN');
+      console.log('📤 Payload final a enviar:', JSON.stringify(orderPayload, null, 2));
+    }
+
+    const response = await fetch('https://api.mercadopago.com/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': `order_${orderId}_${Date.now()}`,
+      },
+      body: JSON.stringify(orderPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Error creando orden de MP:', errorData);
+      
+      // Log detallado del payload para debugging
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        errorData.errors.forEach((error: any, index: number) => {
+          console.error(`   Error ${index + 1}:`, error.message);
+          if (error.details) {
+            console.error(`   Detalles:`, error.details);
+          }
+        });
+      }
+      
+      console.error('📤 Payload enviado:', JSON.stringify(orderPayload, null, 2));
+      throw new Error(`Error al crear la orden: ${this.getErrorMessage(errorData, response.status)}`);
+    }
+
+    const orderResponse = await response.json();
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Orden de MP creada:', {
+        mercadopago_order_id: orderResponse.id,
+        status: orderResponse.status,
+      });
+    }
+
+    return { id: orderResponse.id };
+  }
+
+  /**
+   * Crear un pago usando API Orders (flujo de dos pasos)
    * @param paymentData Datos del pago incluyendo token de tarjeta
    */
   async createPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
     if (!this.accessToken) {
+      console.error('❌ Mercado Pago no está configurado - accessToken vacío');
       throw new Error('Mercado Pago no está configurado');
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔑 Iniciando createPayment con token:', this.accessToken.substring(0, 20) + '...');
     }
 
     try {
       // Generar ID de orden único
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(7)}`;
       
-      // Preparar payload para Mercado Pago (solo parámetros válidos)
-      const payload = {
+      // PASO A: Crear Orden de Mercado Pago (sin notification_url)
+      const order = await this.createOrder(paymentData, orderId);
+      const mercadopagoOrderId = order.id;
+
+      // PASO B: Crear Pago asociado a la Orden (con notification_url)
+      const paymentPayload = {
         token: paymentData.token,
         transaction_amount: paymentData.transaction_amount,
         installments: paymentData.installments,
         ...(paymentData.payment_method_id && { payment_method_id: paymentData.payment_method_id }),
         ...(paymentData.issuer_id && { issuer_id: paymentData.issuer_id }),
+        // Asociar pago a la orden
+        order: {
+          id: mercadopagoOrderId,
+        },
         payer: {
           email: paymentData.payer.email,
           first_name: paymentData.payer.first_name,
@@ -91,36 +259,33 @@ export class MercadoPagoProvider implements PaymentProvider {
         description: paymentData.description || 'Compra en Portfolio Fotográfico',
         external_reference: paymentData.external_reference || orderId,
         statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO',
-        metadata: {
-          ...(paymentData.metadata || {}),
-          platform: 'portfolio-fotografo',
-          integration_type: 'checkout_api',
-          integration_version: '2.0.0',
-          order_id: orderId,
-          created_at: new Date().toISOString(),
-        },
-        // Configurar notification_url para Checkout API
-        // En Checkout API, la notification_url se configura por transacción
-        // y tiene prioridad sobre cualquier configuración global de webhook
+        // Configurar notification_url en el pago (tiene prioridad sobre configuración global)
         ...(this.getNotificationUrl() ? {
           notification_url: this.getNotificationUrl()
         } : {}),
+        metadata: {
+          ...(paymentData.metadata || {}),
+          platform: 'portfolio-fotografo',
+          integration_type: 'orders_api',
+          integration_version: '3.0.0',
+          order_id: orderId,
+          mercadopago_order_id: mercadopagoOrderId,
+          created_at: new Date().toISOString(),
+        },
       };
 
-        // Log para debugging (solo en desarrollo)
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Creando pago con Checkout API:', {
-            orderId,
-            amount: payload.transaction_amount,
-            installments: payload.installments,
-            payment_method: payload.payment_method_id,
-            email: payload.payer.email,
-            notification_url: payload.notification_url || 'No configurada (desarrollo)',
-          });
-        }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('💳 Creando pago asociado a orden:', {
+          orderId,
+          mercadopagoOrderId,
+          amount: paymentPayload.transaction_amount,
+          installments: paymentPayload.installments,
+          notification_url: paymentPayload.notification_url || 'No configurada',
+        });
+      }
 
-      // Generar Idempotency Key único para prevenir duplicados
-      const idempotencyKey = `${orderId}_${Date.now()}`;
+      // Generar Idempotency Key único
+      const idempotencyKey = `payment_${orderId}_${Date.now()}`;
 
       const response = await fetch('https://api.mercadopago.com/v1/payments', {
         method: 'POST',
@@ -131,46 +296,35 @@ export class MercadoPagoProvider implements PaymentProvider {
           'X-Platform-Id': 'portfolio-fotografo',
           'X-Integrator-Id': 'dev_portfolio',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(paymentPayload),
       });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Error de Mercado Pago:', {
-              status: response.status,
-              statusText: response.statusText,
-              error: errorData,
-              orderId,
-            });
-          }
-
-          // Manejar errores específicos de Mercado Pago
-          const errorMessage = this.getErrorMessage(errorData, response.status);
-          throw new Error(errorMessage);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Error procesando pago:', errorData);
         }
+
+        const errorMessage = this.getErrorMessage(errorData, response.status);
+        throw new Error(errorMessage);
+      }
 
       const data: PaymentResponse = await response.json();
 
-      // Log exitoso (solo en desarrollo)
       if (process.env.NODE_ENV === 'development') {
-        console.log('Pago creado exitosamente:', {
+        console.log('✅ Pago procesado exitosamente:', {
           paymentId: data.id,
           status: data.status,
-          statusDetail: data.status_detail,
-          amount: data.transaction_amount,
           orderId,
+          mercadopagoOrderId,
         });
       }
 
       return data;
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('Error crítico creando pago:', {
-          error: error.message,
-          stack: error.stack,
-        });
+        console.error('❌ Error crítico en flujo de pago:', error.message);
       }
 
       throw new Error(

@@ -112,6 +112,7 @@ export interface PaymentRequest {
   installments: number;
   payment_method_id: string;
   issuer_id?: string;
+  currency_id?: string; // NUEVO
   payer: PayerInfo;
   description?: string;
   external_reference?: string;

@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export interface PaymentNotificationData {
   paymentId: string;
@@ -41,6 +41,11 @@ export class EmailNotificationService {
    * Envía notificación al fotógrafo sobre una nueva compra aprobada
    */
   async sendPhotographerNotification(data: PaymentNotificationData): Promise<boolean> {
+    if (!resend) {
+      console.warn('⚠️ RESEND_API_KEY no configurada, saltando envío de email al fotógrafo');
+      return false;
+    }
+    
     try {
       const { data: result, error } = await resend.emails.send({
         from: this.fromEmail,
@@ -67,6 +72,11 @@ export class EmailNotificationService {
    * Envía confirmación de compra al cliente
    */
   async sendCustomerConfirmation(data: PaymentNotificationData): Promise<boolean> {
+    if (!resend) {
+      console.warn('⚠️ RESEND_API_KEY no configurada, saltando envío de email al cliente');
+      return false;
+    }
+    
     try {
       const { data: result, error } = await resend.emails.send({
         from: this.fromEmail,
