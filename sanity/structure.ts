@@ -28,6 +28,17 @@ export const structure = (S: any) => {
         
         S.divider(),
         
+        // Documentales
+        S.listItem()
+          .title('Documentales')
+          .icon(() => '🎬')
+          .child(
+            S.documentList()
+              .title('Documentales')
+              .filter('_type == "documentary"')
+              .defaultOrdering([{ field: 'order', direction: 'asc' }])
+          ),
+        
         // Biografía
         S.listItem()
           .title('Biografía')

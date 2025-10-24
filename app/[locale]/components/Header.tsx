@@ -17,6 +17,7 @@ import {
 const navItems = [
   { name: "nav.home", href: "/" },
   { name: "nav.bio", href: "/bio" },
+  { name: "nav.documentaries", href: "/documentaries" },
   { name: "nav.gallery", href: "/gallery" },
   { name: "nav.shop", href: "/shop" },
   { name: "nav.book", href: "/book" },

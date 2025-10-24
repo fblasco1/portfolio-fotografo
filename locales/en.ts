@@ -5,6 +5,7 @@ export default {
         "shop": "Shop",
         "gallery": "Gallery",
         "bio": "Bio",
+        "documentaries": "Documentaries",
         "book": "Book",
         "contact": "Contact"
     },
@@ -153,5 +154,13 @@ export default {
         "postcard5": {
             "title": "Our flight is higher than their Walls"
         },
+    },
+    "documentaries": {
+        "title": "Documentaries",
+        "year": "Year",
+        "watchTrailer": "Watch Trailer",
+        "noTrailer": "Trailer not available",
+        "empty": "No documentaries available at the moment.",
+        "error": "Error loading documentaries. Please try again."
     }
 } as const

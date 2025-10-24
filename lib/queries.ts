@@ -82,8 +82,6 @@ export const productsQuery = `
 export const bioQuery = `
   *[_type == "bio"][0] {
     profileImage,
-    videoUrl,
-    videoTitle,
     content {
       es {
         title,
@@ -120,6 +118,24 @@ export const bookQuery = `
         subscribe
       }
     }
+  }
+`
+
+export const documentariesQuery = `
+  *[_type == "documentary" && isActive == true] | order(order asc, year desc) {
+    _id,
+    title {
+      es,
+      en
+    },
+    year,
+    synopsis {
+      es,
+      en
+    },
+    trailerUrl,
+    poster,
+    order
   }
 `
 

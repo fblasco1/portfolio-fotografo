@@ -4,8 +4,6 @@ export default {
   type: 'document',
   fields: [
     { name: 'profileImage', title: 'Imagen de perfil', type: 'image', options: { hotspot: true }, description: 'Foto de perfil del fotógrafo' },
-    { name: 'videoUrl', title: 'URL del video', type: 'url', description: 'URL del video de YouTube' },
-    { name: 'videoTitle', title: 'Título del video', type: 'string', description: 'Título del video para el atributo alt' },
     {
       name: 'content',
       title: 'Contenido',

@@ -5,6 +5,7 @@ export default {
         "shop": "Tienda",
         "gallery": "Galeria",
         "bio": "Biografía",
+        "documentaries": "Documentales",
         "book": "Libro",
         "contact": "Contacto"
     },
@@ -153,5 +154,13 @@ export default {
         "postcard5": {
             "title": "Nuestro vuelo es más alto que sus muros"
         },
+    },
+    "documentaries": {
+        "title": "Documentales",
+        "year": "Año",
+        "watchTrailer": "Ver Trailer",
+        "noTrailer": "Trailer no disponible",
+        "empty": "No hay documentales disponibles en este momento.",
+        "error": "Error al cargar los documentales. Por favor, intenta de nuevo."
     }
 } as const
