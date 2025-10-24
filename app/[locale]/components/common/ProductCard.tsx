@@ -5,10 +5,10 @@ import Image from "next/image";
 import { Card, CardContent, CardTitle } from "@/app/[locale]/components/ui/card";
 import { Eye } from "lucide-react";
 import { AddToCartButton } from "@/components/payment";
-import { useRegion } from "@/hooks/useRegion";
+import { useRegion } from "@/contexts/RegionContext";
 import { urlFor } from "@/lib/sanity";
 import { getProductPriceForRegion, isProductAvailableInRegion } from "@/lib/sanity-products";
-import PhotoSlider from "./PhotoSlider";
+import StaticPhotoSlider from "./PhotoSlider";
 import type { StoreItem, SanityProduct } from "@/app/types/store";
 
 // Función segura para obtener URL de imagen
@@ -228,7 +228,7 @@ export default function ProductCard({
 
       {/* Slider para ver imagen en alta resolución */}
       {showSlider && (
-        <PhotoSlider
+        <StaticPhotoSlider
           photos={photos}
           onClose={() => setShowSlider(false)}
         />

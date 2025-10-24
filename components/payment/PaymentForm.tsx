@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCart } from '@/hooks/useCart';
-import { useRegion } from '@/hooks/useRegion';
+import { useCart } from '@/contexts/CartContext';
+import { useRegion } from '@/contexts/RegionContext';
 import { useMercadoPago } from '@/hooks/useMercadoPago';
 import { Button } from '@/app/[locale]/components/ui/button';
 import { CardForm } from './CardForm';

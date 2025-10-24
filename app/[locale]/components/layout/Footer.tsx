@@ -9,5 +9,5 @@ export default function Footer({ locale }: Props) {
           <p className="text-sm">&copy; {new Date().getFullYear()} Cristian Pirovano. Todos los derechos reservados.</p>
       </div>
     </footer>
-  )
+  );
 }

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCart } from '@/hooks/useCart';
-import { useRegion } from '@/hooks/useRegion';
+import { useCart } from '@/contexts/CartContext';
+import { useRegion } from '@/contexts/RegionContext';
 import { PaymentForm } from '@/components/payment/PaymentForm';
 import { PaymentResultModal } from '@/components/payment/PaymentResultModal';
 import { Button } from '@/app/[locale]/components/ui/button';

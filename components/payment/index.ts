@@ -6,8 +6,8 @@ export { default as AddToCartButton } from './AddToCartButton';
 export { default as RegionSelector } from './RegionSelector';
 
 // Hooks
-export { useCart } from '../../hooks/useCart';
-export { useRegion } from '../../hooks/useRegion';
+export { useCart } from '../../contexts/CartContext';
+export { useRegion } from '../../contexts/RegionContext';
 export { usePayment } from '../../hooks/usePayment';
 
 // Utilidades

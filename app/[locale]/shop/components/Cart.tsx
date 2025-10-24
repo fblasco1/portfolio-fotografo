@@ -9,8 +9,8 @@ import {
 } from "../../components/ui/drawer";
 import { Button } from "../../components/ui/button";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
-import { useRegion } from "@/hooks/useRegion";
-import { useCart } from "@/hooks/useCart";
+import { useRegion } from "@/contexts/RegionContext";
+import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/lib/payment/region-detector";
 import { getProductPrice } from "@/lib/payment/config";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRegion } from '@/hooks/useRegion';
+import { useRegion } from '@/contexts/RegionContext';
 import { formatPrice } from '@/lib/payment/region-detector';
 
 interface PaymentConfirmationProps {

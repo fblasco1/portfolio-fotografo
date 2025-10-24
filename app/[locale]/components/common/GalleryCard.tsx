@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/locales/client";
 import Image from "next/image";
-import type { Folder } from "../../types/gallery";
+import type { Folder } from "../../../types/gallery";
 
 interface GalleryCardProps {
   folder: Folder;

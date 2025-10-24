@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useRegion } from './useRegion';
+import { useRegion } from '@/contexts/RegionContext';
 import type { RegionInfo } from '@/lib/payment/region-detector';
 import type { PaymentIntent, PaymentResult } from '@/lib/payment/payment-factory';
 

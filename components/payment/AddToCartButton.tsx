@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { useCart } from '@/hooks/useCart';
-import { useRegion } from '@/hooks/useRegion';
+import { useCart } from '@/contexts/CartContext';
+import { useRegion } from '@/contexts/RegionContext';
 
 interface AddToCartButtonProps {
   product: {

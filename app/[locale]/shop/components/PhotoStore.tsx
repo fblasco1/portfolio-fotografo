@@ -2,9 +2,9 @@
 
 import type { SanityProduct } from "@/lib/sanity-products";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
-import ProductCard from "../../components/ProductCard";
+import ProductCard from "../../components/common/ProductCard";
 import Cart from "./Cart";
-import { useRegion } from "@/hooks/useRegion";
+import { useRegion } from "@/contexts/RegionContext";
 import { RegionSelector } from "../../../../components/payment";
 
 interface PhotoStoreProps {

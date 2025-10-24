@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { Folder } from "../../types/gallery";
+import type { Folder } from "../../../types/gallery";
 import GalleryCard from "./GalleryCard";
-import PhotoSlider from "./PhotoSlider";
+import StaticPhotoSlider from "./PhotoSlider";
 
 interface PhotoGalleryProps {
   folders: Folder[];
@@ -24,7 +24,7 @@ export default function PhotoGallery({ folders }: PhotoGalleryProps) {
         ))}
       </div>
       {selectedFolder && (
-        <PhotoSlider
+        <StaticPhotoSlider
           photos={selectedFolder.photos}
           onClose={() => setSelectedFolder(null)}
         />

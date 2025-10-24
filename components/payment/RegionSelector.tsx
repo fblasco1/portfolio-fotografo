@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useRegion } from '@/hooks/useRegion';
+import { useRegion } from '@/contexts/RegionContext';
 
 const LATIN_AMERICA_COUNTRIES = [
   { code: 'AR', name: 'Argentina', flag: '🇦🇷' },

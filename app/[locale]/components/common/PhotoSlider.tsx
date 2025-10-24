@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useI18n } from "@/locales/client";
-import type { Photo } from "../../types/gallery";
+import type { Photo } from "../../../types/gallery";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 interface PhotoSliderProps {
@@ -11,7 +11,7 @@ interface PhotoSliderProps {
   onClose: () => void;
 }
 
-export default function PhotoSlider({ photos, onClose }: PhotoSliderProps) {
+export default function StaticPhotoSlider({ photos, onClose }: PhotoSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const t = useI18n();

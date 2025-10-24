@@ -1,6 +1,6 @@
 "use client";
 
-import { useRegion } from '@/hooks/useRegion';
+import { useRegion } from '@/contexts/RegionContext';
 import { calculateTotalPrice, getProductPrice } from '@/lib/payment/config';
 import { formatPrice } from '@/lib/payment/region-detector';
 

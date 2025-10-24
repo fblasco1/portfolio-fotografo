@@ -1,6 +1,6 @@
 import { client } from "@/lib/sanity";
 import { settingsQuery } from "@/lib/queries";
-import SlideshowClient from "@/app/[locale]/components/SlideshowClient";
+import SlideshowClient from "@/app/[locale]/components/page-specific/SlideshowClient";
 
 export default async function Home() {
   try {

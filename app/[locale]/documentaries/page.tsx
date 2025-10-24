@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { client, urlFor } from "@/lib/sanity";
 import { documentariesQuery } from "@/lib/queries";
-import VideoModal from "../components/VideoModal";
+import VideoModal from "../components/page-specific/VideoModal";
 import { getI18n } from "@/locales/server";
 
 interface Documentary {
