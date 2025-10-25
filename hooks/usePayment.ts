@@ -33,11 +33,6 @@ export function usePayment(): UsePaymentReturn {
     setError(null);
 
     try {
-      console.log('💳 Creando sesión de pago...', {
-        region: region.country,
-        currency: region.currency,
-        itemsCount: items.length
-      });
 
       const response = await fetch('/api/payment/create-intent', {
         method: 'POST',
@@ -61,7 +56,6 @@ export function usePayment(): UsePaymentReturn {
         throw new Error(data.error || 'Error en la respuesta del servidor');
       }
 
-      console.log('✅ Sesión de pago creada:', data.paymentIntent);
       setPaymentIntent(data.paymentIntent);
       return data.paymentIntent;
 
@@ -89,10 +83,6 @@ export function usePayment(): UsePaymentReturn {
     setError(null);
 
     try {
-      console.log('💳 Procesando pago...', {
-        region: region.country,
-        provider: region.paymentProvider
-      });
 
       const response = await fetch('/api/payment/process', {
         method: 'POST',
@@ -115,7 +105,6 @@ export function usePayment(): UsePaymentReturn {
         throw new Error(data.error || 'Error en la respuesta del servidor');
       }
 
-      console.log('✅ Pago procesado:', data.result);
       return data.result;
 
     } catch (err: any) {

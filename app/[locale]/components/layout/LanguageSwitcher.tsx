@@ -1,5 +1,6 @@
 import { useChangeLocale, useCurrentLocale } from "@/locales/client"
-import { locales } from "@/constants/locales"
+
+const locales = ['en', 'es'];
 
 export default function LanguageSwitcher() {
   const changeLocale = useChangeLocale()

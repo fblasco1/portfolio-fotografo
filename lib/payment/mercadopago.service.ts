@@ -20,7 +20,6 @@ export class MercadoPagoProvider implements PaymentProvider {
     if (!this.accessToken) {
       console.warn('⚠️ MERCADOPAGO_ACCESS_TOKEN no está configurada');
     } else {
-      console.log('✅ MERCADOPAGO_ACCESS_TOKEN configurado:', this.accessToken.substring(0, 20) + '...');
     }
   }
 
@@ -121,8 +120,6 @@ export class MercadoPagoProvider implements PaymentProvider {
     // Construir items de la orden
       const region = paymentData.currency_id || 'ARS';
       const totalAmount = paymentData.transaction_amount;
-      console.log('🔍 Debug buildOrderItems:', { cartItems, region, paymentData });
-      console.log('🔍 Debug payer data:', paymentData.payer);
       const items = this.buildOrderItems(cartItems, region, totalAmount);
 
     const orderPayload = {
@@ -161,18 +158,8 @@ export class MercadoPagoProvider implements PaymentProvider {
       },
     };
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🛒 Creando orden de Mercado Pago:', {
-        orderId,
-        items: items.length,
-        totalAmount,
-        external_reference: orderPayload.external_reference,
-      });
-    }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔑 Enviando request a MP con token:', this.accessToken ? `${this.accessToken.substring(0, 20)}...` : 'NO TOKEN');
-      console.log('📤 Payload final a enviar:', JSON.stringify(orderPayload, null, 2));
     }
 
     const response = await fetch('https://api.mercadopago.com/v1/orders', {
@@ -205,12 +192,6 @@ export class MercadoPagoProvider implements PaymentProvider {
 
     const orderResponse = await response.json();
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Orden de MP creada:', {
-        mercadopago_order_id: orderResponse.id,
-        status: orderResponse.status,
-      });
-    }
 
     return { id: orderResponse.id };
   }

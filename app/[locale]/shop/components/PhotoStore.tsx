@@ -1,8 +1,9 @@
 "use client";
 
 import type { SanityProduct } from "@/lib/sanity-products";
+import { isProductAvailableInRegion } from "@/lib/sanity-products";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
-import ProductCard from "../../components/common/ProductCard";
+import { ProductCard } from "../../components/common";
 import Cart from "./Cart";
 import { useRegion } from "@/contexts/RegionContext";
 import { RegionSelector } from "../../../../components/payment";
@@ -19,6 +20,36 @@ export default function PhotoStore({
   locale 
 }: PhotoStoreProps) {
   const { region, loading: regionLoading } = useRegion();
+
+  // Filtrar productos por región y configuración completa
+  const filterProductsForRegion = (products: SanityProduct[]) => {
+    if (!region || !region.currency) {
+      return [];
+    }
+    
+    const filtered = products.filter(product => {
+      // Verificar que el producto esté disponible en la región
+      const isAvailable = isProductAvailableInRegion(product, region.currency);
+      
+      // Verificar que tenga configuración completa
+      const hasImage = !!product.image?.asset?.url;
+      const hasTitle = !!product.content?.[locale as 'es' | 'en']?.title;
+      const isTestProduct = product.content?.[locale as 'es' | 'en']?.title?.toLowerCase().includes('test') || 
+                           product.content?.[locale as 'es' | 'en']?.title?.toLowerCase().includes('prueba');
+      
+      // Para productos de testing, la imagen es opcional
+      const hasCompleteConfig = hasTitle && (hasImage || isTestProduct);
+      
+      return isAvailable && hasCompleteConfig;
+    });
+    
+    return filtered;
+  };
+
+  // Productos filtrados por región
+  const availablePhotos = filterProductsForRegion(photos);
+  const availablePostcards = filterProductsForRegion(postcards);
+
 
   // Textos internacionalizados
   const getTabText = (key: string): string => {
@@ -94,6 +125,14 @@ export default function PhotoStore({
         <p className="text-gray-600 mt-2">
           {getTabText("shopSubtitle")}
         </p>
+        <div className="mt-3 flex items-center space-x-4 text-sm text-gray-500">
+          <span>
+            📷 {availablePhotos.length} {locale === 'es' ? 'fotos' : 'photos'}
+          </span>
+          <span>
+            📮 {availablePostcards.length} {locale === 'es' ? 'postales' : 'postcards'}
+          </span>
+        </div>
       </div>
 
       {/* Información de región */}
@@ -105,7 +144,7 @@ export default function PhotoStore({
               {getTabText("regionDetected")}
             </p>
             <p className="text-sm text-blue-600">
-              {region.country} • {region.currency} • Mercado Pago
+              {region.country} • {region.currency}
             </p>
           </div>
         </div>
@@ -129,29 +168,59 @@ export default function PhotoStore({
         </TabsList>
 
         <TabsContent value="photos">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {photos.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                locale={locale}
-                variant="enhanced"
-              />
-            ))}
-          </div>
+          {availablePhotos.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {availablePhotos.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  locale={locale}
+                  variant="enhanced"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">📷</div>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                {locale === 'es' ? 'No hay fotos disponibles' : 'No photos available'}
+              </h3>
+              <p className="text-gray-500">
+                {locale === 'es' 
+                  ? 'No hay fotos disponibles para tu región en este momento.' 
+                  : 'No photos are available for your region at this time.'
+                }
+              </p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="postcards">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {postcards.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                locale={locale}
-                variant="enhanced"
-              />
-            ))}
-          </div>
+          {availablePostcards.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {availablePostcards.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  locale={locale}
+                  variant="enhanced"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">📮</div>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                {locale === 'es' ? 'No hay postales disponibles' : 'No postcards available'}
+              </h3>
+              <p className="text-gray-500">
+                {locale === 'es' 
+                  ? 'No hay postales disponibles para tu región en este momento.' 
+                  : 'No postcards are available for your region at this time.'
+                }
+              </p>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

@@ -1,4 +1,4 @@
-import { getProducts, type SanityProduct } from "@/lib/sanity-products";
+import { getProducts, type SanityProduct, isProductAvailableInRegion } from "@/lib/sanity-products";
 import { isSanityConfigured } from "@/lib/sanity";
 import PhotoStore from "./components/PhotoStore";
 

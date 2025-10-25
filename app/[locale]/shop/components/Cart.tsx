@@ -211,7 +211,6 @@ export default function Cart({
               <div className="pt-4 border-t">
                 <Button
                   onClick={() => {
-                    console.log('Navegando a checkout...');
                     // Navegar a página de checkout
                     window.location.href = `/${locale}/checkout`;
                   }}

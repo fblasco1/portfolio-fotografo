@@ -14,13 +14,10 @@ export default async function Gallery({ params }: GalleryPageProps) {
     // Obtener galerías desde Sanity
     const galleries = await client.fetch(galleriesQuery) as SanityGallery[];
     
-    console.log('🔍 Debug - Galerías obtenidas:', galleries);
-    console.log('🔍 Debug - Locale:', locale);
     
     // Ordenar galerías (ya vienen filtradas por isActive desde la consulta)
     const sortedGalleries = galleries.sort((a, b) => a.order - b.order);
 
-    console.log('🔍 Debug - Galerías ordenadas:', sortedGalleries);
 
     // Si no hay galerías, mostrar mensaje
     if (!sortedGalleries || sortedGalleries.length === 0) {

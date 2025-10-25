@@ -14,8 +14,6 @@ export default async function BookLanding({ params }: BookPageProps) {
     // Obtener datos del libro desde Sanity
     const bookData = await client.fetch(bookQuery);
 
-    console.log('🔍 Debug - Datos del libro obtenidos:', bookData);
-    console.log('🔍 Debug - Locale:', locale);
 
     if (!bookData) {
       return (

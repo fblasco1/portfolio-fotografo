@@ -1,5 +1,6 @@
 import { client } from './sanity';
 import { productsQuery } from './queries';
+import type { SanityProduct } from '@/app/types/store';
 
 // Re-export SanityProduct from types/store to avoid duplication
 export type { SanityProduct } from '@/app/types/store';
@@ -171,5 +172,28 @@ export function isProductAvailableInRegion(
     return false;
   }
 
-  return Boolean(regionPricing.enabled && regionPricing.price > 0);
+  const isAvailable = Boolean(regionPricing.enabled && regionPricing.price >= 0);
+  return isAvailable;
+}
+
+/**
+ * Verifica si un producto es de testing (precio 0)
+ */
+export function isTestProduct(product: SanityProduct): boolean {
+  if (!product || !product.pricing) {
+    return false;
+  }
+
+  // Verificar si algún precio es 0
+  const hasZeroPrice = Object.values(product.pricing).some(pricing => 
+    pricing && pricing.enabled && pricing.price === 0
+  );
+
+  // Verificar si el título indica que es de testing
+  const isTestTitle = 
+    product.content?.es?.title?.toLowerCase().includes('test') ||
+    product.content?.es?.title?.toLowerCase().includes('prueba') ||
+    product.content?.en?.title?.toLowerCase().includes('test');
+
+  return hasZeroPrice || isTestTitle;
 }

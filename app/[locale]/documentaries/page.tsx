@@ -32,8 +32,6 @@ export default async function Documentaries({ params }: DocumentariesPageProps) 
     // Obtener documentales desde Sanity
     const documentaries = await client.fetch(documentariesQuery) as Documentary[];
     
-    console.log('🔍 Debug - Documentales obtenidos:', documentaries);
-    console.log('🔍 Debug - Locale:', locale);
     
     // Si no hay documentales, mostrar mensaje
     if (!documentaries || documentaries.length === 0) {

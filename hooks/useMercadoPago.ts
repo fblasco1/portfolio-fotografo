@@ -29,23 +29,19 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
       return;
     }
 
-    console.log('🚀 Inicializando Mercado Pago SDK con public key:', publicKey.substring(0, 10) + '...');
 
     // Esperar a que el SDK esté disponible
     const checkSDK = () => {
       if (window.MercadoPago) {
         try {
-          console.log('📦 Creando instancia de Mercado Pago...');
           const mpInstance = new window.MercadoPago(publicKey, { locale });
           setMp(mpInstance);
           setIsReady(true);
-          console.log('✅ Mercado Pago SDK inicializado correctamente');
         } catch (err) {
           setError(err as Error);
           console.error('❌ Error inicializando Mercado Pago SDK:', err);
         }
       } else {
-        console.log('⏳ Esperando que el SDK de Mercado Pago esté disponible...');
         // Reintentar después de 100ms
         setTimeout(checkSDK, 100);
       }
@@ -140,7 +136,6 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
 
       // Usar los datos directamente del cardData
       const token = await mp.createCardToken(cardData);
-      console.log('✅ Token creado exitosamente:', token.id);
       return token;
     } catch (err) {
       console.error('❌ Error creando token de tarjeta:', err);

@@ -7,7 +7,7 @@ import { Eye } from "lucide-react";
 import { AddToCartButton } from "@/components/payment";
 import { useRegion } from "@/contexts/RegionContext";
 import { urlFor } from "@/lib/sanity";
-import { getProductPriceForRegion, isProductAvailableInRegion } from "@/lib/sanity-products";
+import { getProductPriceForRegion, isProductAvailableInRegion, isTestProduct } from "@/lib/sanity-products";
 import StaticPhotoSlider from "./PhotoSlider";
 import type { StoreItem, SanityProduct } from "@/app/types/store";
 
@@ -91,7 +91,10 @@ export default function ProductCard({
   // Verificar si el producto está disponible en la región (solo para SanityProduct)
   const isAvailableInRegion = isSanityProduct && region && region.currency && hasPricing
     ? isProductAvailableInRegion(product, region.currency)
-    : true; // StoreItem siempre está disponible
+    : true; 
+
+  // Verificar si es un producto de testing
+  const isTest = isSanityProduct ? isTestProduct(product) : false;
 
   // Convertir el producto a formato compatible con PhotoSlider
   const photos = [{
@@ -110,13 +113,26 @@ export default function ProductCard({
             className="relative w-full h-64 cursor-pointer group overflow-hidden bg-gray-100"
             onClick={() => setShowSlider(true)}
           >
-            <Image
-              src={productData.image}
-              alt={productData.title}
-              fill
-              className="object-contain transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-            />
+            {productData.image ? (
+              <Image
+                src={productData.image}
+                alt={productData.title}
+                fill
+                className="object-contain transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                <div className="text-center text-gray-500">
+                  <div className="text-4xl mb-2">
+                    {product.category === 'photo' ? '📷' : '📮'}
+                  </div>
+                  <div className="text-sm font-medium">
+                    {locale === 'es' ? 'Sin imagen' : 'No image'}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
               <Eye size={24} className="text-white" />
             </div>
@@ -139,6 +155,13 @@ export default function ProductCard({
                 ) : (
                   <span className="text-gray-400">-</span>
                 )}
+              </div>
+            )}
+
+            {/* Badge de testing */}
+            {isTest && (
+              <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                🧪 {locale === 'es' ? 'TEST' : 'TEST'}
               </div>
             )}
           </div>

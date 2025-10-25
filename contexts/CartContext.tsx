@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRegion } from './RegionContext';
 import { getProductPrice } from '@/lib/payment/config';
+import { useCurrentLocale } from '@/locales/client';
 
 interface CartItem {
   id: string;
@@ -47,46 +48,157 @@ interface CartProviderProps {
 export function CartProvider({ children }: CartProviderProps) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { region } = useRegion();
+  const currentLocale = useCurrentLocale();
 
-  // Cargar carrito desde localStorage al inicializar
+  // Cargar carrito desde localStorage/sessionStorage al inicializar
   useEffect(() => {
-    const loadCartFromStorage = () => {
+    const loadCartFromStorage = (context = 'INIT') => {
       try {
-        const savedCart = localStorage.getItem('cart');
+        // Intentar cargar desde localStorage primero
+        let savedCart = localStorage.getItem('cart');
+        let source = 'localStorage';
+        
+        // Si no hay nada en localStorage, intentar sessionStorage
+        if (!savedCart) {
+          savedCart = sessionStorage.getItem('cart');
+          source = 'sessionStorage';
+        }
+        
         if (savedCart) {
           const parsedCart = JSON.parse(savedCart);
           // Validar que el carrito tenga la estructura correcta
-          if (Array.isArray(parsedCart)) {
+          if (Array.isArray(parsedCart) && parsedCart.length > 0) {
             setItems(parsedCart);
-            console.log('🛒 Carrito cargado desde localStorage:', parsedCart.length, 'items');
-          } else {
-            console.warn('Formato de carrito inválido, iniciando carrito vacío');
+            setIsInitialized(true);
+            console.log(`🛒 [${context}] Carrito cargado desde ${source}:`, parsedCart.length, 'items');
+          } else if (Array.isArray(parsedCart)) {
+            // Carrito vacío válido
             setItems([]);
+            setIsInitialized(true);
+            console.log(`🛒 [${context}] Carrito vacío cargado desde ${source}`);
+          } else {
+            console.warn(`🛒 [${context}] Formato de carrito inválido, iniciando carrito vacío`);
+            setItems([]);
+            setIsInitialized(true);
+            localStorage.removeItem('cart');
+            sessionStorage.removeItem('cart');
           }
+        } else {
+          console.log(`🛒 [${context}] No hay carrito guardado en localStorage ni sessionStorage`);
+          setIsInitialized(true);
         }
       } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
+        console.error(`🛒 [${context}] Error loading cart from storage:`, error);
         setItems([]);
-        // Limpiar localStorage corrupto
+        setIsInitialized(true);
+        // Limpiar storage corrupto
         localStorage.removeItem('cart');
+        sessionStorage.removeItem('cart');
       }
     };
 
-    loadCartFromStorage();
+    // Cargar inmediatamente
+    loadCartFromStorage('INIT_IMMEDIATE');
+    
+    // También cargar después de un pequeño delay para asegurar que se ejecute después de la navegación
+    const timeoutId = setTimeout(() => loadCartFromStorage('INIT_DELAYED'), 100);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
-  // Guardar carrito en localStorage cuando cambie
+  // Recargar carrito cuando cambie el idioma (para asegurar persistencia)
   useEffect(() => {
-    if (items.length > 0 || localStorage.getItem('cart')) {
+    const loadCartFromStorage = () => {
       try {
-        localStorage.setItem('cart', JSON.stringify(items));
-        console.log('🛒 Carrito guardado en localStorage:', items.length, 'items');
+        // Intentar cargar desde localStorage primero
+        let savedCart = localStorage.getItem('cart');
+        let source = 'localStorage';
+        
+        // Si no hay nada en localStorage, intentar sessionStorage
+        if (!savedCart) {
+          savedCart = sessionStorage.getItem('cart');
+          source = 'sessionStorage';
+        }
+        
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart);
+          if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+            setItems(parsedCart);
+            console.log(`🛒 [LOCALE_CHANGE] Carrito recargado tras cambio de idioma desde ${source}:`, parsedCart.length, 'items');
+          }
+        }
       } catch (error) {
-        console.error('Error saving cart to localStorage:', error);
+        console.error('🛒 [LOCALE_CHANGE] Error recargando carrito tras cambio de idioma:', error);
       }
+    };
+
+    // Recargar carrito cuando cambie el idioma
+    loadCartFromStorage();
+  }, [currentLocale]);
+
+  // Listener para detectar cuando la página se carga (útil para cambios de idioma)
+  useEffect(() => {
+    const handlePageLoad = () => {
+      try {
+        // Intentar cargar desde localStorage primero
+        let savedCart = localStorage.getItem('cart');
+        let source = 'localStorage';
+        
+        // Si no hay nada en localStorage, intentar sessionStorage
+        if (!savedCart) {
+          savedCart = sessionStorage.getItem('cart');
+          source = 'sessionStorage';
+        }
+        
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart);
+          if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+            setItems(parsedCart);
+            console.log(`🛒 [PAGE_LOAD] Carrito recargado tras carga de página desde ${source}:`, parsedCart.length, 'items');
+          }
+        }
+      } catch (error) {
+        console.error('🛒 [PAGE_LOAD] Error recargando carrito tras carga de página:', error);
+      }
+    };
+
+    // Ejecutar inmediatamente si ya estamos en el cliente
+    if (typeof window !== 'undefined') {
+      handlePageLoad();
     }
-  }, [items]);
+
+    // También escuchar el evento de carga de la página
+    window.addEventListener('load', handlePageLoad);
+    
+    return () => {
+      window.removeEventListener('load', handlePageLoad);
+    };
+  }, []);
+
+  // Guardar carrito en localStorage y sessionStorage cuando cambie (solo después de inicialización)
+  useEffect(() => {
+    // Solo guardar si ya se inicializó el carrito
+    if (!isInitialized) {
+      console.log('🛒 [SAVE] Saltando guardado - carrito no inicializado');
+      return;
+    }
+
+    try {
+      const cartData = JSON.stringify(items);
+      localStorage.setItem('cart', cartData);
+      sessionStorage.setItem('cart', cartData); // Respaldo en sessionStorage
+      
+      if (items.length > 0) {
+        console.log('🛒 [SAVE] Carrito guardado en localStorage y sessionStorage:', items.length, 'items');
+      } else {
+        console.log('🛒 [SAVE] Carrito vacío guardado en localStorage y sessionStorage');
+      }
+    } catch (error) {
+      console.error('🛒 [SAVE] Error saving cart to storage:', error);
+    }
+  }, [items, isInitialized]);
 
   // Agregar item al carrito
   const addItem = (item: Omit<CartItem, 'quantity'>) => {
@@ -130,6 +242,7 @@ export function CartProvider({ children }: CartProviderProps) {
   const clearCart = () => {
     setItems([]);
     localStorage.removeItem('cart');
+    sessionStorage.removeItem('cart');
     console.log('🛒 Carrito limpiado completamente');
   };
 
