@@ -17,8 +17,8 @@ export default async function BookLanding({ params }: BookPageProps) {
 
     if (!bookData) {
       return (
-        <div className="min-h-screen pt-32">
-          <div className="container mx-auto px-4">
+        <div className="flex-1 flex flex-col pt-32">
+          <div className="container mx-auto px-4 flex-1">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-4">Libro</h1>
               <p className="text-gray-600">
@@ -34,7 +34,7 @@ export default async function BookLanding({ params }: BookPageProps) {
     }
 
     return (
-      <main className="min-h-screen">
+      <main className="flex-1 flex flex-col">
         <SanityHeroSection bookData={bookData} locale={locale} />
         <SanityNewsletterSection bookData={bookData} locale={locale} />
       </main>
@@ -43,8 +43,8 @@ export default async function BookLanding({ params }: BookPageProps) {
     console.error('❌ Error obteniendo datos del libro:', error);
 
     return (
-      <div className="min-h-screen pt-32">
-        <div className="container mx-auto px-4">
+      <div className="flex-1 flex flex-col pt-32">
+        <div className="container mx-auto px-4 flex-1">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Libro</h1>
             <p className="text-red-600">

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useI18n } from "@/locales/client";
-import LanguageSwitcher from "./LanguageSwitcher";
+import LanguageSwitcher from "@/app/[locale]/components/layout/LanguageSwitcher";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
@@ -73,11 +73,16 @@ export default function Header({ siteTitle }: HeaderProps) {
     return pathname.includes(href);
   };
 
+  // Detectar si estamos en la página de inicio
+  const isHomePage = pathname === "/" || pathname === "/es" || pathname === "/en";
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/95 backdrop-blur-sm shadow-sm"
+        isHomePage
+          ? isScrolled
+            ? "bg-white/95 backdrop-blur-sm shadow-sm"
+            : "bg-transparent"
           : "bg-white/95 backdrop-blur-sm shadow-sm"
       }`}
     >
@@ -85,11 +90,15 @@ export default function Header({ siteTitle }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex flex-col items-start">
-            <span className="text-xl font-bold text-gray-900 tracking-wider">
+            <span className={`text-xl font-bold tracking-wider ${
+              isHomePage && !isScrolled ? "text-white" : "text-gray-900"
+            }`}>
               {mainTitle}
             </span>
             {subtitle && (
-              <span className="text-sm font-normal text-gray-600 -mt-1">
+              <span className={`text-sm font-normal -mt-1 ${
+                isHomePage && !isScrolled ? "text-white/80" : "text-gray-600"
+              }`}>
                 {subtitle}
               </span>
             )}
@@ -101,20 +110,24 @@ export default function Header({ siteTitle }: HeaderProps) {
               <Link
                 key={item.key}
                 href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-gray-600 ${
-                  isActive(item.href)
-                    ? "text-gray-900"
-                    : "text-gray-700"
+                className={`text-sm font-medium transition-colors ${
+                  isHomePage && !isScrolled
+                    ? isActive(item.href)
+                      ? "text-white"
+                      : "text-white/80 hover:text-white"
+                    : isActive(item.href)
+                      ? "text-gray-900"
+                      : "text-gray-700 hover:text-gray-600"
                 }`}
               >
-                {t(`nav.${item.key}`)}
+                {t(`nav.${item.key}` as any, {})}
               </Link>
             ))}
           </nav>
 
           {/* Desktop Language Switcher */}
           <div className="hidden md:flex items-center space-x-4">
-            <LanguageSwitcher />
+            <LanguageSwitcher variant={isHomePage && !isScrolled ? 'transparent' : 'default'} />
           </div>
 
           {/* Mobile Menu */}
@@ -124,7 +137,7 @@ export default function Header({ siteTitle }: HeaderProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-700"
+                  className={isHomePage && !isScrolled ? "text-white hover:text-white/80" : "text-gray-700"}
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
@@ -152,11 +165,11 @@ export default function Header({ siteTitle }: HeaderProps) {
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      {t(`nav.${item.key}`)}
+                      {t(`nav.${item.key}` as any, {})}
                     </Link>
                   ))}
                   <div className="pt-4 border-t">
-                    <LanguageSwitcher />
+                    <LanguageSwitcher variant="default" />
                   </div>
                 </div>
               </SheetContent>

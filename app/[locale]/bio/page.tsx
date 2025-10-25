@@ -20,8 +20,8 @@ export default async function Bio({ params }: BioPageProps) {
   const paragraphs = content?.paragraphs || [];
 
   return (
-    <div className="relative z-20 min-h-screen">
-      <div className="px-4 sm:px-6 lg:px-8 pt-28 pb-8">
+    <div className="relative z-20 flex-1 flex flex-col">
+      <div className="px-4 sm:px-6 lg:px-8 pt-28 pb-8 flex-1">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8 text-gray-900">
             {title}
