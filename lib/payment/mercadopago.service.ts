@@ -99,16 +99,18 @@ export class MercadoPagoProvider implements PaymentProvider {
     quantity: number;
     unit_price: number;
   }> {
-    return cartItems.map((item) => {
+    // Calcular cantidad total de items
+    const totalQuantity = cartItems.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+    
+    // Calcular precio unitario base (con 2 decimales)
+    const baseUnitPrice = parseFloat((totalAmount / totalQuantity).toFixed(2));
+    
+    // Construir items con precio base
+    const items = cartItems.map((item) => {
       // Normalizar productType (el frontend puede enviar 'photo' en lugar de 'photos')
       const normalizedProductType = item.productType === 'photo' ? 'photos' : 
                                    item.productType === 'postcard' ? 'postcards' : 
                                    item.productType;
-      
-      // Usar el precio que viene del frontend (totalAmount / cantidad total de items)
-      // Esto asegura consistencia entre frontend y backend
-      const totalQuantity = cartItems.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
-      const unitPrice = Math.round(totalAmount / totalQuantity);
       
       return {
         id: item.id,
@@ -116,9 +118,22 @@ export class MercadoPagoProvider implements PaymentProvider {
         description: `${normalizedProductType === 'photos' ? 'Fotografía' : 'Postal'} del Portfolio`,
         category_id: normalizedProductType === 'photos' ? 'photography' : 'postcard',
         quantity: item.quantity,
-        unit_price: unitPrice,
+        unit_price: baseUnitPrice,
       };
     });
+    
+    // Calcular la suma actual de todos los items
+    const currentTotal = items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+    
+    // Ajustar el último item para que la suma sea exacta
+    // Esto evita errores de redondeo
+    const difference = parseFloat((totalAmount - currentTotal).toFixed(2));
+    if (difference !== 0 && items.length > 0) {
+      const lastItem = items[items.length - 1];
+      lastItem.unit_price = parseFloat((lastItem.unit_price + (difference / lastItem.quantity)).toFixed(2));
+    }
+    
+    return items;
   }
 
   isAvailable(region: RegionInfo): boolean {
