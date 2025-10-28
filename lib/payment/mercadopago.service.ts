@@ -47,6 +47,38 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
+   * Normalizar el payment_method_id para API Orders
+   * Remueve prefijos como "deb" (debvisa -> visa)
+   */
+  private normalizePaymentMethodId(paymentMethodId: string): string {
+    // Lista de métodos de pago aceptados por API Orders
+    const validPaymentMethods = ['amex', 'argencard', 'cabal', 'cencosud', 'cmr', 'diners', 'master', 'naranja', 'visa'];
+    
+    // Si el método ya es válido, retornarlo
+    if (validPaymentMethods.includes(paymentMethodId)) {
+      return paymentMethodId;
+    }
+    
+    // Remover prefijo "deb" si existe (debvisa -> visa, debmaster -> master)
+    if (paymentMethodId.startsWith('deb')) {
+      const normalized = paymentMethodId.substring(3); // Remover "deb"
+      return validPaymentMethods.includes(normalized) ? normalized : paymentMethodId;
+    }
+    
+    // Si tiene otro formato, intentar extraer el nombre de la marca
+    // Por ejemplo: "debit_card_visa" -> "visa"
+    for (const method of validPaymentMethods) {
+      if (paymentMethodId.includes(method)) {
+        return method;
+      }
+    }
+    
+    // Si no se puede normalizar, retornar el original o visa por defecto
+    console.warn(`⚠️ No se pudo normalizar payment_method_id: ${paymentMethodId}. Usando "visa" por defecto.`);
+    return 'visa';
+  }
+
+  /**
    * Construir array de items para la orden de Mercado Pago
    * a partir de los items del carrito
    */
@@ -138,7 +170,7 @@ export class MercadoPagoProvider implements PaymentProvider {
           {
             amount: totalAmount.toString(),
             payment_method: {
-              id: paymentData.payment_method_id || 'visa',
+              id: this.normalizePaymentMethodId(paymentData.payment_method_id || 'visa'),
               type: 'credit_card',
               token: paymentData.token,
               installments: paymentData.installments,
