@@ -152,6 +152,22 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
+   * Obtener el monto mínimo por moneda para transacciones reales
+   */
+  private getMinimumAmount(currency: string): number {
+    const minimumAmounts: Record<string, number> = {
+      'ARS': 1,      // Peso Argentino - mínimo 1 ARS
+      'BRL': 0.50,   // Real Brasileño - mínimo 0.50 BRL
+      'CLP': 100,    // Peso Chileno - mínimo 100 CLP
+      'COP': 1000,   // Peso Colombiano - mínimo 1000 COP
+      'MXN': 10,     // Peso Mexicano - mínimo 10 MXN
+      'PEN': 1,      // Sol Peruano - mínimo 1 PEN
+      'UYU': 10,     // Peso Uruguayo - mínimo 10 UYU
+    };
+    return minimumAmounts[currency] || 1;
+  }
+
+  /**
    * Crear una orden de Mercado Pago (Paso A)
    */
   private async createOrder(
@@ -164,10 +180,21 @@ export class MercadoPagoProvider implements PaymentProvider {
       throw new Error('El carrito está vacío. No se puede crear la orden.');
     }
 
+    // Validar monto mínimo
+    const currency = paymentData.currency_id || 'ARS';
+    const minimumAmount = this.getMinimumAmount(currency);
+    const totalAmount = paymentData.transaction_amount;
+    
+    if (totalAmount < minimumAmount) {
+      throw new Error(
+        `El monto mínimo para pagos en ${currency} es ${minimumAmount}. ` +
+        `Monto actual: ${totalAmount}. ` +
+        `Por favor, agrega más productos al carrito o actualiza los precios de los productos en Sanity.`
+      );
+    }
+
     // Construir items de la orden
-      const region = paymentData.currency_id || 'ARS';
-      const totalAmount = paymentData.transaction_amount;
-      const items = this.buildOrderItems(cartItems, region, totalAmount);
+    const items = this.buildOrderItems(cartItems, currency, totalAmount);
 
     const orderPayload = {
       type: 'online', // Requerido para API Orders

@@ -1,16 +1,27 @@
 import { PaymentFactory } from './payment-factory';
 import { MercadoPagoProvider } from './mercadopago.service';
 
-// Registrar proveedores de pago
+// Flag para asegurar que solo se inicialice una vez
+let isInitialized = false;
+
+// Registrar proveedores de pago (singleton)
 export function initializePaymentProviders() {
-  console.log('🔧 Inicializando proveedores de pago...');
+  // Si ya fue inicializado, no hacer nada
+  if (isInitialized) {
+    return;
+  }
   
   // Registrar solo Mercado Pago para Latinoamérica
   const mercadopagoProvider = new MercadoPagoProvider();
   PaymentFactory.registerProvider('mercadopago', mercadopagoProvider);
-  console.log('✅ Mercado Pago registrado');
   
-  console.log('🎉 Proveedores de pago inicializados correctamente');
+  // Marcar como inicializado
+  isInitialized = true;
+  
+  // Log solo en desarrollo
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🎉 Proveedores de pago inicializados');
+  }
 }
 
 // Configuración de precios por región (solo Latinoamérica)

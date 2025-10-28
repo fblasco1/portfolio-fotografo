@@ -72,21 +72,17 @@ export function CartProvider({ children }: CartProviderProps) {
           if (Array.isArray(parsedCart) && parsedCart.length > 0) {
             setItems(parsedCart);
             setIsInitialized(true);
-            console.log(`🛒 [${context}] Carrito cargado desde ${source}:`, parsedCart.length, 'items');
           } else if (Array.isArray(parsedCart)) {
             // Carrito vacío válido
             setItems([]);
             setIsInitialized(true);
-            console.log(`🛒 [${context}] Carrito vacío cargado desde ${source}`);
           } else {
-            console.warn(`🛒 [${context}] Formato de carrito inválido, iniciando carrito vacío`);
             setItems([]);
             setIsInitialized(true);
             localStorage.removeItem('cart');
             sessionStorage.removeItem('cart');
           }
         } else {
-          console.log(`🛒 [${context}] No hay carrito guardado en localStorage ni sessionStorage`);
           setIsInitialized(true);
         }
       } catch (error) {
@@ -126,11 +122,10 @@ export function CartProvider({ children }: CartProviderProps) {
           const parsedCart = JSON.parse(savedCart);
           if (Array.isArray(parsedCart) && parsedCart.length > 0) {
             setItems(parsedCart);
-            console.log(`🛒 [LOCALE_CHANGE] Carrito recargado tras cambio de idioma desde ${source}:`, parsedCart.length, 'items');
           }
         }
       } catch (error) {
-        console.error('🛒 [LOCALE_CHANGE] Error recargando carrito tras cambio de idioma:', error);
+        // Error silencioso en producción
       }
     };
 
@@ -156,11 +151,10 @@ export function CartProvider({ children }: CartProviderProps) {
           const parsedCart = JSON.parse(savedCart);
           if (Array.isArray(parsedCart) && parsedCart.length > 0) {
             setItems(parsedCart);
-            console.log(`🛒 [PAGE_LOAD] Carrito recargado tras carga de página desde ${source}:`, parsedCart.length, 'items');
           }
         }
       } catch (error) {
-        console.error('🛒 [PAGE_LOAD] Error recargando carrito tras carga de página:', error);
+        // Error silencioso en producción
       }
     };
 
@@ -181,7 +175,6 @@ export function CartProvider({ children }: CartProviderProps) {
   useEffect(() => {
     // Solo guardar si ya se inicializó el carrito
     if (!isInitialized) {
-      console.log('🛒 [SAVE] Saltando guardado - carrito no inicializado');
       return;
     }
 
@@ -189,14 +182,8 @@ export function CartProvider({ children }: CartProviderProps) {
       const cartData = JSON.stringify(items);
       localStorage.setItem('cart', cartData);
       sessionStorage.setItem('cart', cartData); // Respaldo en sessionStorage
-      
-      if (items.length > 0) {
-        console.log('🛒 [SAVE] Carrito guardado en localStorage y sessionStorage:', items.length, 'items');
-      } else {
-        console.log('🛒 [SAVE] Carrito vacío guardado en localStorage y sessionStorage');
-      }
     } catch (error) {
-      console.error('🛒 [SAVE] Error saving cart to storage:', error);
+      // Error silencioso en producción
     }
   }, [items, isInitialized]);
 
@@ -243,13 +230,11 @@ export function CartProvider({ children }: CartProviderProps) {
     setItems([]);
     localStorage.removeItem('cart');
     sessionStorage.removeItem('cart');
-    console.log('🛒 Carrito limpiado completamente');
   };
 
   // Limpiar carrito después de compra exitosa
   const clearCartAfterPurchase = () => {
     clearCart();
-    console.log('✅ Carrito limpiado después de compra exitosa');
   };
 
   // Calcular totales (sin envío ni IVA - se acordará con el vendedor)
