@@ -447,6 +447,7 @@ export class MercadoPagoProvider implements PaymentProvider {
         // Asociar pago a la orden
         order: {
           id: mercadopagoOrderId,
+          type: 'online', // ✅ Requerido: tipo de orden
         },
         payer: {
           email: paymentData.payer.email,

@@ -370,4 +370,27 @@ describe('Flujo de Pago End-to-End', () => {
     expect(provider['getPaymentMethodType']('visa')).toBe('credit_card');
     expect(provider['getPaymentMethodType']('master')).toBe('credit_card');
   });
+
+  test('createPayment debería incluir order.type en el payload del pago', async () => {
+    // Mockear createOrder exitoso
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 12345 }),
+      status: 200
+    });
+    // Mockear createPayment exitoso
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 67890, status: 'approved', status_detail: 'accredited', transaction_amount: 200 }),
+      status: 200
+    });
+
+    await provider.createPayment(mockPaymentData);
+
+    // Verificar la llamada a createPayment
+    const paymentCall = (global.fetch as jest.Mock).mock.calls[1][1];
+    const paymentPayload = JSON.parse(paymentCall.body);
+    expect(paymentPayload.order.id).toBe(12345);
+    expect(paymentPayload.order.type).toBe('online'); // ✅ Verificar que order.type esté incluido
+  });
 });

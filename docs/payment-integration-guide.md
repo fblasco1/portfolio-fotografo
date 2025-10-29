@@ -152,6 +152,10 @@ transactions: {
 - `visa` → `credit_card`
 - `master` → `credit_card`
 
+**Asociación de pago a orden:**
+- `order.id`: ID de la orden creada
+- `order.type`: Tipo de orden (siempre "online")
+
 ## Manejo de Errores
 
 ### Códigos de Error Específicos
