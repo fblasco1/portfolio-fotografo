@@ -28,22 +28,42 @@ export class MercadoPagoProvider implements PaymentProvider {
    * La notification_url se configura en la orden y tiene prioridad sobre configuración global
    */
   private getNotificationUrl(): string | null {
-    // Configurar notification_url si tenemos una URL base válida
-    if (!this.baseUrl) {
-      return null;
+    // URL de webhook de producción
+    const productionWebhookUrl = 'https://cristianpirovano.com/api/payment/webhook/mercadopago';
+    
+    // En desarrollo, usar la URL base configurada
+    if (process.env.NODE_ENV === 'development' && this.baseUrl) {
+      const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
+      const params = new URLSearchParams({
+        source_news: 'webhooks',
+        integration_type: 'orders_api',
+        version: '3.0.0'
+      });
+      return `${webhookUrl}?${params.toString()}`;
+    }
+    
+    // En producción, usar la URL fija
+    if (process.env.NODE_ENV === 'production') {
+      const params = new URLSearchParams({
+        source_news: 'webhooks',
+        integration_type: 'orders_api',
+        version: '3.0.0'
+      });
+      return `${productionWebhookUrl}?${params.toString()}`;
     }
 
-    // Construir URL de webhook para API Orders
-    const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
-    
-    // Agregar parámetros de identificación para API Orders
-    const params = new URLSearchParams({
-      source_news: 'webhooks',
-      integration_type: 'orders_api',
-      version: '3.0.0'
-    });
+    // Fallback a URL base si está configurada
+    if (this.baseUrl) {
+      const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
+      const params = new URLSearchParams({
+        source_news: 'webhooks',
+        integration_type: 'orders_api',
+        version: '3.0.0'
+      });
+      return `${webhookUrl}?${params.toString()}`;
+    }
 
-    return `${webhookUrl}?${params.toString()}`;
+    return null;
   }
 
   /**
@@ -168,7 +188,101 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
+   * Validar datos del pagador para mejorar la tasa de aprobación
+   * Implementa validaciones de seguridad según las mejores prácticas de Mercado Pago
+   */
+  private validatePayerData(payer: any): void {
+    const errors: string[] = [];
+
+    // Validar email (requisito obligatorio)
+    if (!payer.email || !this.isValidEmail(payer.email)) {
+      errors.push('Email del comprador es requerido y debe ser válido');
+    }
+
+    // Validar nombre (requisito obligatorio)
+    if (!payer.first_name || payer.first_name.trim().length < 2) {
+      errors.push('Nombre del comprador es requerido (mínimo 2 caracteres)');
+    }
+
+    // Validar apellido (requisito obligatorio)
+    if (!payer.last_name || payer.last_name.trim().length < 2) {
+      errors.push('Apellido del comprador es requerido (mínimo 2 caracteres)');
+    }
+
+    // Validar identificación (buena práctica)
+    if (payer.identification) {
+      if (!payer.identification.type || !payer.identification.number) {
+        errors.push('Tipo y número de identificación son requeridos');
+      }
+      
+      // Validar formato de DNI/CPF según el tipo
+      if (payer.identification.type === 'DNI' && !this.isValidDNI(payer.identification.number)) {
+        errors.push('Formato de DNI inválido');
+      }
+      
+      if (payer.identification.type === 'CPF' && !this.isValidCPF(payer.identification.number)) {
+        errors.push('Formato de CPF inválido');
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`Datos del pagador inválidos: ${errors.join(', ')}`);
+    }
+  }
+
+  /**
+   * Validar formato de email
+   */
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  /**
+   * Validar formato de DNI argentino
+   */
+  private isValidDNI(dni: string): boolean {
+    const dniRegex = /^\d{7,8}$/;
+    return dniRegex.test(dni.replace(/\D/g, ''));
+  }
+
+  /**
+   * Validar formato de CPF brasileño
+   */
+  private isValidCPF(cpf: string): boolean {
+    const cpfRegex = /^\d{11}$/;
+    const cleanCpf = cpf.replace(/\D/g, '');
+    return cpfRegex.test(cleanCpf) && this.validateCPFChecksum(cleanCpf);
+  }
+
+  /**
+   * Validar dígitos verificadores del CPF
+   */
+  private validateCPFChecksum(cpf: string): boolean {
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+      return false;
+    }
+
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+    let remainder = (sum * 10) % 11;
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    if (remainder !== parseInt(cpf.charAt(9))) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+    remainder = (sum * 10) % 11;
+    if (remainder === 10 || remainder === 11) remainder = 0;
+    return remainder === parseInt(cpf.charAt(10));
+  }
+
+  /**
    * Crear una orden de Mercado Pago (Paso A)
+   * Implementa las mejores prácticas de seguridad y validación de Mercado Pago
    */
   private async createOrder(
     paymentData: PaymentRequest,
@@ -193,28 +307,35 @@ export class MercadoPagoProvider implements PaymentProvider {
       );
     }
 
-    // Construir items de la orden
+    // Construir items de la orden con validaciones de seguridad
     const items = this.buildOrderItems(cartItems, currency, totalAmount);
+
+    // Validar datos del pagador (requisito de seguridad)
+    this.validatePayerData(paymentData.payer);
 
     const orderPayload = {
       type: 'online', // Requerido para API Orders
       items: items.map(item => ({
-        title: item.title,
-        description: item.description,
-        category_id: item.category_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price.toString(), // Convertir a string
+        id: item.id, // ✅ Requisito: Código del item
+        title: item.title, // ✅ Requisito: Nombre del item
+        description: item.description, // ✅ Requisito: Descripción del item
+        category_id: item.category_id, // ✅ Requisito: Categoría del item
+        quantity: item.quantity, // ✅ Requisito: Cantidad del producto/servicio
+        unit_price: item.unit_price.toString(), // ✅ Requisito: Precio del item
       })),
-      total_amount: totalAmount.toString(), // Convertir a string
-      external_reference: paymentData.external_reference || orderId,
+      total_amount: totalAmount.toString(),
+      external_reference: paymentData.external_reference || orderId, // ✅ Requisito: Referencia externa
+      transactions: {
+        payments: []
+      },
       payer: {
-        email: paymentData.payer.email,
+        email: paymentData.payer.email, // ✅ Requisito: Email del comprador
         entity_type: 'individual',
-        first_name: paymentData.payer.first_name,
-        last_name: paymentData.payer.last_name,
-        identification: paymentData.payer.identification,
-        ...(paymentData.payer.phone && { phone: paymentData.payer.phone }),
-        ...(paymentData.payer.address && { address: paymentData.payer.address })
+        first_name: paymentData.payer.first_name, // ✅ Requisito: Nombre del comprador
+        last_name: paymentData.payer.last_name, // ✅ Requisito: Apellido del comprador
+        identification: paymentData.payer.identification, // ✅ Buena práctica: Identificación del comprador
+        ...(paymentData.payer.phone && { phone: paymentData.payer.phone }), // ✅ Buena práctica: Teléfono del comprador
+        ...(paymentData.payer.address && { address: paymentData.payer.address }) // ✅ Buena práctica: Dirección del comprador
       },
     };
 
@@ -247,7 +368,12 @@ export class MercadoPagoProvider implements PaymentProvider {
       }
       
       console.error('📤 Payload enviado:', JSON.stringify(orderPayload, null, 2));
-      throw new Error(`Error al crear la orden: ${this.getErrorMessage(errorData, response.status)}`);
+      
+      // Manejo de errores con códigos de estado específicos
+      const errorMessage = this.getErrorMessage(errorData, response.status);
+      const errorCode = this.getErrorCode(response.status, errorData);
+      
+      throw new Error(`Error al crear la orden: ${errorMessage} (Código: ${errorCode})`);
     }
 
     const orderResponse = await response.json();
@@ -630,5 +756,42 @@ export class MercadoPagoProvider implements PaymentProvider {
     };
 
     return statusMessages[status] || `Error de Mercado Pago (${status}). Por favor, intenta nuevamente.`;
+  }
+
+  /**
+   * Obtener código de error específico para logging y debugging
+   */
+  private getErrorCode(status: number, errorData: any): string {
+    // Códigos de error específicos de Mercado Pago
+    if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+      const firstError = errorData.errors[0];
+      if (firstError.code) {
+        return `MP_${firstError.code}`;
+      }
+    }
+
+    // Códigos de error HTTP estándar
+    switch (status) {
+      case 400:
+        return 'HTTP_400_BAD_REQUEST';
+      case 401:
+        return 'HTTP_401_UNAUTHORIZED';
+      case 402:
+        return 'HTTP_402_PAYMENT_REQUIRED';
+      case 403:
+        return 'HTTP_403_FORBIDDEN';
+      case 404:
+        return 'HTTP_404_NOT_FOUND';
+      case 422:
+        return 'HTTP_422_UNPROCESSABLE_ENTITY';
+      case 500:
+        return 'HTTP_500_INTERNAL_SERVER_ERROR';
+      case 502:
+        return 'HTTP_502_BAD_GATEWAY';
+      case 503:
+        return 'HTTP_503_SERVICE_UNAVAILABLE';
+      default:
+        return `HTTP_${status}_UNKNOWN`;
+    }
   }
 }
