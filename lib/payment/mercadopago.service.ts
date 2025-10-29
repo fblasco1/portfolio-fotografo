@@ -207,20 +207,6 @@ export class MercadoPagoProvider implements PaymentProvider {
       })),
       total_amount: totalAmount.toString(), // Convertir a string
       external_reference: paymentData.external_reference || orderId,
-      transactions: {
-        payments: [
-          {
-            amount: totalAmount.toString(),
-            payment_method: {
-              id: this.normalizePaymentMethodId(paymentData.payment_method_id || 'visa'),
-              type: 'credit_card',
-              token: paymentData.token,
-              installments: paymentData.installments,
-              statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO'
-            }
-          }
-        ]
-      },
       payer: {
         email: paymentData.payer.email,
         entity_type: 'individual',
