@@ -352,7 +352,7 @@ export class MercadoPagoProvider implements PaymentProvider {
           {
             amount: totalAmount.toString(),
             payment_method: {
-              id: this.normalizePaymentMethodId(paymentData.payment_method_id || 'visa'),
+              id: paymentData.payment_method_id,
               type: this.getPaymentMethodType(paymentData.payment_method_id || 'visa'),
               token: paymentData.token,
               installments: paymentData.installments,
