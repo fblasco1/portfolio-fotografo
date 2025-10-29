@@ -112,7 +112,6 @@ export class MercadoPagoProvider implements PaymentProvider {
     region: string,
     totalAmount: number
   ): Array<{
-    id: string;
     title: string;
     description: string;
     category_id: string;
@@ -125,7 +124,7 @@ export class MercadoPagoProvider implements PaymentProvider {
     // Calcular precio unitario base (con 2 decimales)
     const baseUnitPrice = parseFloat((totalAmount / totalQuantity).toFixed(2));
     
-    // Construir items con precio base
+    // Construir items con precio base (sin campo 'id' - no permitido en API Orders)
     const items = cartItems.map((item) => {
       // Normalizar productType (el frontend puede enviar 'photo' en lugar de 'photos')
       const normalizedProductType = item.productType === 'photo' ? 'photos' : 
@@ -133,7 +132,7 @@ export class MercadoPagoProvider implements PaymentProvider {
                                    item.productType;
       
       return {
-        id: item.id,
+        // Remover campo 'id' - no está permitido en API Orders
         title: item.title,
         description: `${normalizedProductType === 'photos' ? 'Fotografía' : 'Postal'} del Portfolio`,
         category_id: normalizedProductType === 'photos' ? 'photography' : 'postcard',
@@ -316,7 +315,7 @@ export class MercadoPagoProvider implements PaymentProvider {
     const orderPayload = {
       type: 'online', // Requerido para API Orders
       items: items.map(item => ({
-        id: item.id, // ✅ Requisito: Código del item
+        // Remover campo 'id' - no está permitido en API Orders
         title: item.title, // ✅ Requisito: Nombre del item
         description: item.description, // ✅ Requisito: Descripción del item
         category_id: item.category_id, // ✅ Requisito: Categoría del item
@@ -326,7 +325,19 @@ export class MercadoPagoProvider implements PaymentProvider {
       total_amount: totalAmount.toString(),
       external_reference: paymentData.external_reference || orderId, // ✅ Requisito: Referencia externa
       transactions: {
-        payments: []
+        // La API Orders SÍ requiere transactions, pero con estructura específica
+        payments: [
+          {
+            amount: totalAmount.toString(),
+            payment_method: {
+              id: this.normalizePaymentMethodId(paymentData.payment_method_id || 'visa'),
+              type: 'credit_card',
+              token: paymentData.token,
+              installments: paymentData.installments,
+              statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO'
+            }
+          }
+        ]
       },
       payer: {
         email: paymentData.payer.email, // ✅ Requisito: Email del comprador

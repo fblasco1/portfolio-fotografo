@@ -86,7 +86,7 @@ describe('Flujos Críticos de Pago - Mercado Pago', () => {
         type: 'online',
         items: [
           {
-            id: 'item_123',
+            // Campo 'id' removido - no permitido en API Orders
             title: 'Fotografía de Prueba',
             description: 'Fotografía del Portfolio',
             category_id: 'photography',
@@ -97,7 +97,18 @@ describe('Flujos Críticos de Pago - Mercado Pago', () => {
         total_amount: '100.00',
         external_reference: 'order_123456',
         transactions: {
-          payments: []
+          payments: [
+            {
+              amount: '100.00',
+              payment_method: {
+                id: 'visa',
+                type: 'credit_card',
+                token: 'mock_token_123',
+                installments: 1,
+                statement_descriptor: 'CRISTIAN PIROVANO'
+              }
+            }
+          ]
         },
         payer: {
           email: 'test@example.com',
@@ -114,7 +125,8 @@ describe('Flujos Críticos de Pago - Mercado Pago', () => {
       // Verificar campos obligatorios
       expect(mockOrderPayload.type).toBe('online');
       expect(mockOrderPayload.items).toHaveLength(1);
-      expect(mockOrderPayload.items[0]).toHaveProperty('id');
+      // Verificar que NO tenga campo 'id' (no permitido en API Orders)
+      expect(mockOrderPayload.items[0]).not.toHaveProperty('id');
       expect(mockOrderPayload.items[0]).toHaveProperty('title');
       expect(mockOrderPayload.items[0]).toHaveProperty('description');
       expect(mockOrderPayload.items[0]).toHaveProperty('category_id');
@@ -122,7 +134,10 @@ describe('Flujos Críticos de Pago - Mercado Pago', () => {
       expect(mockOrderPayload.items[0]).toHaveProperty('unit_price');
       expect(mockOrderPayload).toHaveProperty('total_amount');
       expect(mockOrderPayload).toHaveProperty('external_reference');
+      // Verificar que SÍ tenga campo 'transactions' (requerido en API Orders)
       expect(mockOrderPayload).toHaveProperty('transactions');
+      expect(mockOrderPayload.transactions).toHaveProperty('payments');
+      expect(mockOrderPayload.transactions.payments).toHaveLength(1);
       expect(mockOrderPayload).toHaveProperty('payer');
       expect(mockOrderPayload.payer).toHaveProperty('email');
       expect(mockOrderPayload.payer).toHaveProperty('first_name');

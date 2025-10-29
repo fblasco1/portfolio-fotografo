@@ -38,11 +38,12 @@ graph TD
 | Apellido del comprador | `payer.last_name` | ✅ | Validación de longitud mínima |
 | Categoría del item | `items.category_id` | ✅ | Mapeo automático por tipo de producto |
 | Descripción del item | `items.description` | ✅ | Generada automáticamente |
-| Código del item | `items.id` | ✅ | ID único generado |
+| Código del item | `items.id` | ❌ | No permitido en API Orders |
 | Cantidad del producto | `items.quantity` | ✅ | Del carrito de compras |
 | Nombre del item | `items.title` | ✅ | Del producto en Sanity |
 | Precio del item | `items.unit_price` | ✅ | Calculado dinámicamente |
 | Referencia externa | `external_reference` | ✅ | ID único de orden |
+| Transacciones | `transactions.payments` | ✅ | Estructura específica requerida |
 | Notificaciones webhooks | `notification_url` | ✅ | Configurada automáticamente |
 
 ### ✅ Buenas Prácticas Implementadas
@@ -107,6 +108,43 @@ private validatePayerData(payer: any): void {
 - **DNI Argentino**: 7-8 dígitos numéricos
 - **CPF Brasileño**: 11 dígitos con validación de dígitos verificadores
 - **Montos**: Validación de montos mínimos por moneda
+
+### Limitaciones de la API Orders
+
+La API Orders de Mercado Pago tiene algunas limitaciones específicas:
+
+- **Campo `id` en items**: No está permitido en la estructura de items
+- **Campo `transactions`**: SÍ es requerido con estructura específica
+- **Flujo de dos pasos**: Orden primero, pago después
+- **Estructura específica**: Requiere campos obligatorios según documentación oficial
+
+### Estructura Correcta de Transactions
+
+Según la documentación oficial de Mercado Pago, el campo `transactions` es **REQUERIDO** y debe contener:
+
+```typescript
+transactions: {
+  payments: [
+    {
+      amount: "100.00",
+      payment_method: {
+        id: "visa",
+        type: "credit_card",
+        token: "token_del_usuario",
+        installments: 1,
+        statement_descriptor: "CRISTIAN PIROVANO"
+      }
+    }
+  ]
+}
+```
+
+**Campos obligatorios:**
+- `amount`: Monto del pago como string
+- `payment_method.id`: ID del método de pago normalizado
+- `payment_method.type`: Tipo de método de pago
+- `payment_method.token`: Token de la tarjeta
+- `payment_method.installments`: Número de cuotas
 
 ## Manejo de Errores
 
