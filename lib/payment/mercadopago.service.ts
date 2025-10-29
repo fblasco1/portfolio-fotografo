@@ -67,6 +67,28 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
+   * Determinar el tipo de método de pago basado en el payment_method_id
+   */
+  private getPaymentMethodType(paymentMethodId: string): string {
+    const normalizedId = this.normalizePaymentMethodId(paymentMethodId);
+    
+    // Tarjetas de débito (prefijo "deb")
+    if (paymentMethodId.startsWith('deb')) {
+      return 'debit_card';
+    }
+    
+    // Tarjetas de crédito (sin prefijo)
+    const creditCards = ['visa', 'master', 'amex', 'elo', 'naranja', 'cabal', 'argencard', 'cencosud', 'tarshop', 'nativa', 'cordobesa'];
+    if (creditCards.includes(normalizedId)) {
+      return 'credit_card';
+    }
+    
+    // Por defecto, asumir crédito si no se puede determinar
+    console.warn(`⚠️ No se pudo determinar el tipo de tarjeta para: ${paymentMethodId}. Usando 'credit_card' por defecto.`);
+    return 'credit_card';
+  }
+
+  /**
    * Normalizar el payment_method_id para API Orders
    * Remueve prefijos como "deb" (debvisa -> visa)
    */
@@ -331,7 +353,7 @@ export class MercadoPagoProvider implements PaymentProvider {
             amount: totalAmount.toString(),
             payment_method: {
               id: this.normalizePaymentMethodId(paymentData.payment_method_id || 'visa'),
-              type: 'credit_card',
+              type: this.getPaymentMethodType(paymentData.payment_method_id || 'visa'),
               token: paymentData.token,
               installments: paymentData.installments,
               statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO'

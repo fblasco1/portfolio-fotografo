@@ -142,9 +142,15 @@ transactions: {
 **Campos obligatorios:**
 - `amount`: Monto del pago como string
 - `payment_method.id`: ID del método de pago normalizado
-- `payment_method.type`: Tipo de método de pago
+- `payment_method.type`: Tipo de método de pago (debit_card/credit_card)
 - `payment_method.token`: Token de la tarjeta
 - `payment_method.installments`: Número de cuotas
+
+**Detección automática del tipo de tarjeta:**
+- `debvisa` → `debit_card`
+- `debmaster` → `debit_card`
+- `visa` → `credit_card`
+- `master` → `credit_card`
 
 ## Manejo de Errores
 

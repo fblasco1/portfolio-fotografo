@@ -350,4 +350,24 @@ describe('Flujo de Pago End-to-End', () => {
     expect(invalidPaymentData.payer.first_name).toBeFalsy();
     expect(invalidPaymentData.payer.last_name).toBeFalsy();
   });
+
+  // --- Casos de Prueba para Métodos Auxiliares ---
+
+  test('normalizePaymentMethodId debería normalizar "debvisa" a "visa"', () => {
+    expect(provider['normalizePaymentMethodId']('debvisa')).toBe('visa');
+  });
+
+  test('normalizePaymentMethodId debería retornar "visa" por defecto para métodos desconocidos', () => {
+    expect(provider['normalizePaymentMethodId']('unknown_method')).toBe('visa');
+  });
+
+  test('getPaymentMethodType debería retornar "debit_card" para tarjetas de débito', () => {
+    expect(provider['getPaymentMethodType']('debvisa')).toBe('debit_card');
+    expect(provider['getPaymentMethodType']('debmaster')).toBe('debit_card');
+  });
+
+  test('getPaymentMethodType debería retornar "credit_card" para tarjetas de crédito', () => {
+    expect(provider['getPaymentMethodType']('visa')).toBe('credit_card');
+    expect(provider['getPaymentMethodType']('master')).toBe('credit_card');
+  });
 });
