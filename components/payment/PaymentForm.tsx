@@ -179,7 +179,7 @@ export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormPro
              const correctPaymentMethodId = paymentMethod ? getCorrectPaymentMethodId(paymentMethod) : undefined;
 
       // 3. Enviar pago al backend
-      const response = await fetch('/api/payment/create-payment', {
+      const response = await fetch('/api/payment/v2/create-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
