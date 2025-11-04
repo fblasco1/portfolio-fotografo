@@ -76,6 +76,19 @@ export default function Header({ siteTitle }: HeaderProps) {
   // Detectar si estamos en la página de inicio
   const isHomePage = pathname === "/" || pathname === "/es" || pathname === "/en";
 
+  // Detectar si estamos en móvil
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -91,13 +104,17 @@ export default function Header({ siteTitle }: HeaderProps) {
           {/* Logo */}
           <Link href="/" className="flex flex-col items-start">
             <span className={`text-xl font-bold tracking-wider ${
-              isHomePage && !isScrolled ? "text-white" : "text-gray-900"
+              isHomePage && !isScrolled 
+                ? isMobile ? "text-gray-900" : "text-white"
+                : "text-gray-900"
             }`}>
               {mainTitle}
             </span>
             {subtitle && (
               <span className={`text-sm font-normal -mt-1 ${
-                isHomePage && !isScrolled ? "text-white/80" : "text-gray-600"
+                isHomePage && !isScrolled
+                  ? isMobile ? "text-gray-600" : "text-white/80"
+                  : "text-gray-600"
               }`}>
                 {subtitle}
               </span>
@@ -137,7 +154,11 @@ export default function Header({ siteTitle }: HeaderProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={isHomePage && !isScrolled ? "text-white hover:text-white/80" : "text-gray-700"}
+                  className={
+                    isHomePage && !isScrolled
+                      ? isMobile ? "text-gray-700 hover:text-gray-900" : "text-white hover:text-white/80"
+                      : "text-gray-700"
+                  }
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
