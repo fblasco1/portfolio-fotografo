@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Card, CardContent, CardTitle } from "@/app/[locale]/components/ui/card";
 import { Eye } from "lucide-react";
 import { AddToCartButton } from "@/components/payment";
 import { useRegion } from "@/contexts/RegionContext";
 import { urlFor } from "@/lib/sanity";
-import { getProductPriceForRegion, isProductAvailableInRegion, isTestProduct } from "@/lib/sanity-products";
+import { isTestProduct } from "@/lib/sanity-products";
+import { getAvailableSizes, type SizePricing } from "@/lib/sanity-pricing";
+import SizeSelector from "@/components/product/SizeSelector";
 import StaticPhotoSlider from "./PhotoSlider";
 import type { StoreItem, SanityProduct } from "@/app/types/store";
+import type { ProductSize } from "@/contexts/CartContext";
 
 // Función segura para obtener URL de imagen
 const getImageUrl = (image: any) => {
@@ -48,6 +52,7 @@ interface ProductCardProps {
   locale: string;
   productType?: 'photos' | 'postcards';
   variant?: 'basic' | 'enhanced';
+  pricing?: SizePricing | null; // Precios ya cargados desde PhotoStore
 }
 
 export default function ProductCard({ 
@@ -55,10 +60,13 @@ export default function ProductCard({
   t, 
   locale, 
   productType = 'photos',
-  variant = 'basic'
+  variant = 'basic',
+  pricing: propPricing
 }: ProductCardProps) {
+  const router = useRouter();
   const { region, loading } = useRegion();
   const [showSlider, setShowSlider] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
 
   // Determinar si es un SanityProduct o StoreItem
   const isSanityProduct = '_id' in product;
@@ -69,8 +77,7 @@ export default function ProductCard({
     title: product.content?.[locale as keyof typeof product.content]?.title || product.content?.es?.title || 'Producto',
     subtitle: product.content?.[locale as keyof typeof product.content]?.subtitle || product.content?.es?.subtitle || 'Descripción del producto',
     image: getImageUrl(product.image),
-    productType: product.category as 'photos' | 'postcards',
-    pricing: product.pricing
+    productType: product.category as 'photos' | 'postcards'
   } : {
     id: product.id.toString(),
     title: t ? t(product.titleKey) : product.titleKey,
@@ -80,21 +87,77 @@ export default function ProductCard({
     pricing: undefined
   };
 
-  // Verificar si el producto tiene precios configurados (solo para SanityProduct)
-  const hasPricing = isSanityProduct && Boolean(product.pricing);
-
-  // Obtener precio según la región del usuario (solo para SanityProduct)
-  const productPrice = isSanityProduct && region && region.currency && hasPricing
-    ? getProductPriceForRegion(product, region.currency)
-    : 0;
-
-  // Verificar si el producto está disponible en la región (solo para SanityProduct)
-  const isAvailableInRegion = isSanityProduct && region && region.currency && hasPricing
-    ? isProductAvailableInRegion(product, region.currency)
-    : true; 
+  // Los precios ahora son globales, no por producto
+  // Si se pasan precios desde el padre, usarlos; si no, cargarlos
+  const [pricing, setPricing] = useState<SizePricing | null>(propPricing || null);
+  const [pricingLoaded, setPricingLoaded] = useState(!!propPricing);
+  const hasGlobalPricing = isSanityProduct && (pricingLoaded || !!pricing);
 
   // Verificar si es un producto de testing
   const isTest = isSanityProduct ? isTestProduct(product) : false;
+
+  // Obtener tamaños disponibles (solo para SanityProduct)
+  // Si ya tenemos pricing, calcular tamaños sincrónicamente; si no, cargarlo
+  const [availableSizes, setAvailableSizes] = useState<ProductSize[]>([]);
+  const [sizesLoaded, setSizesLoaded] = useState(false);
+
+  // Si recibimos pricing desde props, actualizar estado
+  useEffect(() => {
+    if (propPricing !== undefined) {
+      setPricing(propPricing);
+      setPricingLoaded(true);
+    }
+  }, [propPricing]);
+
+  // Calcular tamaños disponibles cuando tengamos pricing
+  useEffect(() => {
+    if (isSanityProduct) {
+      if (pricing) {
+        // Si ya tenemos pricing, calcular tamaños sincrónicamente (rápido)
+        const sizes = getAvailableSizes(pricing);
+        setAvailableSizes(sizes);
+        setSizesLoaded(true);
+        
+        // Auto-seleccionar primer tamaño disponible si no hay selección
+        if (!selectedSize && sizes.length > 0) {
+          const firstStandardSize = sizes.find(size => size !== 'custom');
+          if (firstStandardSize) {
+            setSelectedSize(firstStandardSize);
+          }
+        }
+      } else if (pricingLoaded && !pricing) {
+        // Si ya se cargó pero no hay pricing, solo mostrar custom
+        setAvailableSizes(['custom']);
+        setSizesLoaded(true);
+      } else if (!pricingLoaded) {
+        // Si no se ha cargado aún, mostrar loading
+        setSizesLoaded(false);
+      }
+    } else {
+      setSizesLoaded(true);
+    }
+  }, [isSanityProduct, pricing, pricingLoaded, selectedSize]);
+
+  const handleCustomSizeContact = () => {
+    // Determinar el tipo de producto (FOTO o POSTAL)
+    const productTypeLabel = productData.productType === 'photos' 
+      ? (locale === 'es' ? 'FOTO' : 'PHOTO')
+      : (locale === 'es' ? 'POSTAL' : 'POSTCARD');
+    
+    // Construir el asunto del formulario
+    const subject = locale === 'es'
+      ? `Solicitud de ${productTypeLabel} ${productData.title} en tamaño personalizado`
+      : `Request for ${productTypeLabel} ${productData.title} in custom size`;
+    
+    // Redirigir al formulario de contacto con los parámetros
+    const params = new URLSearchParams({
+      subject: subject,
+      productType: productData.productType,
+      productName: productData.title
+    });
+    
+    router.push(`/${locale}/contact?${params.toString()}`);
+  };
 
   // Convertir el producto a formato compatible con PhotoSlider
   const photos = [{
@@ -137,26 +200,6 @@ export default function ProductCard({
               <Eye size={24} className="text-white" />
             </div>
             
-            {/* Badge de precio (solo para SanityProduct con precios) */}
-            {isSanityProduct && (
-              <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
-                {!hasPricing ? (
-                  <span className="text-yellow-400">
-                    {locale === 'es' ? 'Sin precio' : 'No price'}
-                  </span>
-                ) : region && region.isSupported && isAvailableInRegion ? (
-                  <span>
-                    {region.symbol}{productPrice.toLocaleString()}
-                  </span>
-                ) : region && region.isSupported ? (
-                  <span className="text-gray-400">
-                    {locale === 'es' ? 'No disponible' : 'Not available'}
-                  </span>
-                ) : (
-                  <span className="text-gray-400">-</span>
-                )}
-              </div>
-            )}
 
             {/* Badge de testing */}
             {isTest && (
@@ -175,73 +218,49 @@ export default function ProductCard({
               {productData.subtitle}
             </p>
             
-            {/* Spacer para empujar el botón hacia abajo */}
+            {/* Spacer para empujar el selector y botón hacia abajo */}
             <div className="flex-grow"></div>
             
-            {/* Botón de agregar al carrito */}
-            {isSanityProduct && !hasPricing ? (
-              <button
-                disabled
-                className="w-full px-4 py-2 bg-yellow-200 text-yellow-800 rounded-md cursor-not-allowed"
-              >
-                {locale === 'es' ? 'Precios no configurados' : 'Prices not configured'}
-              </button>
-            ) : isSanityProduct && region && region.isSupported && isAvailableInRegion ? (
-              <AddToCartButton
-                product={productData}
-                locale={locale}
-                size="sm"
-                className="w-full"
-              />
-            ) : isSanityProduct ? (
-              <button
-                disabled
-                className="w-full px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
-              >
-                {locale === 'es' ? 'No disponible' : 'Not available'}
-              </button>
+            {/* Mostrar loading mientras se cargan los tamaños */}
+            {isSanityProduct && hasGlobalPricing && !sizesLoaded ? (
+              <div className="mb-4 flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-stone-600"></div>
+              </div>
             ) : (
-              <AddToCartButton
-                product={productData}
-                locale={locale}
-                size="sm"
-                className="w-full"
-              />
-            )}
-            
-            {/* Mensajes informativos (solo para SanityProduct) */}
-            {isSanityProduct && (
               <>
-                {!hasPricing && (
-                  <div className="mt-2 text-xs text-yellow-600 text-center">
-                    <span>
-                      {locale === 'es' ? 'Configure los precios en Sanity' : 'Configure prices in Sanity'}
-                    </span>
+                {/* Selector de tamaño (siempre visible para SanityProduct con precios globales) */}
+                {isSanityProduct && hasGlobalPricing && sizesLoaded && (
+                  <div className="mb-4">
+                    <SizeSelector
+                      product={product as SanityProduct}
+                      selectedSize={selectedSize}
+                      onSizeChange={setSelectedSize}
+                      locale={locale as 'es' | 'en'}
+                      onCustomSizeContact={handleCustomSizeContact}
+                      pricing={pricing}
+                    />
                   </div>
                 )}
                 
-                {hasPricing && region && region.isSupported && isAvailableInRegion && (
-                  <div className="mt-2 text-xs text-gray-500 text-center">
-                    <span>
-                      {locale === 'es' ? 'Disponible en' : 'Available in'} {region.country}
-                    </span>
-                  </div>
-                )}
-                
-                {hasPricing && region && region.isSupported && !isAvailableInRegion && (
-                  <div className="mt-2 text-xs text-orange-600 text-center">
-                    <span>
-                      {locale === 'es' ? 'No disponible en tu región' : 'Not available in your region'}
-                    </span>
-                  </div>
-                )}
-                
-                {hasPricing && !loading && (!region || !region.isSupported) && (
-                  <div className="mt-2 text-xs text-orange-600 text-center">
-                    <span>
-                      {locale === 'es' ? 'Solo en Latinoamérica' : 'Latin America only'}
-                    </span>
-                  </div>
+                {/* Botón de agregar al carrito */}
+                {isSanityProduct ? (
+                  hasGlobalPricing && sizesLoaded ? (
+                    <AddToCartButton
+                      product={productData}
+                      selectedSize={selectedSize}
+                      locale={locale}
+                      size="sm"
+                      className="w-full"
+                    />
+                  ) : null
+                ) : (
+                  <AddToCartButton
+                    product={productData}
+                    selectedSize={selectedSize || '15x21'}
+                    locale={locale}
+                    size="sm"
+                    className="w-full"
+                  />
                 )}
               </>
             )}
@@ -256,6 +275,7 @@ export default function ProductCard({
           onClose={() => setShowSlider(false)}
         />
       )}
+
     </>
   );
 }

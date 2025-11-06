@@ -1,21 +1,53 @@
 "use client";
 
-import { useState } from "react";
-import { useScopedI18n } from "@/locales/client";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { useScopedI18n, useCurrentLocale } from "@/locales/client";
 
 interface FormData {
   name: string;
   email: string;
   message: string;
+  subject?: string;
 }
 
 const ContactForm: React.FC = () => {
   const t = useScopedI18n("contact");
+  const locale = useCurrentLocale() as 'es' | 'en';
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
     message: "",
+    subject: "",
   });
+
+  // Leer parámetros de la URL y prellenar el formulario
+  useEffect(() => {
+    const subject = searchParams.get("subject");
+    const productType = searchParams.get("productType");
+    const productName = searchParams.get("productName");
+
+    if (subject && productName) {
+      // Si viene desde una solicitud de tamaño personalizado, prellenar el mensaje
+      const customMessage = locale === 'es'
+        ? `Hola,\n\nMe gustaría solicitar la ${productType === 'photos' ? 'foto' : 'postal'} "${productName}" en un tamaño personalizado.\n\nPor favor, proporciona los detalles del tamaño que deseas y cualquier otra información relevante:`
+        : `Hello,\n\nI would like to request the ${productType === 'photos' ? 'photo' : 'postcard'} "${productName}" in a custom size.\n\nPlease provide the details of the size you want and any other relevant information:`;
+      
+      setFormData((prev) => ({
+        ...prev,
+        subject: subject,
+        message: customMessage,
+      }));
+    } else if (subject) {
+      // Si solo hay asunto, usarlo como mensaje inicial
+      setFormData((prev) => ({
+        ...prev,
+        subject: subject,
+        message: subject,
+      }));
+    }
+  }, [searchParams, t, locale]);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -53,14 +85,19 @@ const ContactForm: React.FC = () => {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          subject: formData.subject || undefined,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send message");
 
       setSuccess(true);
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ name: "", email: "", message: "", subject: "" });
     } catch (err) {
       setError(err instanceof Error ? err.message : t("error"));
     } finally {

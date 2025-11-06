@@ -9,7 +9,9 @@ import { PaymentResultModal } from '@/components/payment/PaymentResultModal';
 import { Button } from '@/app/[locale]/components/ui/button';
 import { Card } from '@/app/[locale]/components/ui/card';
 import { ArrowLeft, ShoppingCart } from 'lucide-react';
-import { getProductPrice } from '@/lib/payment/config';
+import { getSizePricing, getPriceUSDForSize } from '@/lib/sanity-pricing';
+import { convertUSDToLocal } from '@/lib/currency-converter';
+import type { ProductSize } from '@/contexts/CartContext';
 
 interface CheckoutPageProps {
   locale: string;
@@ -19,10 +21,9 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
   const router = useRouter();
   const { items: cart, getTotalItems, isEmpty, getTotals } = useCart();
   const { region, loading: regionLoading } = useRegion();
-  
-  // Calcular totales
-  const totals = getTotals();
-  const total = totals?.total || 0;
+  const [itemPrices, setItemPrices] = useState<Record<string, number>>({});
+  const [loadingPrices, setLoadingPrices] = useState(true);
+  const [total, setTotal] = useState(0);
   
   // Estado para el modal de resultado
   const [showResultModal, setShowResultModal] = useState(false);
@@ -37,6 +38,73 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
   });
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  // Cargar precios convertidos
+  useEffect(() => {
+    const loadPrices = async () => {
+      if (!region || !region.isSupported || cart.length === 0) {
+        setLoadingPrices(false);
+        return;
+      }
+
+      setLoadingPrices(true);
+      const priceMap: Record<string, number> = {};
+
+      try {
+        const pricing = await getSizePricing();
+        
+        if (pricing) {
+          for (const item of cart) {
+            if (item.size === 'custom') {
+              priceMap[`${item.id}_${item.size}`] = 0;
+              continue;
+            }
+
+            try {
+              const priceUSD = getPriceUSDForSize(pricing, item.size);
+              if (priceUSD > 0) {
+                const converted = await convertUSDToLocal(
+                  priceUSD,
+                  region.currency,
+                  region.country
+                );
+                priceMap[`${item.id}_${item.size}`] = converted;
+              } else {
+                priceMap[`${item.id}_${item.size}`] = 0;
+              }
+            } catch (error) {
+              console.error(`Error converting price for item ${item.id}:`, error);
+              priceMap[`${item.id}_${item.size}`] = 0;
+            }
+          }
+
+          // Calcular total
+          const subtotal = cart.reduce((sum, item) => {
+            const price = priceMap[`${item.id}_${item.size}`] || 0;
+            return sum + (price * item.quantity);
+          }, 0);
+          setTotal(subtotal);
+        }
+      } catch (error) {
+        console.error('Error loading pricing:', error);
+      }
+
+      setItemPrices(priceMap);
+      setLoadingPrices(false);
+    };
+
+    loadPrices();
+  }, [cart, region]);
+
+  const getSizeLabel = (size: ProductSize): string => {
+    const labels: Record<string, { es: string; en: string }> = {
+      '15x21': { es: '15x21 cm', en: '15x21 cm' },
+      '20x30': { es: '20x30 cm', en: '20x30 cm' },
+      '30x45': { es: '30x45 cm', en: '30x45 cm' },
+      'custom': { es: 'Personalizado', en: 'Custom' }
+    };
+    return labels[size]?.[locale as 'es' | 'en'] || size;
+  };
 
   // Cargar datos del cliente desde localStorage si están disponibles
   useEffect(() => {
@@ -224,28 +292,44 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
               {getText("reviewOrder")}
             </h2>
             <div className="space-y-4">
-              {cart.map((item) => {
-                const itemPrice = region ? getProductPrice(item.productType, region.currency, item.pricing) : 0;
-                return (
-                  <div key={item.id} className="flex gap-4">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-20 h-20 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-medium">{item.title}</h3>
-                      <p className="text-sm text-gray-600">{item.subtitle}</p>
-                      <p className="text-sm">
-                        Cantidad: {item.quantity} × {new Intl.NumberFormat('es-AR', {
-                          style: 'currency',
-                          currency: region?.currency || 'ARS',
-                        }).format(itemPrice)}
-                      </p>
+              {loadingPrices ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-20 bg-gray-200 rounded"></div>
+                  <div className="h-20 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                cart.map((item) => {
+                  const itemPrice = itemPrices[`${item.id}_${item.size}`] || 0;
+                  return (
+                    <div key={`${item.id}_${item.size}`} className="flex gap-4">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-20 h-20 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.title}</h3>
+                        <p className="text-sm text-gray-600">{item.subtitle}</p>
+                        <p className="text-sm text-gray-500">{getSizeLabel(item.size)}</p>
+                        <p className="text-sm">
+                          {locale === 'es' ? 'Cantidad' : 'Quantity'}: {item.quantity}
+                          {itemPrice > 0 && (
+                            <> × {new Intl.NumberFormat('es-AR', {
+                              style: 'currency',
+                              currency: region?.currency || 'ARS',
+                            }).format(itemPrice)}</>
+                          )}
+                        </p>
+                        {item.size === 'custom' && (
+                          <p className="text-xs text-gray-500 italic">
+                            {locale === 'es' ? 'Precio a cotizar' : 'Price to be quoted'}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total:</span>

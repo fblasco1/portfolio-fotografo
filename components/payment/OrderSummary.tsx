@@ -1,8 +1,12 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { useRegion } from '@/contexts/RegionContext';
-import { calculateTotalPrice, getProductPrice } from '@/lib/payment/config';
+import { calculateTotalPrice } from '@/lib/payment/config';
 import { formatPrice } from '@/lib/payment/region-detector';
+import { getSizePricing, getPriceUSDForSize } from '@/lib/sanity-pricing';
+import { convertUSDToLocal } from '@/lib/currency-converter';
+import type { ProductSize } from '@/contexts/CartContext';
 
 interface CartItem {
   id: string;
@@ -11,7 +15,7 @@ interface CartItem {
   image: string;
   productType: 'photos' | 'postcards';
   quantity: number;
-  pricing?: any; // Precios por región desde Sanity
+  size: ProductSize;
 }
 
 interface OrderSummaryProps {
@@ -33,8 +37,62 @@ export default function OrderSummary({
 }: OrderSummaryProps) {
   const { region: hookRegion, loading } = useRegion();
   const region = propRegion || hookRegion;
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [loadingPrices, setLoadingPrices] = useState(true);
 
-  if (loading && !propRegion) {
+  // Cargar precios convertidos
+  useEffect(() => {
+    const loadPrices = async () => {
+      if (!region || !region.isSupported) {
+        setLoadingPrices(false);
+        return;
+      }
+
+      setLoadingPrices(true);
+      const priceMap: Record<string, number> = {};
+
+      try {
+        const pricing = await getSizePricing();
+        
+        if (pricing) {
+          const { convertUSDToLocal } = await import('@/lib/currency-converter');
+          
+          for (const item of items) {
+            if (item.size === 'custom') {
+              priceMap[item.id] = 0;
+              continue;
+            }
+
+            try {
+              const priceUSD = getPriceUSDForSize(pricing, item.size);
+              if (priceUSD > 0) {
+                const converted = await convertUSDToLocal(
+                  priceUSD,
+                  region.currency,
+                  region.country
+                );
+                priceMap[item.id] = converted;
+              } else {
+                priceMap[item.id] = 0;
+              }
+            } catch (error) {
+              console.error(`Error converting price for item ${item.id}:`, error);
+              priceMap[item.id] = 0;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading pricing:', error);
+      }
+
+      setPrices(priceMap);
+      setLoadingPrices(false);
+    };
+
+    loadPrices();
+  }, [items, region]);
+
+  if ((loading || loadingPrices) && !propRegion) {
     return (
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="animate-pulse space-y-4">
@@ -69,9 +127,19 @@ export default function OrderSummary({
     );
   }
 
+  const getSizeLabel = (size: ProductSize): string => {
+    const labels: Record<string, { es: string; en: string }> = {
+      '15x21': { es: '15x21 cm', en: '15x21 cm' },
+      '20x30': { es: '20x30 cm', en: '20x30 cm' },
+      '30x45': { es: '30x45 cm', en: '30x45 cm' },
+      'custom': { es: 'Personalizado', en: 'Custom' }
+    };
+    return labels[size]?.[locale as 'es' | 'en'] || size;
+  };
+
   // Calcular totales
   const subtotal = items.reduce((total, item) => {
-    const price = region ? getProductPrice(item.productType, region.currency, item.pricing) : 0;
+    const price = prices[item.id] || 0;
     return total + (price * item.quantity);
   }, 0);
 
@@ -86,7 +154,7 @@ export default function OrderSummary({
       {/* Items */}
       <div className="space-y-3">
         {items.map((item) => {
-          const price = region ? getProductPrice(item.productType, region.currency, item.pricing) : 0;
+          const price = prices[item.id] || 0;
           return (
             <div key={item.id} className="flex items-center space-x-3">
               <img
@@ -102,16 +170,24 @@ export default function OrderSummary({
                   {item.subtitle}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {locale === 'es' ? 'Cantidad' : 'Quantity'}: {item.quantity}
+                  {getSizeLabel(item.size)} • {locale === 'es' ? 'Cantidad' : 'Quantity'}: {item.quantity}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
-                  {region ? formatPrice(price * item.quantity, region.currency, region.symbol) : `$${price * item.quantity}`}
+                  {price > 0 ? (
+                    formatPrice(price * item.quantity, region.currency, region.symbol)
+                  ) : item.size === 'custom' ? (
+                    <span className="text-gray-500">{locale === 'es' ? 'Cotizar' : 'Quote'}</span>
+                  ) : (
+                    '-'
+                  )}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {region ? formatPrice(price, region.currency, region.symbol) : `$${price}`} c/u
-                </p>
+                {price > 0 && (
+                  <p className="text-xs text-gray-500">
+                    {formatPrice(price, region.currency, region.symbol)} c/u
+                  </p>
+                )}
               </div>
             </div>
           );

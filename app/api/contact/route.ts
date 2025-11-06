@@ -4,7 +4,7 @@ import { Resend } from "resend"
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function POST(request: Request) {
-    const { name, email, message } = await request.json()
+    const { name, email, message, subject } = await request.json()
 
     if (!resend) {
         console.warn('⚠️ RESEND_API_KEY no configurada, saltando envío de email de contacto');
@@ -12,10 +12,13 @@ export async function POST(request: Request) {
     }
 
     try {
+        // Usar el asunto proporcionado o el predeterminado
+        const emailSubject = subject || "Contacto desde el sitio web";
+        
         await resend.emails.send({
             from: "Contacto <noreply@contacto.cristianpirovano.com>",
             to: "cristianpirovanoportfolio@gmail.com",
-            subject: "Contacto desde el sitio web",
+            subject: emailSubject,
             html: `
                 <p><strong>Nombre:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useRegion } from '@/contexts/RegionContext';
+import type { ProductSize } from '@/contexts/CartContext';
 
 interface AddToCartButtonProps {
   product: {
@@ -11,8 +12,8 @@ interface AddToCartButtonProps {
     subtitle: string;
     image: string;
     productType: 'photos' | 'postcards';
-    pricing?: any; // Precios por región desde Sanity
   };
+  selectedSize: ProductSize | null;
   locale: string;
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
@@ -21,6 +22,7 @@ interface AddToCartButtonProps {
 
 export default function AddToCartButton({ 
   product, 
+  selectedSize,
   locale, 
   className = '',
   variant = 'default',
@@ -31,9 +33,11 @@ export default function AddToCartButton({
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const isInCart = hasItem(product.id);
-  const quantity = getItemQuantity(product.id);
-  const isDisabled = loading || !region || !region.isSupported;
+  // Validar que haya un tamaño seleccionado y que no sea 'custom'
+  const isValidSize = selectedSize !== null && selectedSize !== 'custom';
+  const isInCart = isValidSize ? hasItem(product.id, selectedSize) : false;
+  const quantity = isValidSize ? getItemQuantity(product.id, selectedSize) : 0;
+  const isDisabled = loading || !region || !region.isSupported || !isValidSize;
 
   const handleAddToCart = async () => {
     if (isDisabled) {
@@ -42,7 +46,19 @@ export default function AddToCartButton({
           ? 'Región no soportada. Por favor selecciona un país de Latinoamérica.'
           : 'Unsupported region. Please select a Latin American country.'
         );
+        return;
       }
+      if (!selectedSize || selectedSize === 'custom') {
+        alert(locale === 'es'
+          ? 'Por favor selecciona un tamaño válido.'
+          : 'Please select a valid size.'
+        );
+        return;
+      }
+      return;
+    }
+
+    if (!selectedSize || selectedSize === 'custom') {
       return;
     }
 
@@ -52,7 +68,11 @@ export default function AddToCartButton({
       // Simular delay para mejor UX
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      addItem(product);
+      // Agregar producto con tamaño al carrito
+      addItem({
+        ...product,
+        size: selectedSize
+      });
       setShowSuccess(true);
       
       // Ocultar mensaje de éxito después de 2 segundos

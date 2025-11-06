@@ -8,11 +8,10 @@ import {
   DrawerTitle,
 } from "../../components/ui/drawer";
 import { Button } from "../../components/ui/button";
-import { ShoppingCart, X, Plus, Minus } from "lucide-react";
+import { ShoppingCart, X } from "lucide-react";
 import { useRegion } from "@/contexts/RegionContext";
-import { useCart } from "@/contexts/CartContext";
-import { formatPrice } from "@/lib/payment/region-detector";
-import { getProductPrice } from "@/lib/payment/config";
+import { useCart, type ProductSize } from "@/contexts/CartContext";
+import CartItemList from "./CartItemList";
 
 interface CartProps {
   locale: string;
@@ -35,8 +34,13 @@ export default function Cart({
     getTotalItems
   } = useCart();
 
+  // Generar ID único para item (productId_size)
+  const generateItemId = (productId: string, size: ProductSize): string => {
+    return `${productId}_${size}`;
+  };
+
   const handleUpdateQuantity = (itemId: string, delta: number) => {
-    const item = cart.find(item => item.id === itemId);
+    const item = cart.find(item => generateItemId(item.id, item.size) === itemId);
     if (item) {
       const newQuantity = item.quantity + delta;
       if (newQuantity <= 0) {
@@ -45,6 +49,16 @@ export default function Cart({
         updateQuantity(itemId, newQuantity);
       }
     }
+  };
+
+  const getSizeLabel = (size: ProductSize): string => {
+    const labels: Record<string, { es: string; en: string }> = {
+      '15x21': { es: '15x21 cm', en: '15x21 cm' },
+      '20x30': { es: '20x30 cm', en: '20x30 cm' },
+      '30x45': { es: '30x45 cm', en: '30x45 cm' },
+      'custom': { es: 'Personalizado', en: 'Custom' }
+    };
+    return labels[size]?.[locale as 'es' | 'en'] || size;
   };
 
   // Textos internacionalizados
@@ -152,60 +166,15 @@ export default function Cart({
           ) : (
             <div className="space-y-4">
               {/* Items del carrito */}
-              <ul className="space-y-3">
-                {cart.map((item, index) => {
-                  const price = region && region.currency && item.productType 
-                    ? getProductPrice(item.productType, region.currency, item.pricing) 
-                    : 0;
-                  
-                  return (
-                    <li
-                      key={index}
-                      className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg"
-                    >
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-16 h-16 object-cover rounded-md"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 truncate">
-                          {item.title}
-                        </div>
-                        <div className="text-sm text-gray-600 truncate">
-                          {item.subtitle}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {region ? formatPrice(price, region.currency, region.symbol) : `$${price}`} x {item.quantity}
-                        </div>
-                      </div>
-                      
-                      {/* Controles de cantidad */}
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUpdateQuantity(item.id, -1)}
-                          className="w-8 h-8 p-0"
-                        >
-                          <Minus size={14} />
-                        </Button>
-                        <span className="w-8 text-center font-medium">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUpdateQuantity(item.id, 1)}
-                          className="w-8 h-8 p-0"
-                        >
-                          <Plus size={14} />
-                        </Button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <CartItemList 
+                items={cart}
+                region={region}
+                locale={locale}
+                onUpdateQuantity={handleUpdateQuantity}
+                onRemoveItem={removeItem}
+                generateItemId={generateItemId}
+                getSizeLabel={getSizeLabel}
+              />
 
               {/* Botón de finalizar compra */}
               <div className="pt-4 border-t">

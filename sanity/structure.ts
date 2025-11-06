@@ -64,9 +64,25 @@ export const structure = (S: any) => {
           .title('Configuración')
           .icon(() => '⚙️')
           .child(
-            S.document()
-              .schemaType('settings')
-              .documentId('settings')
+            S.list()
+              .title('Configuración')
+              .items([
+                S.listItem()
+                  .title('Configuración General')
+                  .child(
+                    S.document()
+                      .schemaType('settings')
+                      .documentId('settings')
+                  ),
+                S.listItem()
+                  .title('Precios por Tamaño')
+                  .icon(() => '💰')
+                  .child(
+                    S.document()
+                      .schemaType('sizePricing')
+                      .documentId('sizePricing')
+                  )
+              ])
           )
       ])
   } catch (error) {

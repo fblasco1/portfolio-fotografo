@@ -100,12 +100,17 @@ export function calculateTotalPrice(
  * Obtiene el precio de un producto en la moneda especificada
  * @param productType Tipo de producto ('photos' | 'postcards')
  * @param currency Moneda del producto
- * @param productPricing Información de precios por región desde Sanity (opcional)
+ * @param productPricing Información de precios por tamaño desde Sanity (opcional)
+ * @param size Tamaño del producto (opcional, para nuevos productos)
+ * @param countryCode Código de país para conversión (opcional)
+ * @deprecated Usar getProductPriceForSize de sanity-products.ts en su lugar
  */
 export function getProductPrice(
   productType: 'photos' | 'postcards', 
   currency: string, 
-  productPricing?: any
+  productPricing?: any,
+  size?: string,
+  countryCode?: string
 ): number {
   // Verificaciones de seguridad
   if (!productType || !currency) {
@@ -113,28 +118,17 @@ export function getProductPrice(
     return 0;
   }
   
-  // Si tenemos precios por región desde Sanity, los usamos
-  if (productPricing) {
-    const regionMap: Record<string, string> = {
-      'ARS': 'argentina',
-      'BRL': 'brazil', 
-      'CLP': 'chile',
-      'COP': 'colombia',
-      'MXN': 'mexico',
-      'PEN': 'peru',
-      'UYU': 'uruguay'
-    };
-
-    const region = regionMap[currency];
-    if (region && productPricing[region]) {
-      const regionPricing = productPricing[region];
-      if (regionPricing.enabled && regionPricing.price > 0) {
-        return regionPricing.price;
-      }
+  // Si tenemos precios por tamaño desde Sanity, intentar usar conversión
+  if (productPricing && productPricing.sizes && size) {
+    const sizePricing = productPricing.sizes[size];
+    if (sizePricing && sizePricing.enabled && sizePricing.priceUSD > 0) {
+      // Esta función es síncrona, así que retornamos el precio en USD por ahora
+      // El componente que la use debería manejar la conversión asíncrona
+      return sizePricing.priceUSD;
     }
   }
   
-  // Fallback a precios por defecto
+  // Fallback a precios por defecto (compatibilidad temporal)
   const prices = DEFAULT_PRICE_CONFIG[productType];
   if (!prices) {
     console.warn('getProductPrice: productType no encontrado en DEFAULT_PRICE_CONFIG', { productType });

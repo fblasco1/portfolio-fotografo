@@ -62,173 +62,6 @@ export default {
       ]
     },
     {
-      name: 'pricing',
-      title: 'Precios por Región',
-      type: 'object',
-      description: 'Precios específicos para cada país/moneda',
-      fields: [
-        {
-          name: 'argentina',
-          title: 'Argentina (ARS)',
-          type: 'object',
-          fields: [
-            { 
-              name: 'price', 
-              title: 'Precio en ARS', 
-              type: 'number', 
-              validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-              description: 'Precio en pesos argentinos'
-            },
-            { 
-              name: 'enabled', 
-              title: 'Disponible en Argentina', 
-              type: 'boolean', 
-              initialValue: true 
-            }
-          ]
-        },
-        {
-          name: 'brazil',
-          title: 'Brasil (BRL)',
-          type: 'object',
-          fields: [
-            { 
-              name: 'price', 
-              title: 'Precio en BRL', 
-              type: 'number', 
-              validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-              description: 'Precio en reales brasileños'
-            },
-            { 
-              name: 'enabled', 
-              title: 'Disponible en Brasil', 
-              type: 'boolean', 
-              initialValue: true 
-            }
-          ]
-        },
-        {
-          name: 'chile',
-          title: 'Chile (CLP)',
-          type: 'object',
-          fields: [
-            { 
-              name: 'price', 
-              title: 'Precio en CLP', 
-              type: 'number', 
-              validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-              description: 'Precio en pesos chilenos'
-            },
-            { 
-              name: 'enabled', 
-              title: 'Disponible en Chile', 
-              type: 'boolean', 
-              initialValue: true 
-            }
-          ]
-        },
-        {
-          name: 'colombia',
-          title: 'Colombia (COP)',
-          type: 'object',
-          fields: [
-            { 
-              name: 'price', 
-              title: 'Precio en COP', 
-              type: 'number', 
-              validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-              description: 'Precio en pesos colombianos'
-            },
-            { 
-              name: 'enabled', 
-              title: 'Disponible en Colombia', 
-              type: 'boolean', 
-              initialValue: true 
-            }
-          ]
-        },
-        {
-          name: 'mexico',
-          title: 'México (MXN)',
-          type: 'object',
-          fields: [
-            { 
-              name: 'price', 
-              title: 'Precio en MXN', 
-              type: 'number', 
-              validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-              description: 'Precio en pesos mexicanos'
-            },
-            { 
-              name: 'enabled', 
-              title: 'Disponible en México', 
-              type: 'boolean', 
-              initialValue: true 
-            }
-          ]
-        },
-        {
-          name: 'peru',
-          title: 'Perú (PEN)',
-          type: 'object',
-          fields: [
-            { 
-              name: 'price', 
-              title: 'Precio en PEN', 
-              type: 'number', 
-              validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-              description: 'Precio en soles peruanos'
-            },
-            { 
-              name: 'enabled', 
-              title: 'Disponible en Perú', 
-              type: 'boolean', 
-              initialValue: true 
-            }
-          ]
-        },
-        {
-          name: 'uruguay',
-          title: 'Uruguay (UYU)',
-          type: 'object',
-          fields: [
-            { 
-              name: 'price', 
-              title: 'Precio en UYU', 
-              type: 'number', 
-              validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-              description: 'Precio en pesos uruguayos'
-            },
-            { 
-              name: 'enabled', 
-              title: 'Disponible en Uruguay', 
-              type: 'boolean', 
-              initialValue: true 
-            }
-          ]
-        }
-      ],
-      validation: (Rule: any) => Rule.custom((pricing: any) => {
-        if (!pricing) return 'Los precios son obligatorios';
-        
-        try {
-          // Verificar que al menos una región tenga precio
-          const regions = ['argentina', 'brazil', 'chile', 'colombia', 'mexico', 'peru', 'uruguay'];
-          const hasAtLeastOnePrice = regions.some(region => 
-            pricing[region]?.enabled && pricing[region].price > 0
-          );
-          
-          if (!hasAtLeastOnePrice) {
-            return 'Debe configurar al menos un precio para una región habilitada';
-          }
-          
-          return true;
-        } catch (error) {
-          return 'Error en la validación de precios';
-        }
-      })
-    },
-    {
       name: 'content',
       title: 'Contenido',
       type: 'object',
@@ -320,17 +153,10 @@ export default {
       media: 'image',
       isAvailable: 'isAvailable',
       featured: 'metadata.featured',
-      argentinaPrice: 'pricing.argentina.price',
-      brazilPrice: 'pricing.brazil.price',
-      mexicoPrice: 'pricing.mexico.price'
     },
     prepare(selection: any) {
       try {
-        const { title, category, media, isAvailable, featured, argentinaPrice, brazilPrice, mexicoPrice } = selection || {}
-        const prices = [];
-        if (argentinaPrice) prices.push(`ARS: ${argentinaPrice}`);
-        if (brazilPrice) prices.push(`BRL: ${brazilPrice}`);
-        if (mexicoPrice) prices.push(`MXN: ${mexicoPrice}`);
+        const { title, category, media, isAvailable, featured } = selection || {}
         
         const status = [];
         if (featured) status.push('⭐ Destacado');
@@ -338,7 +164,7 @@ export default {
         
         return {
           title: title || 'Sin título',
-          subtitle: `${category === 'photo' ? 'Fotografía' : 'Postal'} ${prices.length > 0 ? `- ${prices.join(', ')}` : ''} ${status.length > 0 ? `- ${status.join(' ')}` : ''}`,
+          subtitle: `${category === 'photo' ? 'Fotografía' : 'Postal'} ${status.length > 0 ? `- ${status.join(' ')}` : ''}`,
           media: media
         }
       } catch (error) {

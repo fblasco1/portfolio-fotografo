@@ -24,36 +24,6 @@ export interface SanityProduct {
     es?: string;
     en?: string;
   };
-  pricing?: {
-    argentina?: {
-      price: number;
-      enabled: boolean;
-    };
-    brazil?: {
-      price: number;
-      enabled: boolean;
-    };
-    chile?: {
-      price: number;
-      enabled: boolean;
-    };
-    colombia?: {
-      price: number;
-      enabled: boolean;
-    };
-    mexico?: {
-      price: number;
-      enabled: boolean;
-    };
-    peru?: {
-      price: number;
-      enabled: boolean;
-    };
-    uruguay?: {
-      price: number;
-      enabled: boolean;
-    };
-  };
   isAvailable: boolean;
   order: number;
   tags?: string[];

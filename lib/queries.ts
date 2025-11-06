@@ -23,42 +23,20 @@ export const productsQuery = `
     _id,
     _type,
     category,
-    image,
+    image {
+      asset-> {
+        _id,
+        url,
+        metadata {
+          dimensions
+        }
+      }
+    },
     order,
     isAvailable,
     description {
       es,
       en
-    },
-    pricing {
-      argentina {
-        price,
-        enabled
-      },
-      brazil {
-        price,
-        enabled
-      },
-      chile {
-        price,
-        enabled
-      },
-      colombia {
-        price,
-        enabled
-      },
-      mexico {
-        price,
-        enabled
-      },
-      peru {
-        price,
-        enabled
-      },
-      uruguay {
-        price,
-        enabled
-      }
     },
     content {
       es {

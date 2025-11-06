@@ -5,6 +5,8 @@ import { useRegion } from './RegionContext';
 import { getProductPrice } from '@/lib/payment/config';
 import { useCurrentLocale } from '@/locales/client';
 
+export type ProductSize = '15x21' | '20x30' | '30x45' | 'custom';
+
 interface CartItem {
   id: string;
   title: string;
@@ -12,7 +14,7 @@ interface CartItem {
   image: string;
   productType: 'photos' | 'postcards';
   quantity: number;
-  pricing?: any; // Precios por región desde Sanity
+  size: ProductSize;
 }
 
 interface CartTotals {
@@ -187,14 +189,20 @@ export function CartProvider({ children }: CartProviderProps) {
     }
   }, [items, isInitialized]);
 
+  // Generar ID único para item del carrito (productId + size)
+  const generateCartItemId = (productId: string, size: ProductSize): string => {
+    return `${productId}_${size}`;
+  };
+
   // Agregar item al carrito
   const addItem = (item: Omit<CartItem, 'quantity'>) => {
     setItems(currentItems => {
-      const existingItem = currentItems.find(i => i.id === item.id);
+      const itemId = generateCartItemId(item.id, item.size);
+      const existingItem = currentItems.find(i => generateCartItemId(i.id, i.size) === itemId);
       
       if (existingItem) {
         return currentItems.map(i =>
-          i.id === item.id
+          generateCartItemId(i.id, i.size) === itemId
             ? { ...i, quantity: i.quantity + 1 }
             : i
         );
@@ -204,12 +212,14 @@ export function CartProvider({ children }: CartProviderProps) {
     });
   };
 
-  // Remover item del carrito
+  // Remover item del carrito (itemId es el ID generado: productId_size)
   const removeItem = (itemId: string) => {
-    setItems(currentItems => currentItems.filter(item => item.id !== itemId));
+    setItems(currentItems => currentItems.filter(item => 
+      generateCartItemId(item.id, item.size) !== itemId
+    ));
   };
 
-  // Actualizar cantidad de un item
+  // Actualizar cantidad de un item (itemId es el ID generado: productId_size)
   const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
       removeItem(itemId);
@@ -218,7 +228,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
     setItems(currentItems =>
       currentItems.map(item =>
-        item.id === itemId
+        generateCartItemId(item.id, item.size) === itemId
           ? { ...item, quantity }
           : item
       )
@@ -243,9 +253,12 @@ export function CartProvider({ children }: CartProviderProps) {
       return null;
     }
 
+    // Calcular subtotal de forma asíncrona (pero retornamos sincrónicamente por ahora)
+    // En el componente que use getTotals, necesitará obtener el precio convertido
     const subtotal = items.reduce((total, item) => {
-      const price = getProductPrice(item.productType, region.currency, item.pricing);
-      return total + (price * item.quantity);
+      // El precio se calculará en el componente que muestra el total
+      // Aquí solo retornamos 0 como placeholder, el cálculo real se hace en el componente
+      return total;
     }, 0);
 
     // Solo subtotal - envío e IVA se acordarán con el vendedor
@@ -293,18 +306,20 @@ export function CartProvider({ children }: CartProviderProps) {
   // Verificar si el carrito está vacío
   const isEmpty = items.length === 0;
 
-  // Obtener item por ID
+  // Obtener item por ID (itemId es el ID generado: productId_size)
   const getItem = (itemId: string) => {
-    return items.find(item => item.id === itemId);
+    return items.find(item => generateCartItemId(item.id, item.size) === itemId);
   };
 
-  // Verificar si un item está en el carrito
-  const hasItem = (itemId: string) => {
-    return items.some(item => item.id === itemId);
+  // Verificar si un item está en el carrito (por productId y size)
+  const hasItem = (productId: string, size: ProductSize) => {
+    const itemId = generateCartItemId(productId, size);
+    return items.some(item => generateCartItemId(item.id, item.size) === itemId);
   };
 
-  // Obtener cantidad de un item específico
-  const getItemQuantity = (itemId: string) => {
+  // Obtener cantidad de un item específico (por productId y size)
+  const getItemQuantity = (productId: string, size: ProductSize) => {
+    const itemId = generateCartItemId(productId, size);
     const item = getItem(itemId);
     return item ? item.quantity : 0;
   };
