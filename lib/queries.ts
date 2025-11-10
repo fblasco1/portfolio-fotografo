@@ -120,6 +120,14 @@ export const documentariesQuery = `
 export const settingsQuery = `
   *[_type == "settings"][0] {
     homeSlideshow,
+    favicon {
+      asset-> {
+        url,
+        metadata {
+          dimensions
+        }
+      }
+    },
     content {
       es {
         siteTitle,

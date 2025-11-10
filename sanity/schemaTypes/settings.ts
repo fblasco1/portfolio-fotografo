@@ -5,6 +5,15 @@ export default {
   fields: [
     { name: 'homeSlideshow', title: 'Imágenes del slideshow', type: 'array', of: [{ type: 'image' }], validation: (Rule: any) => Rule.max(12), description: 'Imágenes para el slideshow de la página principal (máximo 12)' },
     {
+      name: 'favicon',
+      title: 'Icono del sitio (Favicon)',
+      type: 'image',
+      options: {
+        hotspot: true
+      },
+      description: 'Icono que aparecerá en la pestaña del navegador. Si se deja vacío, se usará la foto de la biografía por defecto.'
+    },
+    {
       name: 'content',
       title: 'Contenido',
       type: 'object',

@@ -4,18 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Card, CardContent, CardTitle } from "@/app/[locale]/components/ui/card";
-import { Eye } from "lucide-react";
 import { AddToCartButton } from "@/components/payment";
 import { useRegion } from "@/contexts/RegionContext";
 import { urlFor } from "@/lib/sanity";
 import { isTestProduct } from "@/lib/sanity-products";
 import { getAvailableSizes, type SizePricing } from "@/lib/sanity-pricing";
 import SizeSelector from "@/components/product/SizeSelector";
-import StaticPhotoSlider from "./PhotoSlider";
+import FullscreenPhotoViewer from "./FullscreenPhotoViewer";
 import type { StoreItem, SanityProduct } from "@/app/types/store";
 import type { ProductSize } from "@/contexts/CartContext";
 
-// Función segura para obtener URL de imagen
+// Funciones seguras para obtener URL de imagen
 const getImageUrl = (image: any) => {
   try {
     // Si no hay imagen, usar placeholder
@@ -46,6 +45,32 @@ const getImageUrl = (image: any) => {
   }
 };
 
+const getHighResImageUrl = (image: any) => {
+  try {
+    if (!image || !image.asset) {
+      return "/placeholder.svg";
+    }
+
+    if (typeof image === "string") {
+      return image;
+    }
+
+    try {
+      const builder = (urlFor as any)(image);
+      if (builder && builder.url) {
+        return builder.url() || "/placeholder.svg";
+      }
+    } catch (urlError) {
+      console.warn("Error using urlFor for high resolution:", urlError);
+    }
+
+    return image.asset?.url || "/placeholder.svg";
+  } catch (error) {
+    console.warn("Error getting high resolution image URL:", error);
+    return "/placeholder.svg";
+  }
+};
+
 interface ProductCardProps {
   product: StoreItem | SanityProduct;
   t?: any;
@@ -64,7 +89,7 @@ export default function ProductCard({
   pricing: propPricing
 }: ProductCardProps) {
   const router = useRouter();
-  const { region, loading } = useRegion();
+  const { region } = useRegion();
   const [showSlider, setShowSlider] = useState(false);
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
 
@@ -72,11 +97,14 @@ export default function ProductCard({
   const isSanityProduct = '_id' in product;
   
   // Obtener datos del producto según el tipo
+  const previewImage = isSanityProduct ? getImageUrl(product.image) : (product as StoreItem).url;
+  const highResImage = isSanityProduct ? getHighResImageUrl(product.image) : (product as StoreItem).url;
+
   const productData = isSanityProduct ? {
     id: product._id,
     title: product.content?.[locale as keyof typeof product.content]?.title || product.content?.es?.title || 'Producto',
     subtitle: product.content?.[locale as keyof typeof product.content]?.subtitle || product.content?.es?.subtitle || 'Descripción del producto',
-    image: getImageUrl(product.image),
+    image: previewImage,
     productType: product.category as 'photos' | 'postcards'
   } : {
     id: product.id.toString(),
@@ -159,21 +187,19 @@ export default function ProductCard({
     router.push(`/${locale}/contact?${params.toString()}`);
   };
 
-  // Convertir el producto a formato compatible con PhotoSlider
   const photos = [{
-    id: isSanityProduct ? parseInt(product._id) : product.id,
-    url: productData.image,
+    url: highResImage,
     title: productData.title,
     description: productData.subtitle
   }];
 
   return (
     <>
-      <Card className="h-full">
+      <Card className="h-full overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
         <CardContent className="flex flex-col h-full p-0">
-          {/* Imagen con hover effect para abrir slider */}
+          {/* Imagen principal del producto */}
           <div 
-            className="relative w-full h-64 cursor-pointer group overflow-hidden bg-gray-100"
+            className="relative w-full h-48 sm:h-56 lg:h-64 cursor-pointer group overflow-hidden bg-black"
             onClick={() => setShowSlider(true)}
           >
             {productData.image ? (
@@ -181,14 +207,15 @@ export default function ProductCard({
                 src={productData.image}
                 alt={productData.title}
                 fill
-                className="object-contain transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 768px) 100vw, 480px"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-200">
                 <div className="text-center text-gray-500">
                   <div className="text-4xl mb-2">
-                    {product.category === 'photo' ? '📷' : '📮'}
+                    {productData.productType === 'photos' ? '📷' : '📮'}
                   </div>
                   <div className="text-sm font-medium">
                     {locale === 'es' ? 'Sin imagen' : 'No image'}
@@ -196,11 +223,6 @@ export default function ProductCard({
                 </div>
               </div>
             )}
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Eye size={24} className="text-white" />
-            </div>
-            
-
             {/* Badge de testing */}
             {isTest && (
               <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-xs font-semibold">
@@ -268,11 +290,14 @@ export default function ProductCard({
         </CardContent>
       </Card>
 
-      {/* Slider para ver imagen en alta resolución */}
       {showSlider && (
-        <StaticPhotoSlider
+        <FullscreenPhotoViewer
           photos={photos}
           onClose={() => setShowSlider(false)}
+          showNavigation={false}
+          showCounter={false}
+          viewerTitle={productData.title}
+          viewerSubtitle={productData.subtitle}
         />
       )}
 

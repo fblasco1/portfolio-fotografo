@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Folder } from "../../../types/gallery";
 import GalleryCard from "./GalleryCard";
-import StaticPhotoSlider from "./PhotoSlider";
+import FullscreenPhotoViewer from "./FullscreenPhotoViewer";
 
 interface PhotoGalleryProps {
   folders: Folder[];
@@ -24,9 +24,17 @@ export default function PhotoGallery({ folders }: PhotoGalleryProps) {
         ))}
       </div>
       {selectedFolder && (
-        <StaticPhotoSlider
-          photos={selectedFolder.photos}
+        <FullscreenPhotoViewer
+          photos={selectedFolder.photos.map((photo) => ({
+            url: photo.url,
+            title: photo.title || selectedFolder.title,
+            description: photo.description || selectedFolder.location,
+          }))}
           onClose={() => setSelectedFolder(null)}
+          viewerTitle={selectedFolder.title}
+          viewerSubtitle={selectedFolder.location}
+          showNavigation={selectedFolder.photos.length > 1}
+          showCounter={selectedFolder.photos.length > 1}
         />
       )}
     </div>
