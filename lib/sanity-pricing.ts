@@ -62,7 +62,7 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
 
   try {
     const query = `*[_type == "sizePricing"][0] {
-      photo: photoPricing {
+      "photo": photoPricing {
         size15x21 {
           priceUSD,
           enabled
@@ -76,7 +76,7 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
           enabled
         }
       },
-      postcard: postcardPricing {
+      "postcard": postcardPricing {
         size15x21 {
           priceUSD,
           enabled
