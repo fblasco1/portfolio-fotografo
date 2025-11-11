@@ -64,7 +64,8 @@ export default function OrderSummary({
             }
 
             try {
-              const priceUSD = getPriceUSDForSize(pricing, item.size);
+              const productType = item.productType === 'postcards' ? 'postcard' : 'photo';
+              const priceUSD = getPriceUSDForSize(pricing, item.size, { productType });
               if (priceUSD > 0) {
                 const converted = await convertUSDToLocal(
                   priceUSD,

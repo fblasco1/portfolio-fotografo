@@ -140,22 +140,32 @@ export default function ProductCard({
   // Calcular tamaños disponibles cuando tengamos pricing
   useEffect(() => {
     if (isSanityProduct) {
+      const productCategory = productData.productType === 'postcards' ? 'postcard' : 'photo';
+
       if (pricing) {
         // Si ya tenemos pricing, calcular tamaños sincrónicamente (rápido)
-        const sizes = getAvailableSizes(pricing);
+        const sizes = getAvailableSizes(pricing, { productType: productCategory });
         setAvailableSizes(sizes);
         setSizesLoaded(true);
-        
+
         // Auto-seleccionar primer tamaño disponible si no hay selección
         if (!selectedSize && sizes.length > 0) {
-          const firstStandardSize = sizes.find(size => size !== 'custom');
+          const firstStandardSize = sizes.find(size => size !== 'custom') ?? sizes[0];
           if (firstStandardSize) {
             setSelectedSize(firstStandardSize);
           }
+        } else if (selectedSize && !sizes.includes(selectedSize)) {
+          // Si el tamaño seleccionado ya no está disponible, seleccionar el primero disponible
+          const fallbackSize = sizes.find(size => size !== 'custom') ?? sizes[0] ?? null;
+          setSelectedSize(fallbackSize ?? null);
         }
       } else if (pricingLoaded && !pricing) {
-        // Si ya se cargó pero no hay pricing, solo mostrar custom
-        setAvailableSizes(['custom']);
+        // Si ya se cargó pero no hay pricing, permitir contacto solo en fotos
+        if (productCategory === 'photo') {
+          setAvailableSizes(['custom']);
+        } else {
+          setAvailableSizes([]);
+        }
         setSizesLoaded(true);
       } else if (!pricingLoaded) {
         // Si no se ha cargado aún, mostrar loading
@@ -164,7 +174,7 @@ export default function ProductCard({
     } else {
       setSizesLoaded(true);
     }
-  }, [isSanityProduct, pricing, pricingLoaded, selectedSize]);
+  }, [isSanityProduct, pricing, pricingLoaded, selectedSize, productData.productType]);
 
   const handleCustomSizeContact = () => {
     // Determinar el tipo de producto (FOTO o POSTAL)

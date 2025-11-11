@@ -38,15 +38,15 @@ export default function SizeSelector({
       setPricing(propPricing);
       if (propPricing) {
         // Calcular tamaños sincrónicamente (rápido)
-        const sizes = getAvailableSizes(propPricing);
+        const sizes = getAvailableSizes(propPricing, { productType: product.category });
         setAvailableSizes(sizes);
         setLoadingSizes(false);
       } else {
-        setAvailableSizes(['custom']);
+        setAvailableSizes(product.category === 'photo' ? ['custom'] : []);
         setLoadingSizes(false);
       }
     }
-  }, [propPricing]);
+  }, [propPricing, product.category]);
 
   // Solo cargar precios si no se pasaron desde props
   useEffect(() => {
@@ -58,23 +58,23 @@ export default function SizeSelector({
           setPricing(sizePricing);
           if (sizePricing) {
             // getAvailableSizes es síncrono y rápido
-            const sizes = getAvailableSizes(sizePricing);
+            const sizes = getAvailableSizes(sizePricing, { productType: product.category });
             setAvailableSizes(sizes);
           } else {
             // Si no hay precios, mostrar solo opción custom
-            setAvailableSizes(['custom']);
+            setAvailableSizes(product.category === 'photo' ? ['custom'] : []);
           }
         } catch (error) {
           console.error('Error loading pricing:', error);
           // En caso de error, mostrar solo custom
-          setAvailableSizes(['custom']);
+          setAvailableSizes(product.category === 'photo' ? ['custom'] : []);
         } finally {
           setLoadingSizes(false);
         }
       };
       loadPricing();
     }
-  }, [propPricing]);
+  }, [propPricing, product.category]);
 
   // Cargar precios convertidos para cada tamaño
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function SizeSelector({
       for (const size of availableSizes) {
         if (size === 'custom') continue;
 
-        const priceUSD = getPriceUSDForSize(pricing, size);
+        const priceUSD = getPriceUSDForSize(pricing, size, { productType: product.category });
         if (priceUSD > 0) {
           // Si hay región y está soportada, convertir a moneda local
           if (region && region.isSupported) {
@@ -121,6 +121,9 @@ export default function SizeSelector({
 
   const handleSizeSelect = (size: ProductSize) => {
     if (size === 'custom') {
+      if (product.category !== 'photo') {
+        return;
+      }
       if (onCustomSizeContact) {
         onCustomSizeContact();
       }
@@ -150,7 +153,7 @@ export default function SizeSelector({
 
     if (!pricing) return '';
 
-    const priceUSD = getPriceUSDForSize(pricing, size);
+    const priceUSD = getPriceUSDForSize(pricing, size, { productType: product.category });
     if (priceUSD === 0) return '';
 
     if (loadingPrices) {

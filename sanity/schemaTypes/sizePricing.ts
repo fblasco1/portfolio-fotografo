@@ -1,115 +1,148 @@
+const sizeField = (name: string, title: string, description: string) => ({
+  name,
+  title,
+  type: 'object',
+  fields: [
+    {
+      name: 'priceUSD',
+      title: 'Precio en USD',
+      type: 'number',
+      validation: (Rule: any) =>
+        Rule.positive().error('El precio debe ser mayor a 0'),
+      description
+    },
+    {
+      name: 'enabled',
+      title: 'Disponible',
+      type: 'boolean',
+      initialValue: true,
+      description: 'Si este tamaño está disponible para la venta'
+    }
+  ]
+});
+
 export default {
   name: 'sizePricing',
   title: 'Precios por Tamaño',
   type: 'document',
-  description: 'Configuración global de precios en USD para cada tamaño disponible. Los precios son los mismos para todos los productos (fotos y postales) y se convierten automáticamente a la moneda local según la ubicación del usuario.',
-  // Documento singleton - solo debe existir un documento de este tipo
-  // Se identifica por el documentId fijo 'sizePricing'
+  description:
+    'Configuración global de precios en USD. Las fotos y las postales utilizan tarifas distintas y se convierten automáticamente a la moneda local según la región del usuario.',
   fields: [
     {
-      name: 'size15x21',
-      title: '15x21 cm',
+      name: 'photoPricing',
+      title: 'Precios para Fotos',
       type: 'object',
+      options: { collapsible: true, collapsed: false },
       fields: [
         {
-          name: 'priceUSD',
-          title: 'Precio en USD',
-          type: 'number',
-          validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-          description: 'Precio en dólares estadounidenses para tamaño 15x21 cm'
+          ...sizeField(
+            'size15x21',
+            '15x21 cm',
+            'Precio en dólares estadounidenses para fotos tamaño 15x21 cm'
+          )
         },
         {
-          name: 'enabled',
-          title: 'Disponible',
-          type: 'boolean',
-          initialValue: true,
-          description: 'Si este tamaño está disponible para la venta'
+          ...sizeField(
+            'size20x30',
+            '20x30 cm',
+            'Precio en dólares estadounidenses para fotos tamaño 20x30 cm'
+          )
+        },
+        {
+          ...sizeField(
+            'size30x45',
+            '30x45 cm',
+            'Precio en dólares estadounidenses para fotos tamaño 30x45 cm'
+          )
         }
       ]
     },
     {
-      name: 'size20x30',
-      title: '20x30 cm',
+      name: 'postcardPricing',
+      title: 'Precios para Postales',
       type: 'object',
+      options: { collapsible: true, collapsed: false },
       fields: [
         {
-          name: 'priceUSD',
-          title: 'Precio en USD',
-          type: 'number',
-          validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-          description: 'Precio en dólares estadounidenses para tamaño 20x30 cm'
-        },
-        {
-          name: 'enabled',
-          title: 'Disponible',
-          type: 'boolean',
-          initialValue: true,
-          description: 'Si este tamaño está disponible para la venta'
-        }
-      ]
-    },
-    {
-      name: 'size30x45',
-      title: '30x45 cm',
-      type: 'object',
-      fields: [
-        {
-          name: 'priceUSD',
-          title: 'Precio en USD',
-          type: 'number',
-          validation: (Rule: any) => Rule.positive().error('El precio debe ser mayor a 0'),
-          description: 'Precio en dólares estadounidenses para tamaño 30x45 cm'
-        },
-        {
-          name: 'enabled',
-          title: 'Disponible',
-          type: 'boolean',
-          initialValue: true,
-          description: 'Si este tamaño está disponible para la venta'
+          ...sizeField(
+            'size15x21',
+            '15x21 cm',
+            'Precio en dólares estadounidenses para postales tamaño 15x21 cm'
+          )
         }
       ]
     }
   ],
-  validation: (Rule: any) => Rule.custom((doc: any) => {
-    if (!doc) return 'La configuración de precios es obligatoria';
-    
-    try {
-      // Verificar que al menos un tamaño tenga precio habilitado
-      const sizes = ['size15x21', 'size20x30', 'size30x45'];
-      const hasAtLeastOnePrice = sizes.some(size => 
-        doc[size]?.enabled && doc[size].priceUSD > 0
-      );
-      
-      if (!hasAtLeastOnePrice) {
-        return 'Debe configurar al menos un tamaño con precio habilitado';
+  validation: (Rule: any) =>
+    Rule.custom((doc: any) => {
+      if (!doc) return 'La configuración de precios es obligatoria';
+
+      try {
+        const photoPricing = doc.photoPricing || {};
+        const postcardPricing = doc.postcardPricing || {};
+
+        const photoSizes = ['size15x21', 'size20x30', 'size30x45'];
+        const hasPhotoPrice = photoSizes.some(
+          (size) => photoPricing[size]?.enabled && photoPricing[size]?.priceUSD > 0
+        );
+
+        const postcard = postcardPricing.size15x21;
+        const hasPostcardPrice =
+          postcard && postcard.enabled && postcard.priceUSD > 0;
+
+        if (!hasPhotoPrice) {
+          return 'Debes configurar al menos un tamaño habilitado para fotos con precio mayor a 0.';
+        }
+
+        if (!hasPostcardPrice) {
+          return 'Debes configurar el precio del tamaño 15x21 para postales.';
+        }
+
+        return true;
+      } catch (error) {
+        return 'Error en la validación de precios';
       }
-      
-      return true;
-    } catch (error) {
-      return 'Error en la validación de precios';
-    }
-  }),
+    }),
   preview: {
     select: {
-      price15x21: 'size15x21.priceUSD',
-      price20x30: 'size20x30.priceUSD',
-      price30x45: 'size30x45.priceUSD',
-      enabled15x21: 'size15x21.enabled',
-      enabled20x30: 'size20x30.enabled',
-      enabled30x45: 'size30x45.enabled'
+      photo15x21: 'photoPricing.size15x21.priceUSD',
+      photo20x30: 'photoPricing.size20x30.priceUSD',
+      photo30x45: 'photoPricing.size30x45.priceUSD',
+      photoEnabled15x21: 'photoPricing.size15x21.enabled',
+      photoEnabled20x30: 'photoPricing.size20x30.enabled',
+      photoEnabled30x45: 'photoPricing.size30x45.enabled',
+      postcard15x21: 'postcardPricing.size15x21.priceUSD',
+      postcardEnabled15x21: 'postcardPricing.size15x21.enabled'
     },
     prepare(selection: any) {
       try {
-        const { price15x21, price20x30, price30x45, enabled15x21, enabled20x30, enabled30x45 } = selection || {};
-        const prices = [];
-        
-        if (enabled15x21 && price15x21) prices.push(`15x21: $${price15x21}`);
-        if (enabled20x30 && price20x30) prices.push(`20x30: $${price20x30}`);
-        if (enabled30x45 && price30x45) prices.push(`30x45: $${price30x45}`);
-        
+        const {
+          photo15x21,
+          photo20x30,
+          photo30x45,
+          photoEnabled15x21,
+          photoEnabled20x30,
+          photoEnabled30x45,
+          postcard15x21,
+          postcardEnabled15x21
+        } = selection || {};
+
+        const photoPrices = [];
+        if (photoEnabled15x21 && photo15x21) photoPrices.push(`15x21: $${photo15x21}`);
+        if (photoEnabled20x30 && photo20x30) photoPrices.push(`20x30: $${photo20x30}`);
+        if (photoEnabled30x45 && photo30x45) photoPrices.push(`30x45: $${photo30x45}`);
+
+        const postcardLabel =
+          postcardEnabled15x21 && postcard15x21
+            ? `Postales 15x21: $${postcard15x21}`
+            : 'Postales sin precio';
+
         return {
-          title: 'Precios por Tamaño',
-          subtitle: prices.length > 0 ? prices.join(', ') : 'Sin precios configurados'
+          title: 'Precios globales',
+          subtitle:
+            photoPrices.length > 0
+              ? `${photoPrices.join(', ')} • ${postcardLabel}`
+              : postcardLabel
         };
       } catch (error) {
         return {

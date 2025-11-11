@@ -91,7 +91,7 @@ export async function getProductPriceUSD(
   }
 
   const pricing = await getSizePricing();
-  return getPriceUSDForSize(pricing, size);
+  return getPriceUSDForSize(pricing, size, { productType: product.category });
 }
 
 /**
@@ -99,9 +99,10 @@ export async function getProductPriceUSD(
  */
 export function getProductPriceUSDSync(
   pricing: Awaited<ReturnType<typeof getSizePricing>>,
-  size: ProductSize
+  size: ProductSize,
+  productType: 'photo' | 'postcard' = 'photo'
 ): number {
-  return getPriceUSDForSize(pricing, size);
+  return getPriceUSDForSize(pricing, size, { productType });
 }
 
 /**
@@ -132,8 +133,18 @@ export async function isSizeAvailable(
   product: SanityProduct,
   size: ProductSize
 ): Promise<boolean> {
+  if (product.category === 'postcard') {
+    // Las postales solo admiten 15x21 y no tienen tamaños personalizados
+    if (size === 'custom') {
+      return false;
+    }
+    if (size !== '15x21') {
+      return false;
+    }
+  }
+
   const pricing = await getSizePricing();
-  return checkSizeAvailable(pricing, size);
+  return checkSizeAvailable(pricing, size, { productType: product.category });
 }
 
 /**
@@ -143,7 +154,10 @@ export async function isSizeAvailable(
  */
 export async function getAvailableSizes(product: SanityProduct): Promise<ProductSize[]> {
   const pricing = await getSizePricing();
-  return getAvailableSizesFromPricing(pricing);
+  const sizes = getAvailableSizesFromPricing(pricing, {
+    productType: product.category
+  });
+  return sizes;
 }
 
 /**
@@ -166,7 +180,7 @@ export async function isProductAvailableInRegion(
 ): Promise<boolean> {
   // Verificar si el producto tiene al menos un tamaño disponible
   const availableSizes = await getAvailableSizes(product);
-  return availableSizes.length > 1; // Más de 1 porque siempre incluye 'custom'
+  return availableSizes.some(size => size !== 'custom');
 }
 
 // Mantener función de compatibilidad temporal

@@ -9,7 +9,6 @@ import Cart from "./Cart";
 import { useRegion } from "@/contexts/RegionContext";
 import { RegionSelector } from "../../../../components/payment";
 import { getSizePricing } from "@/lib/sanity-pricing";
-import { getAvailableSizes } from "@/lib/sanity-products";
 
 interface PhotoStoreProps {
   photos: SanityProduct[];

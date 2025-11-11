@@ -1,27 +1,47 @@
 import { client } from './sanity';
 import type { ProductSize } from '@/contexts/CartContext';
 
-export interface SizePricing {
-  size15x21?: {
-    priceUSD: number;
-    enabled: boolean;
-  };
-  size20x30?: {
-    priceUSD: number;
-    enabled: boolean;
-  };
-  size30x45?: {
-    priceUSD: number;
-    enabled: boolean;
-  };
+export interface SizePricingOption {
+  priceUSD: number;
+  enabled: boolean;
 }
 
-// Mapeo de tamaños (código del sistema) a nombres de campo en Sanity
-const SIZE_FIELD_MAP: Record<ProductSize, string> = {
-  '15x21': 'size15x21',
-  '20x30': 'size20x30',
-  '30x45': 'size30x45',
-  'custom': 'custom'
+export interface PhotoSizePricing {
+  size15x21?: SizePricingOption;
+  size20x30?: SizePricingOption;
+  size30x45?: SizePricingOption;
+}
+
+export interface PostcardSizePricing {
+  size15x21?: SizePricingOption;
+}
+
+export interface SizePricing {
+  photo?: PhotoSizePricing;
+  postcard?: PostcardSizePricing;
+}
+
+export type ProductCategoryOption = 'photo' | 'postcard';
+
+const SIZE_FIELD_MAP: Record<ProductCategoryOption, Partial<Record<ProductSize, string>>> = {
+  photo: {
+    '15x21': 'size15x21',
+    '20x30': 'size20x30',
+    '30x45': 'size30x45'
+  },
+  postcard: {
+    '15x21': 'size15x21'
+  }
+};
+
+type PricingGroup = PhotoSizePricing | PostcardSizePricing;
+
+const getPricingGroup = (
+  pricing: SizePricing | null,
+  productType: ProductCategoryOption
+): PricingGroup | null => {
+  if (!pricing) return null;
+  return productType === 'postcard' ? pricing.postcard || null : pricing.photo || null;
 };
 
 // Cache para precios (evita múltiples llamadas)
@@ -33,7 +53,6 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
  * Usa cache para mejorar el rendimiento
  */
 export async function getSizePricing(forceRefresh: boolean = false): Promise<SizePricing | null> {
-  // Verificar cache primero (si no se fuerza refresh)
   if (!forceRefresh && pricingCache) {
     const now = Date.now();
     if (now - pricingCache.timestamp < CACHE_DURATION) {
@@ -43,34 +62,39 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
 
   try {
     const query = `*[_type == "sizePricing"][0] {
-      size15x21 {
-        priceUSD,
-        enabled
+      photo: photoPricing {
+        size15x21 {
+          priceUSD,
+          enabled
+        },
+        size20x30 {
+          priceUSD,
+          enabled
+        },
+        size30x45 {
+          priceUSD,
+          enabled
+        }
       },
-      size20x30 {
-        priceUSD,
-        enabled
-      },
-      size30x45 {
-        priceUSD,
-        enabled
+      postcard: postcardPricing {
+        size15x21 {
+          priceUSD,
+          enabled
+        }
       }
     }`;
-    
+
     const pricing = await client.fetch(query);
-    
     const result = pricing || null;
-    
-    // Actualizar cache
+
     pricingCache = {
       data: result,
       timestamp: Date.now()
     };
-    
+
     return result;
   } catch (error) {
     console.error('Error fetching size pricing from Sanity:', error);
-    // Si hay error pero tenemos cache, devolver cache
     if (pricingCache) {
       return pricingCache.data;
     }
@@ -88,14 +112,27 @@ export function clearPricingCache(): void {
 /**
  * Obtiene el precio en USD para un tamaño específico
  */
-export function getPriceUSDForSize(pricing: SizePricing | null, size: ProductSize): number {
-  if (size === 'custom' || !pricing) {
+export function getPriceUSDForSize(
+  pricing: SizePricing | null,
+  size: ProductSize,
+  options?: { productType?: ProductCategoryOption }
+): number {
+  if (size === 'custom') {
     return 0;
   }
 
-  const fieldName = SIZE_FIELD_MAP[size];
-  const sizePricing = pricing[fieldName as keyof SizePricing];
-  
+  const productType = options?.productType ?? 'photo';
+  const group = getPricingGroup(pricing, productType);
+  if (!group) {
+    return 0;
+  }
+
+  const fieldName = SIZE_FIELD_MAP[productType]?.[size];
+  if (!fieldName) {
+    return 0;
+  }
+
+  const sizePricing = group[fieldName as keyof PricingGroup] as SizePricingOption | undefined;
   if (!sizePricing || !sizePricing.enabled || !sizePricing.priceUSD || sizePricing.priceUSD <= 0) {
     return 0;
   }
@@ -106,18 +143,27 @@ export function getPriceUSDForSize(pricing: SizePricing | null, size: ProductSiz
 /**
  * Verifica si un tamaño está disponible
  */
-export function isSizeAvailable(pricing: SizePricing | null, size: ProductSize): boolean {
+export function isSizeAvailable(
+  pricing: SizePricing | null,
+  size: ProductSize,
+  options?: { productType?: ProductCategoryOption }
+): boolean {
   if (size === 'custom') {
-    return true; // Los tamaños personalizados siempre están disponibles
+    return options?.productType === 'postcard' ? false : true;
   }
 
-  if (!pricing) {
+  const productType = options?.productType ?? 'photo';
+  const group = getPricingGroup(pricing, productType);
+  if (!group) {
     return false;
   }
 
-  const fieldName = SIZE_FIELD_MAP[size];
-  const sizePricing = pricing[fieldName as keyof SizePricing];
-  
+  const fieldName = SIZE_FIELD_MAP[productType]?.[size];
+  if (!fieldName) {
+    return false;
+  }
+
+  const sizePricing = group[fieldName as keyof PricingGroup] as SizePricingOption | undefined;
   if (!sizePricing) {
     return false;
   }
@@ -129,24 +175,38 @@ export function isSizeAvailable(pricing: SizePricing | null, size: ProductSize):
  * Obtiene todos los tamaños disponibles
  * Esta función es síncrona y rápida, no hace llamadas a la API
  */
-export function getAvailableSizes(pricing: SizePricing | null): ProductSize[] {
+export function getAvailableSizes(
+  pricing: SizePricing | null,
+  options?: {
+    productType?: ProductCategoryOption;
+    includeCustomForPostcard?: boolean;
+  }
+): ProductSize[] {
+  const productType = options?.productType ?? 'photo';
   const sizes: ProductSize[] = [];
-  
-  if (!pricing) {
-    // Si no hay precios, devolver solo custom para que el usuario pueda contactar
-    return ['custom'];
+
+  const group = getPricingGroup(pricing, productType);
+  if (!group) {
+    return productType === 'photo' ? ['custom'] : [];
   }
 
-  const standardSizes: ProductSize[] = ['15x21', '20x30', '30x45'];
-  
+  const standardSizes: ProductSize[] =
+    productType === 'postcard'
+      ? ['15x21']
+      : ['15x21', '20x30', '30x45'];
+
   for (const size of standardSizes) {
-    if (isSizeAvailable(pricing, size)) {
+    if (isSizeAvailable(pricing, size, { productType })) {
       sizes.push(size);
     }
   }
 
-  // Siempre agregar opción de tamaño personalizado
-  sizes.push('custom');
+  const shouldIncludeCustom =
+    productType === 'photo' || options?.includeCustomForPostcard;
+
+  if (shouldIncludeCustom) {
+    sizes.push('custom');
+  }
 
   return sizes;
 }
