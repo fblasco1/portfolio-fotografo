@@ -1,7 +1,19 @@
 import { Suspense } from "react";
-import ContactForm from "../components/page-specific/ContactForm"
+import ContactForm from "../components/page-specific/ContactForm";
+import { client } from "@/lib/sanity";
+import { settingsQuery } from "@/lib/queries";
 
-export default function ContactPage() {
+interface ContactPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function ContactPage({ params }: ContactPageProps) {
+  const { locale } = await params;
+  
+  // Obtener redes sociales desde Sanity
+  const settings = await client.fetch(settingsQuery);
+  const socialMedia = settings?.socialMedia || {};
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 pt-28 pb-8">
       <div className="max-w-7xl mx-auto">
@@ -10,7 +22,7 @@ export default function ContactPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-600"></div>
           </div>
         }>
-          <ContactForm />
+          <ContactForm socialMedia={socialMedia} />
         </Suspense>
       </div>
     </div>

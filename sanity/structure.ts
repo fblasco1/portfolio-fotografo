@@ -4,17 +4,6 @@ export const structure = (S: any) => {
     return S.list()
       .title('Portfolio Cristian Pirovano')
       .items([
-        // Productos
-        S.listItem()
-          .title('Productos')
-          .icon(() => '📸')
-          .child(
-            S.documentList()
-              .title('Productos')
-              .filter('_type == "product"')
-              .defaultOrdering([{ field: 'order', direction: 'asc' }])
-          ),
-        
         // Galerías
         S.listItem()
           .title('Galerías')

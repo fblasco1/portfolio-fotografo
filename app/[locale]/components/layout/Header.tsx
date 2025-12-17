@@ -58,7 +58,6 @@ export default function Header({ siteTitle }: HeaderProps) {
 
   const navItems = [
     { key: "home", href: "/" },
-    { key: "shop", href: "/shop" },
     { key: "gallery", href: "/gallery" },
     { key: "bio", href: "/bio" },
     { key: "documentaries", href: "/documentaries" },

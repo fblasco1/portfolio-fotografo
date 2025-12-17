@@ -14,7 +14,7 @@ export default function SanityGalleryCard({ gallery, locale, onClick }: SanityGa
   // Obtener contenido según el idioma
   const content = gallery.content[locale as keyof typeof gallery.content] || gallery.content.es;
   
-  // Verificar si tiene imagen de portada
+  // Usar la imagen de portada (cover) como portada de la tarjeta
   const hasCover = gallery.cover;
   const coverUrl = hasCover ? urlFor(gallery.cover).url() : "/placeholder.svg";
 

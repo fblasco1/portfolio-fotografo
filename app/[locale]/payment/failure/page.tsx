@@ -51,10 +51,10 @@ export default function PaymentFailurePage() {
             Reintentar Pago
           </Link>
           <Link
-            href="/shop"
+            href="/gallery"
             className="flex-1 px-6 py-3 border border-stone-600 text-stone-600 rounded-lg hover:bg-stone-50 transition-colors"
           >
-            Volver a la Tienda
+            Volver a la Galería
           </Link>
         </div>
 

@@ -35,12 +35,22 @@ export default function Cart({
   } = useCart();
 
   // Generar ID único para item (productId_size)
-  const generateItemId = (productId: string, size: ProductSize): string => {
+  const generateItemId = (productId: string, size?: ProductSize): string => {
+    if (!size) return productId;
     return `${productId}_${size}`;
   };
 
   const handleUpdateQuantity = (itemId: string, delta: number) => {
-    const item = cart.find(item => generateItemId(item.id, item.size) === itemId);
+    // Buscar el item por su ID generado
+    const item = cart.find((item, index) => {
+      if (item.size) {
+        return generateItemId(item.id, item.size) === itemId;
+      } else {
+        // Para items sin tamaño, usar el ID directamente o con índice
+        return item.id === itemId || `${item.id}_${index}` === itemId;
+      }
+    });
+    
     if (item) {
       const newQuantity = item.quantity + delta;
       if (newQuantity <= 0) {

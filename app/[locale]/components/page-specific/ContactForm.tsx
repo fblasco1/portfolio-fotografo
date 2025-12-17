@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useScopedI18n, useCurrentLocale } from "@/locales/client";
+import { Instagram, Facebook, Twitter, Linkedin, Youtube, Music } from 'lucide-react';
 
 interface FormData {
   name: string;
@@ -11,7 +12,18 @@ interface FormData {
   subject?: string;
 }
 
-const ContactForm: React.FC = () => {
+interface ContactFormProps {
+  socialMedia?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+    linkedin?: string;
+    youtube?: string;
+    tiktok?: string;
+  };
+}
+
+const ContactForm: React.FC<ContactFormProps> = ({ socialMedia }) => {
   const t = useScopedI18n("contact");
   const locale = useCurrentLocale() as 'es' | 'en';
   const searchParams = useSearchParams();
@@ -182,6 +194,83 @@ const ContactForm: React.FC = () => {
           {isSubmitting ? t("submitting") : t("submit")}
         </button>
       </form>
+
+      {/* Redes sociales */}
+      {socialMedia && Object.values(socialMedia).some(url => url) && (
+        <div className="mt-8 pt-8 border-t border-gray-200">
+          <p className="text-sm font-medium text-gray-700 mb-4">
+            {locale === 'es' ? 'Sígueme en:' : 'Follow me on:'}
+          </p>
+          <div className="flex flex-wrap gap-4">
+            {socialMedia.instagram && (
+              <a
+                href={socialMedia.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Instagram size={20} />
+                <span className="text-sm">Instagram</span>
+              </a>
+            )}
+            {socialMedia.facebook && (
+              <a
+                href={socialMedia.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Facebook size={20} />
+                <span className="text-sm">Facebook</span>
+              </a>
+            )}
+            {socialMedia.twitter && (
+              <a
+                href={socialMedia.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Twitter size={20} />
+                <span className="text-sm">Twitter</span>
+              </a>
+            )}
+            {socialMedia.linkedin && (
+              <a
+                href={socialMedia.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Linkedin size={20} />
+                <span className="text-sm">LinkedIn</span>
+              </a>
+            )}
+            {socialMedia.youtube && (
+              <a
+                href={socialMedia.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Youtube size={20} />
+                <span className="text-sm">YouTube</span>
+              </a>
+            )}
+            {socialMedia.tiktok && (
+              <a
+                href={socialMedia.tiktok}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Music size={20} />
+                <span className="text-sm">TikTok</span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ShoppingCart } from "lucide-react";
 import { useCurrentLocale } from "@/locales/client";
+import { useCart } from "@/contexts/CartContext";
 
 export interface ViewerPhoto {
   url: string;
   title?: string;
   description?: string;
+  id?: string; // ID único para agregar al carrito
 }
 
 interface FullscreenPhotoViewerProps {
@@ -19,6 +21,7 @@ interface FullscreenPhotoViewerProps {
   showCounter?: boolean;
   viewerTitle?: string;
   viewerSubtitle?: string;
+  allowAddToCart?: boolean; // Permitir agregar al carrito desde el visor
 }
 
 export default function FullscreenPhotoViewer({
@@ -29,12 +32,17 @@ export default function FullscreenPhotoViewer({
   showCounter = true,
   viewerTitle,
   viewerSubtitle,
+  allowAddToCart = false,
 }: FullscreenPhotoViewerProps) {
   const locale = useCurrentLocale() as "es" | "en";
-  const [currentIndex, setCurrentIndex] = useState(
-    Math.min(Math.max(initialIndex, 0), Math.max(photos.length - 1, 0))
-  );
+  const { addItem } = useCart();
+  // Asegurar que el índice inicial sea válido y muestre la primera foto
+  const validInitialIndex = photos.length > 0 
+    ? Math.min(Math.max(initialIndex, 0), photos.length - 1)
+    : 0;
+  const [currentIndex, setCurrentIndex] = useState(validInitialIndex);
   const [isLoading, setIsLoading] = useState(true);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const totalPhotos = photos.length;
   const currentPhoto = photos[currentIndex];
@@ -44,7 +52,10 @@ export default function FullscreenPhotoViewer({
   }, [onClose]);
 
   useEffect(() => {
-    setCurrentIndex(Math.min(Math.max(initialIndex, 0), Math.max(photos.length - 1, 0)));
+    if (photos.length > 0) {
+      const validIndex = Math.min(Math.max(initialIndex, 0), photos.length - 1);
+      setCurrentIndex(validIndex);
+    }
   }, [initialIndex, photos.length]);
 
   useEffect(() => {
@@ -108,6 +119,34 @@ export default function FullscreenPhotoViewer({
     if (viewerSubtitle) return viewerSubtitle;
     return currentPhoto?.description || "";
   }, [viewerSubtitle, currentPhoto]);
+
+  // Resetear estado de "agregado al carrito" cuando cambia la foto
+  useEffect(() => {
+    setAddedToCart(false);
+  }, [currentIndex]);
+
+  const handleAddToCart = useCallback(() => {
+    if (!allowAddToCart || !currentPhoto) return;
+    
+    // Generar ID único usando timestamp para evitar duplicados
+    const uniqueId = currentPhoto.id 
+      ? `${currentPhoto.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      : `photo_${currentIndex}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const photoTitle = resolvedTitle || currentPhoto.title || `Foto ${currentIndex + 1}`;
+    const photoSubtitle = resolvedSubtitle || currentPhoto.description || "";
+    
+    addItem({
+      id: uniqueId,
+      title: photoTitle,
+      subtitle: photoSubtitle,
+      image: currentPhoto.url,
+      // No agregamos productType ni size aquí, se seleccionarán en checkout
+    });
+    
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  }, [allowAddToCart, currentPhoto, currentIndex, resolvedTitle, resolvedSubtitle, addItem]);
 
   if (!photos || photos.length === 0) {
     return (
@@ -204,16 +243,49 @@ export default function FullscreenPhotoViewer({
           )}
         </div>
 
-        {(resolvedTitle || resolvedSubtitle || (showCounter && totalPhotos > 1)) && (
+        {(resolvedTitle || resolvedSubtitle || (showCounter && totalPhotos > 1) || allowAddToCart) && (
           <div className="mt-8 text-center text-white px-4 space-y-3">
             {resolvedTitle && (
               <h2 className="text-2xl font-semibold tracking-wide">{resolvedTitle}</h2>
             )}
-            {resolvedSubtitle && (
-              <p className="text-sm text-gray-300 leading-relaxed">
-                {resolvedSubtitle}
-              </p>
-            )}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              {resolvedSubtitle && (
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  {resolvedSubtitle}
+                </p>
+              )}
+              {allowAddToCart && currentPhoto && (
+                <button
+                  type="button"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    addedToCart 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-stone-700/80 hover:bg-stone-600/80'
+                  }`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleAddToCart();
+                  }}
+                  aria-label={locale === "es" ? "Agregar al carrito" : "Add to cart"}
+                >
+                  {addedToCart ? (
+                    <>
+                      <span className="text-lg">✓</span>
+                      <span className="text-sm font-medium">
+                        {locale === "es" ? "Agregado" : "Added"}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-lg">+</span>
+                      <span className="text-sm font-medium">
+                        {locale === "es" ? "Agregar al carrito" : "Add to cart"}
+                      </span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
             {showCounter && totalPhotos > 1 && (
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
                 {locale === "es"

@@ -137,6 +137,14 @@ export const settingsQuery = `
         siteTitle,
         siteDescription
       }
+    },
+    socialMedia {
+      instagram,
+      facebook,
+      twitter,
+      linkedin,
+      youtube,
+      tiktok
     }
   }
 `

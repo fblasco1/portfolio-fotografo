@@ -50,7 +50,7 @@ export default function PaymentPendingPage() {
             Volver al Inicio
           </Link>
           <Link
-            href="/shop"
+            href="/gallery"
             className="flex-1 px-6 py-3 border border-stone-600 text-stone-600 rounded-lg hover:bg-stone-50 transition-colors"
           >
             Seguir Comprando
