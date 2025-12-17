@@ -61,6 +61,12 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
   }
 
   try {
+    // Verificar que el cliente de Sanity esté configurado
+    if (!client) {
+      console.warn('Sanity client not configured');
+      return pricingCache?.data || null;
+    }
+
     const query = `*[_type == "sizePricing"][0] {
       "photo": photoPricing {
         size15x21 {
@@ -93,11 +99,19 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
     };
 
     return result;
-  } catch (error) {
-    console.error('Error fetching size pricing from Sanity:', error);
-    if (pricingCache) {
+  } catch (error: any) {
+    // Mejorar el manejo de errores para evitar que se propague
+    const errorMessage = error?.message || String(error);
+    console.error('Error fetching size pricing from Sanity:', errorMessage);
+    
+    // Si hay cache, usar ese valor en lugar de fallar completamente
+    if (pricingCache?.data) {
+      console.warn('Using cached pricing data due to fetch error');
       return pricingCache.data;
     }
+    
+    // Si no hay cache y hay error, retornar null silenciosamente
+    // El componente debe manejar el caso cuando pricing es null
     return null;
   }
 }

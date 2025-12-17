@@ -6,6 +6,7 @@ import {
   DrawerTrigger,
   DrawerContent,
   DrawerTitle,
+  DrawerDescription,
 } from "../../components/ui/drawer";
 import { Button } from "../../components/ui/button";
 import { ShoppingCart, X } from "lucide-react";
@@ -151,7 +152,14 @@ export default function Cart({
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <DrawerContent className="p-4">
           <div className="flex justify-between items-center mb-4">
-            <DrawerTitle>{getText("cartTitle")}</DrawerTitle>
+            <div>
+              <DrawerTitle>{getText("cartTitle")}</DrawerTitle>
+              <DrawerDescription className="sr-only">
+                {locale === 'es' 
+                  ? 'Gestiona los items en tu carrito de compras' 
+                  : 'Manage items in your shopping cart'}
+              </DrawerDescription>
+            </div>
             <Button variant="ghost" onClick={() => setIsDrawerOpen(false)}>
               <X size={24} />
             </Button>

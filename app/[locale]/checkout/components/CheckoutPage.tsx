@@ -48,7 +48,17 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
         const globalPricing = await getSizePricing();
         setPricing(globalPricing);
       } catch (error) {
-        console.error('Error loading pricing:', error);
+        // El error ya se maneja dentro de getSizePricing, solo loguear aquí si es necesario
+        console.warn('Could not load pricing, will retry:', error);
+        // Intentar nuevamente después de un delay
+        setTimeout(async () => {
+          try {
+            const retryPricing = await getSizePricing(true); // Force refresh
+            setPricing(retryPricing);
+          } catch (retryError) {
+            console.error('Retry failed:', retryError);
+          }
+        }, 2000);
       }
     };
     loadPricing();
@@ -431,7 +441,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                         <p className="text-sm text-gray-600">{item.subtitle}</p>
                         
                         {/* Selector de tipo y tamaño - siempre visible para permitir edición */}
-                        {pricing && (
+                        {pricing ? (
                           <div className="mt-3 space-y-3 p-3 bg-gray-50 rounded-lg">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -519,6 +529,14 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                                 </p>
                               )}
                             </div>
+                          </div>
+                        ) : (
+                          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm text-yellow-800">
+                              {locale === 'es' 
+                                ? '⚠️ Cargando información de precios...' 
+                                : '⚠️ Loading pricing information...'}
+                            </p>
                           </div>
                         )}
                         
