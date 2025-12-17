@@ -37,6 +37,49 @@ export default {
           ]
         }
       ]
+    },
+    {
+      name: 'socialMedia',
+      title: 'Redes Sociales',
+      type: 'object',
+      fields: [
+        {
+          name: 'instagram',
+          title: 'Instagram',
+          type: 'url',
+          description: 'URL de tu perfil de Instagram'
+        },
+        {
+          name: 'facebook',
+          title: 'Facebook',
+          type: 'url',
+          description: 'URL de tu perfil de Facebook'
+        },
+        {
+          name: 'twitter',
+          title: 'Twitter/X',
+          type: 'url',
+          description: 'URL de tu perfil de Twitter/X'
+        },
+        {
+          name: 'linkedin',
+          title: 'LinkedIn',
+          type: 'url',
+          description: 'URL de tu perfil de LinkedIn'
+        },
+        {
+          name: 'youtube',
+          title: 'YouTube',
+          type: 'url',
+          description: 'URL de tu canal de YouTube'
+        },
+        {
+          name: 'tiktok',
+          title: 'TikTok',
+          type: 'url',
+          description: 'URL de tu perfil de TikTok'
+        }
+      ]
     }
   ],
   preview: {

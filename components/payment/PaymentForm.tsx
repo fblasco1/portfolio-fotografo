@@ -18,16 +18,17 @@ interface PaymentFormProps {
     firstName?: string;
     lastName?: string;
   };
+  total?: number; // Total calculado desde el checkout
 }
 
-export function PaymentForm({ onSuccess, onError, customerInfo }: PaymentFormProps) {
+export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal }: PaymentFormProps) {
   const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || '';
   const { items: cart, getTotals, clearCart } = useCart();
   const { region } = useRegion();
   
-  // Calcular total
+  // Usar el total pasado como prop, o calcularlo desde el carrito como fallback
   const totals = getTotals();
-  const total = totals?.total || 0;
+  const total = propTotal !== undefined ? propTotal : (totals?.total || 0);
 
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);

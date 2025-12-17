@@ -115,8 +115,9 @@ export default function CartItemList({
 
   return (
     <ul className="space-y-3">
-      {items.map((item) => {
-        const itemId = generateItemId(item.id, item.size);
+      {items.map((item, index) => {
+        // Generar ID único para la key: usar itemId si tiene tamaño, sino usar índice para evitar duplicados
+        const itemId = item.size ? generateItemId(item.id, item.size) : `${item.id}_${index}`;
         const price = prices[itemId] || 0;
         const total = price * item.quantity;
 

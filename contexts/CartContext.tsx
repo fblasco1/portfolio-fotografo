@@ -12,9 +12,9 @@ interface CartItem {
   title: string;
   subtitle: string;
   image: string;
-  productType: 'photos' | 'postcards';
+  productType?: 'photos' | 'postcards'; // Opcional inicialmente, se selecciona en checkout
   quantity: number;
-  size: ProductSize;
+  size?: ProductSize; // Opcional inicialmente, se selecciona en checkout
 }
 
 interface CartTotals {
@@ -31,14 +31,15 @@ interface CartContextType {
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
+  updateItemTypeAndSize: (itemId: string, productType: 'photos' | 'postcards', size: ProductSize) => void;
   clearCart: () => void;
   clearCartAfterPurchase: () => void;
   getTotals: () => CartTotals | null;
   getTotalItems: () => number;
   isEmpty: boolean;
   getItem: (itemId: string) => CartItem | undefined;
-  hasItem: (itemId: string) => boolean;
-  getItemQuantity: (itemId: string) => number;
+  hasItem: (itemId: string, size?: ProductSize) => boolean;
+  getItemQuantity: (itemId: string, size?: ProductSize) => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -189,50 +190,101 @@ export function CartProvider({ children }: CartProviderProps) {
     }
   }, [items, isInitialized]);
 
-  // Generar ID único para item del carrito (productId + size)
-  const generateCartItemId = (productId: string, size: ProductSize): string => {
-    return `${productId}_${size}`;
+  // Generar ID único para item del carrito (productId + size si existe)
+  const generateCartItemId = (productId: string, size?: ProductSize): string => {
+    return size ? `${productId}_${size}` : productId;
   };
 
   // Agregar item al carrito
   const addItem = (item: Omit<CartItem, 'quantity'>) => {
     setItems(currentItems => {
+      // Si el item no tiene tipo ni tamaño, crear un nuevo item siempre
+      // Si tiene tipo y tamaño, buscar si ya existe
+      if (!item.productType || !item.size) {
+        // Item sin tipo/tamaño: agregar como nuevo item único
+        return [...currentItems, { ...item, quantity: 1 }];
+      }
+      
+      // Item con tipo y tamaño: buscar si ya existe
       const itemId = generateCartItemId(item.id, item.size);
-      const existingItem = currentItems.find(i => generateCartItemId(i.id, i.size) === itemId);
+      const existingItem = currentItems.find(i => {
+        if (!i.productType || !i.size) return false;
+        return generateCartItemId(i.id, i.size) === itemId;
+      });
       
       if (existingItem) {
-        return currentItems.map(i =>
-          generateCartItemId(i.id, i.size) === itemId
+        return currentItems.map(i => {
+          if (!i.productType || !i.size) return i;
+          return generateCartItemId(i.id, i.size) === itemId
             ? { ...i, quantity: i.quantity + 1 }
-            : i
-        );
+            : i;
+        });
       } else {
         return [...currentItems, { ...item, quantity: 1 }];
       }
     });
   };
 
-  // Remover item del carrito (itemId es el ID generado: productId_size)
+  // Remover item del carrito (itemId puede ser productId_size o productId_index para items sin tamaño)
   const removeItem = (itemId: string) => {
-    setItems(currentItems => currentItems.filter(item => 
-      generateCartItemId(item.id, item.size) !== itemId
-    ));
+    setItems(currentItems => {
+      // Si el itemId contiene un índice (formato: id_index), extraer el id base
+      const indexMatch = itemId.match(/^(.+)_(\d+)$/);
+      if (indexMatch) {
+        const [, baseId, indexStr] = indexMatch;
+        const index = parseInt(indexStr, 10);
+        // Remover el item en ese índice si coincide
+        return currentItems.filter((item, idx) => {
+          if (idx === index && item.id === baseId && !item.size) {
+            return false;
+          }
+          return true;
+        });
+      }
+      
+      // Para items con tamaño, usar el método normal
+      return currentItems.filter(item => {
+        if (!item.size) {
+          // Para items sin tamaño, comparar solo por id si no hay índice en itemId
+          return item.id !== itemId;
+        }
+        return generateCartItemId(item.id, item.size) !== itemId;
+      });
+    });
   };
 
-  // Actualizar cantidad de un item (itemId es el ID generado: productId_size)
+  // Actualizar cantidad de un item (itemId puede ser productId_size o productId_index)
   const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
       removeItem(itemId);
       return;
     }
 
-    setItems(currentItems =>
-      currentItems.map(item =>
-        generateCartItemId(item.id, item.size) === itemId
+    setItems(currentItems => {
+      // Si el itemId contiene un índice, actualizar ese item específico
+      const indexMatch = itemId.match(/^(.+)_(\d+)$/);
+      if (indexMatch) {
+        const [, baseId, indexStr] = indexMatch;
+        const index = parseInt(indexStr, 10);
+        return currentItems.map((item, idx) => {
+          if (idx === index && item.id === baseId && !item.size) {
+            return { ...item, quantity };
+          }
+          return item;
+        });
+      }
+      
+      // Para items con tamaño, usar el método normal
+      return currentItems.map(item => {
+        if (!item.size) {
+          // Para items sin tamaño, comparar solo por id
+          return item.id === itemId ? { ...item, quantity } : item;
+        }
+        return generateCartItemId(item.id, item.size) === itemId
           ? { ...item, quantity }
-          : item
-      )
-    );
+          : item;
+      });
+    });
   };
 
   // Limpiar carrito
@@ -311,17 +363,62 @@ export function CartProvider({ children }: CartProviderProps) {
     return items.find(item => generateCartItemId(item.id, item.size) === itemId);
   };
 
-  // Verificar si un item está en el carrito (por productId y size)
-  const hasItem = (productId: string, size: ProductSize) => {
+  // Verificar si un item está en el carrito (por productId y size opcional)
+  const hasItem = (productId: string, size?: ProductSize) => {
+    if (!size) {
+      // Si no hay size, buscar cualquier item con ese productId
+      return items.some(item => item.id === productId);
+    }
     const itemId = generateCartItemId(productId, size);
-    return items.some(item => generateCartItemId(item.id, item.size) === itemId);
+    return items.some(item => {
+      if (!item.size) return false;
+      return generateCartItemId(item.id, item.size) === itemId;
+    });
   };
 
-  // Obtener cantidad de un item específico (por productId y size)
-  const getItemQuantity = (productId: string, size: ProductSize) => {
+  // Obtener cantidad de un item específico (por productId y size opcional)
+  const getItemQuantity = (productId: string, size?: ProductSize) => {
+    if (!size) {
+      // Si no hay size, sumar todas las cantidades de items con ese productId
+      return items
+        .filter(item => item.id === productId)
+        .reduce((sum, item) => sum + item.quantity, 0);
+    }
     const itemId = generateCartItemId(productId, size);
     const item = getItem(itemId);
     return item ? item.quantity : 0;
+  };
+  
+  // Actualizar tipo y tamaño de un item (útil para checkout)
+  const updateItemTypeAndSize = (itemId: string, productType: 'photos' | 'postcards', size: ProductSize) => {
+    setItems(currentItems => {
+      // Si el itemId contiene un índice (formato: id_index), extraer el id base
+      const indexMatch = itemId.match(/^(.+)_(\d+)$/);
+      
+      return currentItems.map((item, index) => {
+        if (indexMatch) {
+          // Buscar por índice si el formato coincide
+          const [, baseId, indexStr] = indexMatch;
+          const targetIndex = parseInt(indexStr, 10);
+          if (index === targetIndex && item.id === baseId && !item.size) {
+            return { ...item, productType, size };
+          }
+        }
+        
+        // Para items con tamaño, usar el método normal
+        const currentItemId = generateCartItemId(item.id, item.size);
+        if (currentItemId === itemId) {
+          return { ...item, productType, size };
+        }
+        
+        // Para items sin tamaño, comparar solo por id base
+        if (!item.size && item.id === itemId) {
+          return { ...item, productType, size };
+        }
+        
+        return item;
+      });
+    });
   };
 
   return (
@@ -333,6 +430,7 @@ export function CartProvider({ children }: CartProviderProps) {
         addItem,
         removeItem,
         updateQuantity,
+        updateItemTypeAndSize,
         clearCart,
         clearCartAfterPurchase,
         getTotals,

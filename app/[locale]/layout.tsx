@@ -77,6 +77,7 @@ export default async function RootLayout({
   const { settings, bio } = await fetchSiteData();
   const siteTitle = settings?.content?.[locale as keyof typeof settings.content]?.siteTitle;
   const faviconUrl = getFaviconUrl(settings, bio);
+  const socialMedia = settings?.socialMedia || {};
 
   return (
     <html className="h-full w-full overflow-x-hidden" lang={locale}>
@@ -92,7 +93,7 @@ export default async function RootLayout({
       <body className={`${inter.className} h-full`}>
         <AppProviders>
           <I18nProviderClient locale={locale} fallback={<div>Loading...</div>}>
-            <MainLayout locale={locale} siteTitle={siteTitle}>{children}</MainLayout>
+            <MainLayout locale={locale} siteTitle={siteTitle} socialMedia={socialMedia}>{children}</MainLayout>
           </I18nProviderClient>
         </AppProviders>
       </body>
