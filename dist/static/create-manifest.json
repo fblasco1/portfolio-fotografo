@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "createdAt": "2025-12-17T22:11:51.623Z",
+  "workspaces": [
+    {
+      "name": "default",
+      "title": "Portfolio Cristian Pirovano - Admin",
+      "basePath": "/admin",
+      "projectId": "l3gcwt1n",
+      "dataset": "production",
+      "icon": "<style data-styled=\"true\" data-styled-version=\"6.1.19\">.cLsLzf{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",\"Liberation Sans\",Helvetica,Arial,system-ui,sans-serif;font-weight:500;font-size:13px;transform:translateY(1px);}/*!sc*/\ndata-styled.g405[id=\"sc-gzpDuk\"]{content:\"cLsLzf,\"}/*!sc*/\n</style><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><rect width=\"32\" height=\"32\" rx=\"2\" fill=\"#f7abc5\"></rect><text x=\"50%\" y=\"50%\" text-anchor=\"middle\" alignment-baseline=\"middle\" fill=\"hsla(339, 83%, 42%, 1)\" class=\"sc-gzpDuk cLsLzf\">PC</text></svg>",
+      "mediaLibrary": {
+        "enabled": false
+      },
+      "schema": "0cd868b5.create-schema.json",
+      "tools": "475942f1.create-tools.json"
+    }
+  ]
+}

@@ -91,8 +91,18 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
     }`;
 
     const pricing = await client.fetch(query);
-    const result = pricing || null;
+    
+    // Validar que la respuesta tenga la estructura esperada
+    if (!pricing || typeof pricing !== 'object') {
+      console.warn('Invalid pricing data structure received from Sanity');
+      if (pricingCache?.data) {
+        return pricingCache.data;
+      }
+      return null;
+    }
 
+    const result = pricing as SizePricing;
+    
     pricingCache = {
       data: result,
       timestamp: Date.now()
@@ -102,7 +112,14 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
   } catch (error: any) {
     // Mejorar el manejo de errores para evitar que se propague
     const errorMessage = error?.message || String(error);
-    console.error('Error fetching size pricing from Sanity:', errorMessage);
+    const errorDetails = error?.response || error?.status || '';
+    
+    // Log más detallado para debugging
+    console.error('Error fetching size pricing from Sanity:', {
+      message: errorMessage,
+      details: errorDetails,
+      error: error
+    });
     
     // Si hay cache, usar ese valor en lugar de fallar completamente
     if (pricingCache?.data) {

@@ -1,0 +1,1110 @@
+[
+  {
+    "fields": [
+      {
+        "options": {
+          "hotspot": true
+        },
+        "description": "Foto de perfil del fotógrafo",
+        "name": "profileImage",
+        "type": "image",
+        "title": "Imagen de perfil"
+      },
+      {
+        "fields": [
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "title",
+                "type": "string",
+                "title": "Título"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      },
+                      {
+                        "flag": "min",
+                        "constraint": 1
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "of": [
+                  {
+                    "type": "text"
+                  }
+                ],
+                "name": "paragraphs",
+                "type": "array",
+                "title": "Párrafos"
+              }
+            ],
+            "name": "es",
+            "type": "object",
+            "title": "Español"
+          },
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      },
+                      {
+                        "flag": "min",
+                        "constraint": 1
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "of": [
+                  {
+                    "type": "text"
+                  }
+                ],
+                "name": "paragraphs",
+                "type": "array"
+              }
+            ],
+            "name": "en",
+            "type": "object",
+            "title": "English"
+          }
+        ],
+        "name": "content",
+        "type": "object",
+        "title": "Contenido"
+      }
+    ],
+    "name": "bio",
+    "type": "document",
+    "title": "Biografía"
+  },
+  {
+    "fields": [
+      {
+        "options": {
+          "hotspot": true
+        },
+        "description": "Imagen de portada del libro",
+        "name": "coverImage",
+        "type": "image",
+        "title": "Imagen de portada"
+      },
+      {
+        "fields": [
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "title",
+                "type": "string",
+                "title": "Título"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "author",
+                "type": "string",
+                "title": "Autor"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "description",
+                "type": "text",
+                "title": "Descripción"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "comingSoon",
+                "type": "string",
+                "title": "Próximo lanzamiento"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "availability",
+                "type": "text",
+                "title": "Disponibilidad"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "emailPlaceholder",
+                "type": "string",
+                "title": "Placeholder del email"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "subscribe",
+                "type": "string",
+                "title": "Texto del botón suscribir"
+              }
+            ],
+            "name": "es",
+            "type": "object",
+            "title": "Español"
+          },
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "author",
+                "type": "string"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "description",
+                "type": "text"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "comingSoon",
+                "type": "string"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "availability",
+                "type": "text"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "emailPlaceholder",
+                "type": "string",
+                "title": "Email placeholder"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "subscribe",
+                "type": "string",
+                "title": "Subscribe button text"
+              }
+            ],
+            "name": "en",
+            "type": "object",
+            "title": "English"
+          }
+        ],
+        "name": "content",
+        "type": "object",
+        "title": "Contenido"
+      }
+    ],
+    "name": "book",
+    "type": "document",
+    "title": "Libro"
+  },
+  {
+    "fields": [
+      {
+        "fields": [
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "presence",
+                    "constraint": "required"
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "name": "es",
+            "type": "string",
+            "title": "Español"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "presence",
+                    "constraint": "required"
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "name": "en",
+            "type": "string",
+            "title": "English"
+          }
+        ],
+        "name": "title",
+        "type": "object",
+        "title": "Título"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 1900
+              },
+              {
+                "flag": "max",
+                "constraint": 2030
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "year",
+        "type": "number",
+        "title": "Año"
+      },
+      {
+        "fields": [
+          {
+            "rows": 4,
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "presence",
+                    "constraint": "required"
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "name": "es",
+            "type": "text",
+            "title": "Español"
+          },
+          {
+            "rows": 4,
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "presence",
+                    "constraint": "required"
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "name": "en",
+            "type": "text",
+            "title": "English"
+          }
+        ],
+        "name": "synopsis",
+        "type": "object",
+        "title": "Sinopsis"
+      },
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "uri",
+                "constraint": {
+                  "options": {
+                    "scheme": [
+                      "/^http$/",
+                      "/^https$/"
+                    ],
+                    "allowRelative": false,
+                    "relativeOnly": false,
+                    "allowCredentials": false
+                  }
+                }
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "URL del trailer en YouTube o Vimeo",
+        "name": "trailerUrl",
+        "type": "url",
+        "title": "URL del Trailer"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "description": "Imagen del poster del documental",
+        "name": "poster",
+        "type": "image"
+      },
+      {
+        "initialValue": true,
+        "description": "Marcar si el documental debe mostrarse en el sitio",
+        "name": "isActive",
+        "type": "boolean",
+        "title": "Activo"
+      },
+      {
+        "initialValue": 0,
+        "description": "Orden de visualización (menor número = aparece primero)",
+        "name": "order",
+        "type": "number",
+        "title": "Orden"
+      }
+    ],
+    "name": "documentary",
+    "type": "document",
+    "title": "Documental"
+  },
+  {
+    "fields": [
+      {
+        "description": "Ubicación donde se tomaron las fotos",
+        "name": "location",
+        "type": "string",
+        "title": "Ubicación"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "name": "cover",
+        "type": "image",
+        "title": "Imagen de portada"
+      },
+      {
+        "description": "Todas las fotos de la galería",
+        "of": [
+          {
+            "type": "image"
+          }
+        ],
+        "name": "photos",
+        "type": "array",
+        "title": "Fotografías"
+      },
+      {
+        "description": "Orden de aparición en la galería",
+        "name": "order",
+        "type": "number",
+        "title": "Orden"
+      },
+      {
+        "initialValue": true,
+        "description": "Si la galería debe mostrarse en el sitio",
+        "name": "isActive",
+        "type": "boolean",
+        "title": "Activa"
+      },
+      {
+        "fields": [
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "title",
+                "type": "string",
+                "title": "Título"
+              },
+              {
+                "description": "Descripción de la galería",
+                "name": "description",
+                "type": "text",
+                "title": "Descripción"
+              }
+            ],
+            "name": "es",
+            "type": "object",
+            "title": "Español"
+          },
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "description": "Gallery description",
+                "name": "description",
+                "type": "text"
+              }
+            ],
+            "name": "en",
+            "type": "object",
+            "title": "English"
+          }
+        ],
+        "name": "content",
+        "type": "object",
+        "title": "Contenido"
+      }
+    ],
+    "name": "gallery",
+    "type": "document",
+    "title": "Galería"
+  },
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "rules": [
+              {
+                "flag": "max",
+                "constraint": 12
+              }
+            ],
+            "level": "error"
+          }
+        ],
+        "description": "Imágenes para el slideshow de la página principal (máximo 12)",
+        "of": [
+          {
+            "type": "image"
+          }
+        ],
+        "name": "homeSlideshow",
+        "type": "array",
+        "title": "Imágenes del slideshow"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "description": "Icono que aparecerá en la pestaña del navegador. Si se deja vacío, se usará la foto de la biografía por defecto.",
+        "name": "favicon",
+        "type": "image",
+        "title": "Icono del sitio (Favicon)"
+      },
+      {
+        "fields": [
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "siteTitle",
+                "type": "string",
+                "title": "Título del sitio"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "siteDescription",
+                "type": "text",
+                "title": "Descripción del sitio"
+              }
+            ],
+            "name": "es",
+            "type": "object",
+            "title": "Español"
+          },
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "siteTitle",
+                "type": "string"
+              },
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "presence",
+                        "constraint": "required"
+                      }
+                    ],
+                    "level": "error"
+                  }
+                ],
+                "name": "siteDescription",
+                "type": "text"
+              }
+            ],
+            "name": "en",
+            "type": "object",
+            "title": "English"
+          }
+        ],
+        "name": "content",
+        "type": "object",
+        "title": "Contenido"
+      },
+      {
+        "fields": [
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "description": "URL de tu perfil de Instagram",
+            "name": "instagram",
+            "type": "url"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "description": "URL de tu perfil de Facebook",
+            "name": "facebook",
+            "type": "url"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "description": "URL de tu perfil de Twitter/X",
+            "name": "twitter",
+            "type": "url",
+            "title": "Twitter/X"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "description": "URL de tu perfil de LinkedIn",
+            "name": "linkedin",
+            "type": "url",
+            "title": "LinkedIn"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "description": "URL de tu canal de YouTube",
+            "name": "youtube",
+            "type": "url",
+            "title": "YouTube"
+          },
+          {
+            "validation": [
+              {
+                "rules": [
+                  {
+                    "flag": "uri",
+                    "constraint": {
+                      "options": {
+                        "scheme": [
+                          "/^http$/",
+                          "/^https$/"
+                        ],
+                        "allowRelative": false,
+                        "relativeOnly": false,
+                        "allowCredentials": false
+                      }
+                    }
+                  }
+                ],
+                "level": "error"
+              }
+            ],
+            "description": "URL de tu perfil de TikTok",
+            "name": "tiktok",
+            "type": "url",
+            "title": "TikTok"
+          }
+        ],
+        "name": "socialMedia",
+        "type": "object",
+        "title": "Redes Sociales"
+      }
+    ],
+    "name": "settings",
+    "type": "document",
+    "title": "Configuración"
+  },
+  {
+    "validation": [
+      {
+        "rules": [
+          {
+            "flag": "custom"
+          }
+        ],
+        "level": "error"
+      }
+    ],
+    "description": "Configuración global de precios en USD. Las fotos y las postales utilizan tarifas distintas y se convierten automáticamente a la moneda local según la región del usuario.",
+    "fields": [
+      {
+        "options": {
+          "collapsible": true,
+          "collapsed": false
+        },
+        "fields": [
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "min",
+                        "constraint": 0
+                      }
+                    ],
+                    "level": "error",
+                    "message": "El precio debe ser mayor a 0"
+                  }
+                ],
+                "description": "Precio en dólares estadounidenses para fotos tamaño 15x21 cm",
+                "name": "priceUSD",
+                "type": "number",
+                "title": "Precio en USD"
+              },
+              {
+                "initialValue": true,
+                "description": "Si este tamaño está disponible para la venta",
+                "name": "enabled",
+                "type": "boolean",
+                "title": "Disponible"
+              }
+            ],
+            "name": "size15x21",
+            "type": "object",
+            "title": "15x21 cm"
+          },
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "min",
+                        "constraint": 0
+                      }
+                    ],
+                    "level": "error",
+                    "message": "El precio debe ser mayor a 0"
+                  }
+                ],
+                "description": "Precio en dólares estadounidenses para fotos tamaño 20x30 cm",
+                "name": "priceUSD",
+                "type": "number",
+                "title": "Precio en USD"
+              },
+              {
+                "initialValue": true,
+                "description": "Si este tamaño está disponible para la venta",
+                "name": "enabled",
+                "type": "boolean",
+                "title": "Disponible"
+              }
+            ],
+            "name": "size20x30",
+            "type": "object",
+            "title": "20x30 cm"
+          },
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "min",
+                        "constraint": 0
+                      }
+                    ],
+                    "level": "error",
+                    "message": "El precio debe ser mayor a 0"
+                  }
+                ],
+                "description": "Precio en dólares estadounidenses para fotos tamaño 30x45 cm",
+                "name": "priceUSD",
+                "type": "number",
+                "title": "Precio en USD"
+              },
+              {
+                "initialValue": true,
+                "description": "Si este tamaño está disponible para la venta",
+                "name": "enabled",
+                "type": "boolean",
+                "title": "Disponible"
+              }
+            ],
+            "name": "size30x45",
+            "type": "object",
+            "title": "30x45 cm"
+          }
+        ],
+        "name": "photoPricing",
+        "type": "object",
+        "title": "Precios para Fotos"
+      },
+      {
+        "options": {
+          "collapsible": true,
+          "collapsed": false
+        },
+        "fields": [
+          {
+            "fields": [
+              {
+                "validation": [
+                  {
+                    "rules": [
+                      {
+                        "flag": "min",
+                        "constraint": 0
+                      }
+                    ],
+                    "level": "error",
+                    "message": "El precio debe ser mayor a 0"
+                  }
+                ],
+                "description": "Precio en dólares estadounidenses para postales tamaño 15x21 cm",
+                "name": "priceUSD",
+                "type": "number",
+                "title": "Precio en USD"
+              },
+              {
+                "initialValue": true,
+                "description": "Si este tamaño está disponible para la venta",
+                "name": "enabled",
+                "type": "boolean",
+                "title": "Disponible"
+              }
+            ],
+            "name": "size15x21",
+            "type": "object",
+            "title": "15x21 cm"
+          }
+        ],
+        "name": "postcardPricing",
+        "type": "object",
+        "title": "Precios para Postales"
+      }
+    ],
+    "name": "sizePricing",
+    "type": "document",
+    "title": "Precios por Tamaño"
+  }
+]

@@ -10,7 +10,7 @@ import imageUrlBuilder from '@sanity/image-url'
 const DEFAULT_CONFIG = {
   projectId: 'demo-project',
   dataset: 'production',
-  apiVersion: '2023-05-03',
+  apiVersion: '2025-08-18',
   useCdn: false,
 }
 
@@ -21,7 +21,7 @@ function getSanityConfig() {
     try {
       const { projectId, dataset, apiVersion } = require('../sanity/env')
       return { projectId, dataset, apiVersion }
-    } catch {
+    } catch (envError) {
       // Si falla, usar variables de entorno directamente
       const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || DEFAULT_CONFIG.projectId
       const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || DEFAULT_CONFIG.dataset
