@@ -60,6 +60,34 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
     }
   }
 
+  // Intentar usar API route primero (más confiable en Vercel preview)
+  try {
+    const isClient = typeof window !== 'undefined';
+    if (isClient) {
+      // En el cliente, usar API route para evitar problemas de CORS/red
+      const response = await fetch('/api/pricing', {
+        cache: forceRefresh ? 'no-store' : 'default',
+      });
+
+      if (response.ok) {
+        const pricing = await response.json();
+        
+        if (pricing && typeof pricing === 'object') {
+          const result = pricing as SizePricing;
+          pricingCache = {
+            data: result,
+            timestamp: Date.now()
+          };
+          return result;
+        }
+      }
+    }
+  } catch (apiError) {
+    // Si falla la API route, intentar directamente con Sanity
+    console.warn('API route failed, trying direct Sanity fetch:', apiError);
+  }
+
+  // Fallback: usar cliente de Sanity directamente (servidor o si API route falla)
   try {
     // Verificar que el cliente de Sanity esté configurado
     if (!client) {
@@ -90,7 +118,13 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
       }
     }`;
 
-    const pricing = await client.fetch(query);
+    // Usar Promise.race para agregar un timeout personalizado
+    const fetchPromise = client.fetch(query);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
+    );
+
+    const pricing = await Promise.race([fetchPromise, timeoutPromise]) as any;
     
     // Validar que la respuesta tenga la estructura esperada
     if (!pricing || typeof pricing !== 'object') {
@@ -112,14 +146,20 @@ export async function getSizePricing(forceRefresh: boolean = false): Promise<Siz
   } catch (error: any) {
     // Mejorar el manejo de errores para evitar que se propague
     const errorMessage = error?.message || String(error);
-    const errorDetails = error?.response || error?.status || '';
+    const isNetworkError = error?.isNetworkError || errorMessage.includes('network') || errorMessage.includes('timeout');
     
-    // Log más detallado para debugging
-    console.error('Error fetching size pricing from Sanity:', {
-      message: errorMessage,
-      details: errorDetails,
-      error: error
-    });
+    // Log más detallado solo si no es un error de red común
+    if (!isNetworkError) {
+      console.error('Error fetching size pricing from Sanity:', {
+        message: errorMessage,
+        error: error
+      });
+    } else {
+      // Para errores de red, solo loguear en modo desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Network error fetching pricing (using cache if available):', errorMessage);
+      }
+    }
     
     // Si hay cache, usar ese valor en lugar de fallar completamente
     if (pricingCache?.data) {

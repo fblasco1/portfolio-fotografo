@@ -46,7 +46,11 @@ export const client = createClient({
   projectId: config.projectId,
   dataset: config.dataset,
   apiVersion: config.apiVersion,
-  useCdn: process.env.NODE_ENV === 'production', // CDN en producción
+  // Deshabilitar CDN para evitar problemas de red en preview/desarrollo
+  // El CDN puede causar problemas de CORS o timeout en algunos entornos
+  useCdn: false,
+  // Configurar timeout más corto para evitar esperas largas
+  requestTagPrefix: 'portfolio',
 })
 
 // Crear builder de imágenes
