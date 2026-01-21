@@ -72,7 +72,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
         // Si no tiene tipo ni tamaño, inicializar con valores por defecto solo si no existe ya
         if (!selectedTypesAndSizes[item.id]) {
           initialSelections[item.id] = {
-            productType: 'photos', // Por defecto foto
+            productType: 'photos', // Solo foto
             size: '15x21' // Por defecto tamaño pequeño
           };
         }
@@ -102,8 +102,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
 
       try {
         for (const item of cart) {
-          // Usar tipo y tamaño seleccionados o los del item
-          const productType = item.productType || selectedTypesAndSizes[item.id]?.productType || 'photos';
+          // Usar tipo y tamaño seleccionados o los del item (solo foto ahora)
           const size = item.size || selectedTypesAndSizes[item.id]?.size || '15x21';
           
           if (size === 'custom') {
@@ -112,8 +111,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
           }
 
           try {
-            const sanityProductType = productType === 'postcards' ? 'postcard' : 'photo';
-            const priceUSD = getPriceUSDForSize(pricing, size, { productType: sanityProductType });
+            const priceUSD = getPriceUSDForSize(pricing, size, { productType: 'photo' });
             if (priceUSD > 0) {
               const converted = await convertUSDToLocal(
                 priceUSD,
@@ -132,8 +130,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
 
         // Calcular total usando los valores seleccionados actuales
         const subtotal = cart.reduce((sum, item) => {
-          // Usar tipo y tamaño seleccionados o los del item
-          const productType = selectedTypesAndSizes[item.id]?.productType || item.productType || 'photos';
+          // Usar tamaño seleccionado o el del item (solo foto ahora)
           const size = selectedTypesAndSizes[item.id]?.size || item.size || '15x21';
           const price = priceMap[`${item.id}_${size}`] || 0;
           return sum + (price * item.quantity);
@@ -300,15 +297,13 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
     setTimeout(() => setPaymentError(null), 5000);
   };
 
-  // Actualizar tipo y tamaño de un item
+  // Actualizar tamaño de un item (solo foto ahora)
   const handleTypeAndSizeChange = (itemId: string, productType: 'photos' | 'postcards', size: ProductSize) => {
-    // Si cambiamos el tipo, verificar que el tamaño sea válido para el nuevo tipo
+    // Verificar que el tamaño sea válido
     let validSize = size;
     if (pricing) {
-      const availableSizes = getAvailableSizes(pricing, { 
-        productType: productType === 'postcards' ? 'postcard' : 'photo' 
-      });
-      // Si el tamaño actual no está disponible para el nuevo tipo, usar el primero disponible
+      const availableSizes = getAvailableSizes(pricing, { productType: 'photo' });
+      // Si el tamaño actual no está disponible, usar el primero disponible
       if (!availableSizes.includes(size) && availableSizes.length > 0) {
         validSize = availableSizes[0];
       }
@@ -324,8 +319,8 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
           newState[key] = { ...prev[key] };
         }
       });
-      // Agregar el nuevo valor
-      newState[itemId] = { productType, size: validSize };
+      // Agregar el nuevo valor (siempre foto)
+      newState[itemId] = { productType: 'photos', size: validSize };
       return newState;
     });
     
@@ -336,31 +331,31 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
       // Si el item no tiene tamaño, usar el ID con índice para actualizarlo
       if (!item.size) {
         const tempItemId = `${item.id}_${itemIndex}`;
-        updateItemTypeAndSize(tempItemId, productType, validSize);
+        updateItemTypeAndSize(tempItemId, 'photos', validSize);
       } else {
         // Si ya tiene tamaño, usar el método normal
         const currentItemId = `${item.id}_${item.size}`;
-        updateItemTypeAndSize(currentItemId, productType, validSize);
+        updateItemTypeAndSize(currentItemId, 'photos', validSize);
       }
     }
   };
 
-  // Verificar si todos los items tienen tipo y tamaño seleccionados
+  // Verificar si todos los items tienen tamaño seleccionado
   const allItemsConfigured = cart.every(item => {
-    if (item.productType && item.size) return true;
+    if (item.size) return true;
     const selection = selectedTypesAndSizes[item.id];
-    return selection && selection.productType && selection.size;
+    return selection && selection.size;
   });
 
   // Pedir información del cliente antes de mostrar formulario
   const handleContinueToPayment = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Verificar que todos los items tengan tipo y tamaño
+    // Verificar que todos los items tengan tamaño
     if (!allItemsConfigured) {
       setPaymentError(locale === 'es' 
-        ? 'Por favor, selecciona el tipo y tamaño para todos los productos' 
-        : 'Please select type and size for all products');
+        ? 'Por favor, selecciona el tamaño para todos los productos' 
+        : 'Please select size for all products');
       return;
     }
     
@@ -416,14 +411,13 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                 ) : (
                   cart.map((item, index) => {
                   // Usar el estado seleccionado si existe, sino usar los valores del item o defaults
-                  // IMPORTANTE: Siempre priorizar selectedTypesAndSizes sobre item.productType/item.size
+                  // IMPORTANTE: Siempre priorizar selectedTypesAndSizes sobre item.size
                   // Leer directamente del estado para asegurar que se actualice cuando cambie
                   const selection = selectedTypesAndSizes[item.id];
                   // Usar nullish coalescing para asegurar que se use el estado si existe
                   const currentSize: ProductSize = selection?.size ?? item.size ?? '15x21';
-                  const currentType: 'photos' | 'postcards' = selection?.productType ?? item.productType ?? 'photos';
                   const itemPrice = itemPrices[`${item.id}_${currentSize}`] || 0;
-                  const needsConfiguration = !item.productType || !item.size;
+                  const needsConfiguration = !item.size;
                   
                   // Generar key única para evitar problemas de re-render
                   // Usar el índice para items sin tamaño para mantener la key estable
@@ -445,62 +439,10 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                           <div className="mt-3 space-y-3 p-3 bg-gray-50 rounded-lg">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                {locale === 'es' ? 'Tipo de producto:' : 'Product type:'}
-                              </label>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const availableSizes = getAvailableSizes(pricing, { productType: 'photo' });
-                                    const newSize = availableSizes.length > 0 && availableSizes.includes(currentSize) 
-                                      ? currentSize 
-                                      : availableSizes.length > 0 
-                                        ? availableSizes[0] 
-                                        : currentSize;
-                                    handleTypeAndSizeChange(item.id, 'photos', newSize);
-                                  }}
-                                  className={`px-4 py-2 rounded border-2 transition-colors cursor-pointer ${
-                                    currentType === 'photos'
-                                      ? 'border-stone-600 bg-stone-50 font-medium'
-                                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                                  }`}
-                                  aria-pressed={currentType === 'photos'}
-                                >
-                                  {locale === 'es' ? 'Foto' : 'Photo'}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const availableSizes = getAvailableSizes(pricing, { productType: 'postcard' });
-                                    const newSize = availableSizes.length > 0 && availableSizes.includes(currentSize) 
-                                      ? currentSize 
-                                      : availableSizes.length > 0 
-                                        ? availableSizes[0] 
-                                        : currentSize;
-                                    handleTypeAndSizeChange(item.id, 'postcards', newSize);
-                                  }}
-                                  className={`px-4 py-2 rounded border-2 transition-colors cursor-pointer ${
-                                    currentType === 'postcards'
-                                      ? 'border-stone-600 bg-stone-50 font-medium'
-                                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                                  }`}
-                                  aria-pressed={currentType === 'postcards'}
-                                >
-                                  {locale === 'es' ? 'Postal' : 'Postcard'}
-                                </button>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
                                 {locale === 'es' ? 'Tamaño:' : 'Size:'}
                               </label>
                               <div className="grid grid-cols-2 gap-2">
-                                {getAvailableSizes(pricing, { productType: currentType === 'postcards' ? 'postcard' : 'photo' }).map((size) => {
+                                {getAvailableSizes(pricing, { productType: 'photo' }).map((size) => {
                                   const isSelected = currentSize === size;
                                   return (
                                     <button
@@ -509,7 +451,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        handleTypeAndSizeChange(item.id, currentType, size);
+                                        handleTypeAndSizeChange(item.id, 'photos', size);
                                       }}
                                       className={`px-3 py-2 text-sm rounded border-2 transition-colors cursor-pointer ${
                                         isSelected
@@ -523,9 +465,9 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                                   );
                                 })}
                               </div>
-                              {getAvailableSizes(pricing, { productType: currentType === 'postcards' ? 'postcard' : 'photo' }).length === 0 && (
+                              {getAvailableSizes(pricing, { productType: 'photo' }).length === 0 && (
                                 <p className="text-sm text-gray-500 italic">
-                                  {locale === 'es' ? 'No hay tamaños disponibles para este tipo' : 'No sizes available for this type'}
+                                  {locale === 'es' ? 'No hay tamaños disponibles' : 'No sizes available'}
                                 </p>
                               )}
                             </div>
@@ -542,12 +484,6 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                         
                         <p className="text-sm mt-2">
                           {locale === 'es' ? 'Cantidad' : 'Quantity'}: {item.quantity}
-                          {itemPrice > 0 && (
-                            <> × {new Intl.NumberFormat('es-AR', {
-                              style: 'currency',
-                              currency: region?.currency || 'ARS',
-                            }).format(itemPrice)}</>
-                          )}
                         </p>
                         {currentSize === 'custom' && (
                           <p className="text-xs text-gray-500 italic">

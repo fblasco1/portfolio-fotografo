@@ -71,12 +71,12 @@ export default async function Documentaries({ params }: DocumentariesPageProps) 
                       {/* Poster */}
                       {documentary.poster && (
                         <div className="lg:col-span-1">
-                          <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-md">
+                          <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-md bg-gray-100">
                             <Image
                               src={urlFor(documentary.poster).width(400).height(600).url()}
                               alt={title}
                               fill
-                              className="object-cover"
+                              className="object-contain"
                             />
                           </div>
                         </div>
