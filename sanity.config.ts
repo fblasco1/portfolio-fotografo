@@ -21,7 +21,7 @@ if (projectId === 'demo-project' || dataset === 'production' && !process.env.NEX
 }
 
 export default defineConfig({
-  basePath: '/admin',
+  basePath: '/admin/studio',
   projectId,
   dataset,
   title: 'Portfolio Cristian Pirovano - Admin',
