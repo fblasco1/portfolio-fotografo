@@ -1,238 +1,89 @@
-# 📸 Portfolio Fotográfico - E-commerce con Mercado Pago
+# 📸 Portfolio Fotográfico
 
-Portfolio fotográfico profesional con tienda online integrada con **Mercado Pago Checkout API**.
+Portfolio fotográfico con tienda online integrada con **Mercado Pago Checkout API** (Orders API v2).
 
-## 🚀 Características
+## Características
 
-- ✅ **Next.js 15** con App Router
-- ✅ **Sanity CMS** para gestión de contenido
-- ✅ **Mercado Pago Checkout API** 
-- ✅ **Internacionalización** (ES/EN)
-- ✅ **Responsive Design**
-- ✅ **Pago único** sin cuotas
-- ✅ **Sin envío/IVA** 
+- **Next.js 15** · App Router · TypeScript · Tailwind
+- **Sanity CMS** para contenido (galerías, libro, documentales)
+- **Mercado Pago** pagos con tarjeta (crédito/débito)
+- **Panel admin** con auth Supabase: órdenes desde API MP + Sanity Studio
+- **i18n** (ES/EN)
 
-## 🛠️ Tecnologías
+## Inicio rápido
 
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
-- **CMS**: Sanity
-- **Pagos**: Mercado Pago Checkout API
-- **Deploy**: Vercel/Netlify
-
-## 📋 Requisitos Previos
-
-- Node.js 18+
-- npm/yarn
-- Cuenta de Mercado Pago (Sandbox/Producción)
-- Proyecto Sanity configurado
-
-## ⚙️ Instalación
-
-1. **Clonar repositorio**
 ```bash
-git clone <repository-url>
+git clone <repo>
 cd portfolio-fotografo
-```
-
-2. **Instalar dependencias**
-```bash
 npm install
-```
-
-3. **Configurar variables de entorno**
-```bash
 cp env.example .env.local
-```
-
-4. **Configurar .env.local**
-```env
-# Sanity
-NEXT_PUBLIC_SANITY_PROJECT_ID=tu_project_id
-NEXT_PUBLIC_SANITY_DATASET=production
-NEXT_PUBLIC_SANITY_API_VERSION=2025-08-18
-SANITY_API_TOKEN=tu_api_token
-
-# Mercado Pago (Sandbox para desarrollo)
-MERCADOPAGO_ACCESS_TOKEN=TEST-tu_access_token
-NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=TEST-tu_public_key
-
-# Base URL
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-```
-
-5. **Ejecutar en desarrollo**
-```bash
+# Configurar .env.local (Sanity, Mercado Pago, Supabase)
 npm run dev
 ```
 
-## 🧪 Testing - Pruebas de Integración
+### Variables de entorno
 
-Para una guía completa de pruebas (cuentas de prueba, credenciales, simulación paso a paso), consulta:
+| Variable | Descripción |
+|----------|-------------|
+| `NEXT_PUBLIC_SANITY_*` | Sanity CMS |
+| `MERCADOPAGO_ACCESS_TOKEN` | Access Token MP (APP_USR- en prod) |
+| `NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY` | Public Key MP |
+| `NEXT_PUBLIC_BASE_URL` | URL base (ej. `http://localhost:3000`) |
+| `NEXT_PUBLIC_SUPABASE_*` | Supabase (auth admin) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role para admin |
+| `RESEND_API_KEY` | Emails de notificación |
 
-**[docs/01-PRUEBAS-INTEGRACION-MERCADOPAGO.md](docs/01-PRUEBAS-INTEGRACION-MERCADOPAGO.md)**
+Ver `env.example` y [docs/CONFIGURACION-SUPABASE.md](docs/CONFIGURACION-SUPABASE.md) para el panel admin.
 
-### Flujo rápido
+## Panel Admin
 
-1. Ir a la tienda (`/es/gallery`)
-2. Agregar productos al carrito
-3. Ir al checkout (`/es/checkout`)
-4. Seleccionar tamaño de la imagen
-5. Completar información de contacto
-6. Completar datos de tarjeta (titular: `APRO`, DNI: `12345678` para pago aprobado)
+- **Login**: `/admin/login` (email configurado en Supabase)
+- **Hub**: `/admin` → Órdenes | Contenido
+- **Órdenes**: `/admin/dashboard` (datos desde API Mercado Pago)
+- **Sanity Studio**: `/admin/studio`
 
-## 🚀 Deploy a Producción
+Configuración: [docs/CONFIGURACION-SUPABASE.md](docs/CONFIGURACION-SUPABASE.md)
 
-### 1. Configurar Variables de Producción
+## Testing y producción
 
-```env
-# Mercado Pago (Producción)
-MERCADOPAGO_ACCESS_TOKEN=APP_USR-tu_access_token_prod
-NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=APP_USR-tu_public_key_prod
+| Recurso | Documento |
+|---------|-----------|
+| Pruebas de integración MP | [docs/01-PRUEBAS-INTEGRACION-MERCADOPAGO.md](docs/01-PRUEBAS-INTEGRACION-MERCADOPAGO.md) |
+| Tarjetas de prueba | [docs/mercadopago-test-cards.md](docs/mercadopago-test-cards.md) |
+| Calidad y medición MP | [docs/CHECKLIST-CALIDAD-PRODUCCION.md](docs/CHECKLIST-CALIDAD-PRODUCCION.md) |
+| Webhook | [docs/webhook-setup.md](docs/webhook-setup.md) |
+| Deploy | [docs/production-checklist.md](docs/production-checklist.md) |
 
-# Base URL de producción
-NEXT_PUBLIC_BASE_URL=https://tu-dominio.com
+### Flujo de prueba rápido
+
+1. Tienda → `/es/gallery` → agregar al carrito
+2. Checkout → seleccionar tamaño → contacto → tarjeta
+3. Titular: `APRO`, DNI: `12345678` (pago aprobado)
+
+## Estructura
+
+```
+app/
+├── [locale]/        # Rutas públicas (gallery, checkout, etc.)
+├── admin/           # Panel (login, dashboard, studio)
+└── api/
+    ├── payment/     # Crear pago, webhook
+    └── admin/       # Órdenes, reembolsos (proxy a MP)
+components/payment/  # PaymentForm, CardForm, MercadoPagoScript
+lib/
+├── payment/         # mercadopago.service
+├── mercadopago-admin # API órdenes MP
+└── supabase/        # Auth admin
 ```
 
-### 2. Deploy en Vercel
+## Comandos
 
 ```bash
-# Instalar Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
+npm run dev          # Desarrollo
+npm run build        # Build producción
+npm run sanity:dev   # Sanity Studio (standalone)
 ```
 
-### 3. Configurar Webhook en Mercado Pago
+## Documentación
 
-1. **Ir a tu panel de Mercado Pago**
-2. **Configurar webhook**:
-   - URL: `https://tu-dominio.com/api/payment/webhook/mercadopago`
-   - Eventos: `payment`
-   - **Secret (opcional)**: Configurar `MERCADOPAGO_WEBHOOK_SECRET` para validación de firmas
-
-### 4. Configurar Notificaciones por Email
-
-1. **Configurar Resend**:
-   - Obtener API key de [Resend](https://resend.com)
-   - Configurar `RESEND_API_KEY` en variables de entorno
-
-2. **Probar emails automáticos**:
-   ```bash
-   node scripts/test-email-notifications.js
-   ```
-
-## 🛒 Sistema de Carrito Unificado
-
-El proyecto utiliza un sistema de carrito unificado que integra:
-
-### 🎯 **Componentes Principales:**
-- **`Cart.tsx`**: Carrito principal con integración completa
-- **`ProductCard.tsx`**: Tarjeta de producto unificada para ambos tipos
-- **`AddToCartButton.tsx`**: Botón para agregar productos al carrito
-- **`CartButton.tsx`**: Botón flotante del carrito
-- **`CheckoutPage.tsx`**: Página dedicada de checkout
-
-### 🔄 **Flujo Unificado:**
-```
-Tienda → AddToCartButton → Cart → CheckoutPage → Mercado Pago → Webhook → Emails
-```
-
-### ✅ **Beneficios:**
-- **Sistema único**: Un solo carrito y ProductCard para toda la aplicación
-- **Integración completa**: Con hooks de región y pagos
-- **UX consistente**: Misma experiencia en todas las páginas
-- **Mantenimiento simple**: Un solo sistema que mantener
-- **Sin duplicación**: Componentes unificados para ambos tipos de productos
-
-## 🔔 Sistema de Notificaciones Automáticas
-
-El sistema envía emails automáticamente cuando un pago es aprobado:
-
-### 📧 Email al Fotógrafo
-- **Contenido**: Detalles del pago, información del cliente, productos comprados, dirección de envío
-- **Propósito**: Notificar nueva venta y coordinar envío
-- **Destinatario**: `pirovanofotografia@gmail.com`
-
-### 📧 Email al Cliente
-- **Contenido**: Confirmación de compra, detalles de productos, próximos pasos
-- **Propósito**: Confirmar compra y generar confianza
-- **Destinatario**: Email del cliente que realizó la compra
-
-### 🧪 Probar Notificaciones
-
-#### Probar solo los emails:
-```bash
-node scripts/test-email-notifications.js
-```
-
-#### Probar el webhook completo:
-```bash
-# Configurar variables de entorno (opcional)
-export WEBHOOK_URL="http://localhost:3000/api/payment/webhook/mercadopago"
-export MERCADOPAGO_WEBHOOK_SECRET="tu_secret_aqui"
-
-# Ejecutar prueba del webhook
-node scripts/test-webhook-complete.js
-```
-
-#### Probar en producción:
-```bash
-export WEBHOOK_URL="https://tu-dominio.com/api/payment/webhook/mercadopago"
-node scripts/test-webhook-complete.js
-```
-
-## 📁 Estructura del Proyecto
-
-```
-├── app/
-│   ├── [locale]/          # Rutas internacionalizadas
-│   │   ├── shop/          # Tienda
-│   │   ├── checkout/      # Checkout
-│   │   └── components/    # Componentes UI
-│   ├── api/
-│   │   └── payment/       # APIs de pago
-│   │       └── webhook/   # Webhook de Mercado Pago
-│   └── types/             # Tipos TypeScript
-├── components/
-│   └── payment/           # Componentes de pago unificados
-├── lib/
-│   ├── email/             # Servicio de notificaciones por email
-│   └── payment/           # Servicios de pago
-├── scripts/
-│   ├── test-email-notifications.js  # Script de prueba de emails
-│   └── test-webhook-complete.js     # Script de prueba del webhook completo
-├── hooks/                 # React hooks
-├── contexts/              # React contexts
-└── sanity/                # Configuración Sanity
-```
-
-## 🔧 Comandos Útiles
-
-```bash
-# Desarrollo
-npm run dev
-
-# Build
-npm run build
-
-# Sanity Studio
-npm run sanity:dev
-
-# Deploy Sanity
-npm run sanity:deploy
-```
-
-## 📞 Soporte
-
-- **Mercado Pago**: [Documentación oficial](https://www.mercadopago.com.ar/developers)
-- **Sanity**: [Documentación oficial](https://www.sanity.io/docs)
-- **Next.js**: [Documentación oficial](https://nextjs.org/docs)
-
-## 📄 Licencia
-
-MIT License - Ver archivo LICENSE para más detalles.
-
----
-
-**¡Tu tienda online está lista para recibir pagos!** 🎉
+Índice completo: [docs/README.md](docs/README.md)
