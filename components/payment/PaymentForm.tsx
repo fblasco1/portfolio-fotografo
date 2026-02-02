@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useRegion } from '@/contexts/RegionContext';
 import { useMercadoPago } from '@/hooks/useMercadoPago';
+import { getErrorMessage, formatPaymentError } from '@/lib/utils';
 import { Button } from '@/app/[locale]/components/ui/button';
 import { CardForm } from './CardForm';
 // import { InstallmentSelector } from './InstallmentSelector'; // Removido - solo pago único
@@ -17,13 +18,28 @@ interface PaymentFormProps {
     email: string;
     firstName?: string;
     lastName?: string;
+    phone?: string;
+    address?: {
+      street_name?: string;
+      street_number?: string;
+      city?: string;
+      zip_code?: string;
+      federal_unit?: string;
+    };
   };
   total?: number; // Total calculado desde el checkout
 }
 
 export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal }: PaymentFormProps) {
-  const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || '';
+  const publicKey = (process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || '').trim();
   const { items: cart, getTotals, clearCart } = useCart();
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && publicKey) {
+      const prefijo = publicKey.startsWith('TEST-') ? 'TEST-' : publicKey.startsWith('APP_USR-') ? 'APP_USR-' : '?';
+      console.info(`[MP] Public key: ${prefijo}... (${publicKey.length} chars)`);
+    }
+  }, [publicKey]);
   const { region } = useRegion();
   
   // Usar el total pasado como prop, o calcularlo desde el carrito como fallback
@@ -48,42 +64,46 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
     createCardToken,
   } = useMercadoPago({ publicKey, locale: region?.country === 'BR' ? 'pt-BR' : 'es-AR' });
 
-  // Cargar tipos de identificación cuando el SDK esté listo
+  // Cargar tipos de identificación cuando el SDK esté listo (usa fallback si falla)
   useEffect(() => {
     if (isReady) {
       getIdentificationTypes()
         .then(setIdentificationTypes)
         .catch((err) => {
-          console.error('Error cargando tipos de identificación:', err);
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn('Error cargando tipos de identificación:', msg);
+          setIdentificationTypes([
+            { id: 'DNI', name: 'DNI', type: 'number', min_length: 7, max_length: 8 },
+            { id: 'CI', name: 'CI', type: 'number', min_length: 7, max_length: 9 },
+            { id: 'CPF', name: 'CPF', type: 'number', min_length: 11, max_length: 11 },
+          ]);
         });
     }
   }, [isReady, getIdentificationTypes]);
 
-  // Detectar método de pago cuando cambia el BIN
+  // Detectar método de pago cuando cambia el BIN (getPaymentMethods ya devuelve [] si falla)
   useEffect(() => {
     if (bin.length >= 6 && isReady) {
       getPaymentMethods(bin)
         .then((response: any) => {
-          // La API devuelve un objeto con estructura { paging: {...}, results: [...] }
-          let methodsArray = [];
+          let methodsArray: any[] = [];
           if (response && response.results && Array.isArray(response.results)) {
             methodsArray = response.results;
           } else if (Array.isArray(response)) {
             methodsArray = response;
           } else if (response && response.id) {
-            // Si es un objeto individual con id
             methodsArray = [response];
           }
-          
+
           if (methodsArray.length > 0) {
-            const method = methodsArray[0];
-            setPaymentMethod(method);
+            setPaymentMethod(methodsArray[0]);
           } else {
             setPaymentMethod(null);
           }
         })
         .catch((err) => {
-          console.error('Error obteniendo información de la tarjeta:', err);
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn('Error obteniendo información de la tarjeta:', msg);
           setPaymentMethod(null);
         });
     } else {
@@ -179,6 +199,30 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
       // 2. Obtener método de pago correcto (si está disponible)
              const correctPaymentMethodId = paymentMethod ? getCorrectPaymentMethodId(paymentMethod) : undefined;
 
+      // Generar external_reference único y robusto
+      const externalReference = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${cart.length}items`;
+
+      // Procesar teléfono para formato de Mercado Pago
+      // Formato esperado: { area_code: "11", number: "12345678" }
+      const phoneNumber = customerInfo?.phone || '';
+      const phoneParts = phoneNumber.replace(/\D/g, ''); // Solo números
+      let phoneAreaCode: string | undefined = undefined;
+      let phoneNumberOnly: string | undefined = undefined;
+      
+      if (phoneParts.length >= 10) {
+        // Formato internacional o con código de área: +54 11 1234-5678 o 11 1234-5678
+        // Extraer código de área (últimos 2-4 dígitos antes del número)
+        const lastDigits = phoneParts.slice(-8); // Últimos 8 dígitos son el número
+        phoneNumberOnly = lastDigits;
+        const remaining = phoneParts.slice(0, -8);
+        if (remaining.length >= 2) {
+          phoneAreaCode = remaining.slice(-2); // Últimos 2 dígitos del código de área
+        }
+      } else if (phoneParts.length >= 8) {
+        // Solo número sin código de área
+        phoneNumberOnly = phoneParts.slice(-8);
+      }
+
       // 3. Enviar pago al backend
       const response = await fetch('/api/payment/v2/create-payment', {
         method: 'POST',
@@ -191,18 +235,36 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
             token: token.id,
             transaction_amount: total,
             installments: selectedInstallment,
-            currency_id: region?.currency || 'ARS', // NUEVO
+            currency_id: region?.currency || 'ARS',
             ...(correctPaymentMethodId && { payment_method_id: correctPaymentMethodId }),
             payer: {
-              email: customerInfo.email,
-              first_name: customerInfo.firstName,
-              last_name: customerInfo.lastName,
+              email: customerInfo?.email || '',
+              first_name: customerInfo?.firstName || '',
+              last_name: customerInfo?.lastName || '',
               identification: {
                 type: cardData.identificationType,
                 number: cardData.identificationNumber,
               },
+              // Agregar teléfono si está disponible (mejora aprobación de pagos)
+              ...(phoneNumberOnly && phoneNumberOnly.length >= 8 && {
+                phone: {
+                  ...(phoneAreaCode && { area_code: phoneAreaCode }),
+                  number: phoneNumberOnly,
+                },
+              }),
+              // Agregar dirección si está disponible
+              ...(customerInfo?.address && customerInfo.address.street_name && {
+                address: {
+                  zip_code: customerInfo.address.zip_code || '',
+                  street_name: customerInfo.address.street_name || '',
+                  street_number: customerInfo.address.street_number || '',
+                  ...(customerInfo.address.city && { city: customerInfo.address.city }),
+                  ...(customerInfo.address.federal_unit && { federal_unit: customerInfo.address.federal_unit }),
+                },
+              }),
             },
             description: `Compra en Portfolio Fotográfico - ${cart.length} items`,
+            external_reference: externalReference, // ✅ Mejorado: referencia única y consistente
             metadata: {
               cart_items: cart.map((item: any) => ({
                 id: item.id,
@@ -210,6 +272,8 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
                 quantity: item.quantity,
                 productType: item.productType,
               })),
+              order_reference: externalReference,
+              cart_total_items: cart.length,
             },
           },
         }),
@@ -256,9 +320,11 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
       // Llamar callback de éxito
       onSuccess(payment.id, payment.status);
 
-    } catch (error: any) {
-      console.error('❌ Error procesando pago:', error);
-      onError(error.message || 'Error procesando el pago. Por favor intenta nuevamente.');
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      const friendly = formatPaymentError(msg);
+      console.error('❌ Error procesando pago:', msg);
+      onError(friendly || 'Error procesando el pago. Por favor intenta nuevamente.');
     } finally {
       setIsProcessing(false);
     }
@@ -266,10 +332,12 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
 
   if (!publicKey) {
     return (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600">
-            Error: Public Key de Mercado Pago no configurada. 
-            Agrega NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY a tu archivo .env.local
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-2">
+          <p className="text-red-600 font-medium">
+            Public Key de Mercado Pago no configurada.
+          </p>
+          <p className="text-red-700 text-sm">
+            Agrega <code className="bg-red-100 px-1 rounded">NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY</code> en <code className="bg-red-100 px-1 rounded">.env.local</code> y reinicia el servidor (<code className="bg-red-100 px-1 rounded">npm run dev</code>) después de guardar.
           </p>
         </div>
     );

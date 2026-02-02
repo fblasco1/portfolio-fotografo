@@ -89,6 +89,21 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
+   * Sanitizar address del payer: la API Orders solo acepta zip_code, street_name, street_number, city
+   * (no federal_unit ni otras propiedades adicionales)
+   */
+  private sanitizePayerAddress(address: Record<string, unknown>): Record<string, string> {
+    const allowed = ['zip_code', 'street_name', 'street_number', 'city'];
+    const sanitized: Record<string, string> = {};
+    for (const key of allowed) {
+      if (address[key] != null && typeof address[key] === 'string') {
+        sanitized[key] = address[key] as string;
+      }
+    }
+    return sanitized;
+  }
+
+  /**
    * Normalizar el payment_method_id para API Orders
    * Remueve prefijos como "deb" (debvisa -> visa)
    */
@@ -155,11 +170,13 @@ export class MercadoPagoProvider implements PaymentProvider {
       
       return {
         // Remover campo 'id' - no está permitido en API Orders
-        title: item.title,
-        description: `${normalizedProductType === 'photos' ? 'Fotografía' : 'Postal'} del Portfolio`,
-        category_id: normalizedProductType === 'photos' ? 'photography' : 'postcard',
-        quantity: item.quantity,
-        unit_price: baseUnitPrice,
+        title: item.title || 'Producto del Portfolio', // ✅ Requisito: Nombre del item
+        description: `${normalizedProductType === 'photos' ? 'Fotografía impresa' : 'Postal'} del Portfolio Fotográfico - ${item.title || 'Producto'}`, // ✅ Requisito: Descripción del item
+        // Usar categorías válidas de Mercado Pago según tipo de producto
+        // Categorías válidas: art, electronics, fashion, food, home, services, tickets, travel, others
+        category_id: normalizedProductType === 'photos' ? 'art' : 'others', // ✅ Requisito: Categoría del item
+        quantity: item.quantity || 1, // ✅ Requisito: Cantidad del producto
+        unit_price: baseUnitPrice, // ✅ Requisito: Precio del item
       };
     });
     
@@ -368,7 +385,9 @@ export class MercadoPagoProvider implements PaymentProvider {
         last_name: paymentData.payer.last_name, // ✅ Requisito: Apellido del comprador
         identification: paymentData.payer.identification, // ✅ Buena práctica: Identificación del comprador
         ...(paymentData.payer.phone && { phone: paymentData.payer.phone }), // ✅ Buena práctica: Teléfono del comprador
-        ...(paymentData.payer.address && { address: paymentData.payer.address }) // ✅ Buena práctica: Dirección del comprador
+        ...(paymentData.payer.address && {
+          address: this.sanitizePayerAddress(paymentData.payer.address),
+        }), // API Orders no acepta federal_unit
       },
     };
 
@@ -416,7 +435,65 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
-   * Crear un pago usando API Orders (flujo de dos pasos)
+   * Crear pago usando Payments API directa (solo para credenciales TEST).
+   * Permite usar tarjetas de prueba sin gastar dinero real.
+   */
+  private async createPaymentLegacy(paymentData: PaymentRequest, orderId: string): Promise<PaymentResponse> {
+    const payerAddress = paymentData.payer.address
+      ? this.sanitizePayerAddress(paymentData.payer.address)
+      : undefined;
+
+    const payload = {
+      transaction_amount: paymentData.transaction_amount,
+      token: paymentData.token,
+      description: paymentData.description || 'Compra en Portfolio Fotográfico (prueba)',
+      installments: paymentData.installments,
+      payment_method_id: paymentData.payment_method_id || 'visa',
+      ...(paymentData.issuer_id && { issuer_id: paymentData.issuer_id }),
+      external_reference: orderId,
+      statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO',
+      payer: {
+        email: paymentData.payer.email,
+        first_name: paymentData.payer.first_name,
+        last_name: paymentData.payer.last_name,
+        identification: paymentData.payer.identification,
+        ...(paymentData.payer.phone && { phone: paymentData.payer.phone }),
+        ...(payerAddress && Object.keys(payerAddress).length > 0 && { address: payerAddress }),
+      },
+      ...(this.getNotificationUrl() && { notification_url: this.getNotificationUrl() }),
+      metadata: {
+        ...(paymentData.metadata || {}),
+        platform: 'portfolio-fotografo',
+        integration_type: 'payments_api_test',
+        order_id: orderId,
+      },
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🧪 Modo prueba: Payments API con tarjetas de prueba (sin cobro real)');
+    }
+
+    const response = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': `payment_${orderId}_${Date.now()}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = this.getErrorMessage(errorData, response.status);
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Crear un pago usando API Orders (flujo de dos pasos) o Payments API (modo prueba)
    * @param paymentData Datos del pago incluyendo token de tarjeta
    */
   async createPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
@@ -430,9 +507,19 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
 
     try {
-      // Generar ID de orden único
-      const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      // Generar ID de orden único y robusto para external_reference
+      // Formato: order_timestamp_random_cartItems
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 9);
+      const cartItemsCount = paymentData.metadata?.cart_items?.length || 0;
+      const orderId = paymentData.external_reference || `order_${timestamp}_${random}_${cartItemsCount}items`;
+
+      // MODO PRUEBA: Credenciales TEST + Payments API = tarjetas de prueba sin cobro real
+      if (this.accessToken.startsWith('TEST-')) {
+        return this.createPaymentLegacy(paymentData, orderId);
+      }
       
+      // MODO PRODUCCIÓN: API Orders (credenciales APP_USR-)
       // PASO A: Crear Orden de Mercado Pago (sin notification_url)
       const order = await this.createOrder(paymentData, orderId);
       const mercadopagoOrderId = order.id;
@@ -458,9 +545,10 @@ export class MercadoPagoProvider implements PaymentProvider {
           phone: paymentData.payer.phone,
         },
         description: paymentData.description || 'Compra en Portfolio Fotográfico',
-        external_reference: paymentData.external_reference || orderId,
+        external_reference: paymentData.external_reference || orderId, // ✅ Siempre presente y único
         statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO',
-        // Configurar notification_url en el pago (tiene prioridad sobre configuración global)
+        // ✅ Configurar notification_url en el pago (OBLIGATORIO para webhooks)
+        // Tiene prioridad sobre configuración global
         ...(this.getNotificationUrl() ? {
           notification_url: this.getNotificationUrl()
         } : {}),
@@ -720,6 +808,7 @@ export class MercadoPagoProvider implements PaymentProvider {
       'invalid_payment_type': 'El tipo de pago no es válido.',
       'invalid_payment_method_id': 'El ID del método de pago no es válido.',
       'invalid_token': 'El token de la tarjeta no es válido o ha expirado.',
+      'invalid_card_token': 'El token de la tarjeta no es válido. Verifica que Public Key y Access Token sean del mismo par de credenciales en .env.local, y que no hayas esperado demasiado antes de pagar.',
       'invalid_external_reference': 'La referencia externa no es válida.',
       'invalid_notification_url': 'La URL de notificación no es válida.',
       'invalid_metadata': 'Los metadatos no son válidos.',
@@ -749,7 +838,39 @@ export class MercadoPagoProvider implements PaymentProvider {
       'invalid_merchant_callback_url': 'La URL del callback del comerciante no es válida.',
       'invalid_merchant_redirect_url': 'La URL de redirección del comerciante no es válida.',
       'invalid_merchant_notification_url': 'La URL de notificación del comerciante no es válida.',
+      'invalid_credentials': 'La API Orders de Mercado Pago ya no acepta credenciales de prueba (TEST-). Debes activar credenciales de producción y usarlas también para pruebas. Ver docs/mercadopago-test-cards.md.',
     };
+
+    // API Orders devuelve errors: [{code, message, details}], y a veces code 'failed' con details
+    if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+      const first = errorData.errors[0];
+      const detailsStr = Array.isArray(first.details) ? first.details.join(' ') : String(first.details || '');
+      if (detailsStr.includes('invalid_card_token')) {
+        return 'Token de tarjeta inválido. Asegúrate de que NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY y MERCADOPAGO_ACCESS_TOKEN sean del mismo par (ambos de Producción). Intenta nuevamente con los datos de la tarjeta.';
+      }
+      if (detailsStr.includes('rejected_by_issuer')) {
+        return 'El pago fue rechazado por el emisor de la tarjeta. Con credenciales de producción, las tarjetas de prueba (4509..., 5031...) no funcionan; usa una tarjeta real o contacta a Mercado Pago sobre pruebas con test users.';
+      }
+      if (detailsStr.includes('invalid_users_involved')) {
+        return 'Email del comprador no válido para pruebas. Crea una cuenta Comprador en Tu integración > Cuentas de prueba y usa el email que MP asigna a esa cuenta. Ver docs/mercadopago-test-cards.md.';
+      }
+      if (detailsStr.includes('processing_error')) {
+        return 'Error de procesamiento. Verifica: 1) Titular de tarjeta debe ser APRO para pago aprobado. 2) Código postal en formato argentino (ej. C1406). 3) Intenta de nuevo (puede ser temporal).';
+      }
+      if (first.code === 'invalid_credentials') {
+        const msg = (first.message || '').toLowerCase();
+        if (msg.includes('test credentials are not supported')) {
+          return 'Mercado Pago ya no acepta credenciales TEST-. Activa credenciales de producción en el panel y úsalas para pruebas. Ver docs/mercadopago-test-cards.md sección "invalid_credentials".';
+        }
+        return errorMessages['invalid_credentials'] || first.message || 'Credenciales inválidas.';
+      }
+      if (first.code && errorMessages[first.code]) {
+        return errorMessages[first.code];
+      }
+      if (first.message) {
+        return first.message;
+      }
+    }
 
     // Buscar el código de error específico
     if (errorData.cause && Array.isArray(errorData.cause)) {

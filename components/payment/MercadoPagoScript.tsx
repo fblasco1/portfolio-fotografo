@@ -20,7 +20,7 @@ export function MercadoPagoScript({ publicKey, onLoad, onError }: MercadoPagoScr
       return;
     }
 
-    // Crear script tag
+    // Crear script tag (solo URL base - la key se pasa al constructor)
     const script = document.createElement('script');
     script.src = 'https://sdk.mercadopago.com/js/v2';
     script.async = true;

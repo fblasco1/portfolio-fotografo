@@ -37,6 +37,14 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
     email: '',
     firstName: '',
     lastName: '',
+    phone: '',
+    address: {
+      street_name: '',
+      street_number: '',
+      city: '',
+      zip_code: '',
+      federal_unit: '',
+    },
   });
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -163,11 +171,12 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
     if (savedCustomerData) {
       try {
         const data = JSON.parse(savedCustomerData);
-        setCustomerInfo({
+        setCustomerInfo(prev => ({
+          ...prev,
           email: data.email || '',
           firstName: data.name ? data.name.split(' ')[0] : '',
           lastName: data.name ? data.name.split(' ').slice(1).join(' ') : '',
-        });
+        }));
         // Limpiar los datos del localStorage después de usarlos
         localStorage.removeItem('customerData');
       } catch (error) {
@@ -366,6 +375,14 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
       email: formData.get('email') as string,
       firstName: formData.get('firstName') as string,
       lastName: formData.get('lastName') as string,
+      phone: formData.get('phone') as string,
+      address: {
+        street_name: formData.get('street_name') as string,
+        street_number: formData.get('street_number') as string,
+        city: formData.get('city') as string,
+        zip_code: formData.get('zip_code') as string,
+        federal_unit: formData.get('federal_unit') as string,
+      },
     });
     
     setShowPaymentForm(true);
@@ -566,11 +583,100 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                     className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                    {locale === 'es' ? 'Teléfono' : 'Phone'}
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    required
+                    value={customerInfo.phone}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder={locale === 'es' ? 'Ej: +54 11 1234-5678' : 'Ex: +54 11 1234-5678'}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="street_name" className="block text-sm font-medium mb-2">
+                      {locale === 'es' ? 'Calle' : 'Street'}
+                    </label>
+                    <input
+                      type="text"
+                      id="street_name"
+                      name="street_name"
+                      required
+                      value={customerInfo.address.street_name}
+                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: { ...prev.address, street_name: e.target.value } }))}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="street_number" className="block text-sm font-medium mb-2">
+                      {locale === 'es' ? 'Número' : 'Number'}
+                    </label>
+                    <input
+                      type="text"
+                      id="street_number"
+                      name="street_number"
+                      required
+                      value={customerInfo.address.street_number}
+                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: { ...prev.address, street_number: e.target.value } }))}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium mb-2">
+                      {locale === 'es' ? 'Ciudad' : 'City'}
+                    </label>
+                    <input
+                      type="text"
+                      id="city"
+                      name="city"
+                      required
+                      value={customerInfo.address.city}
+                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: { ...prev.address, city: e.target.value } }))}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="zip_code" className="block text-sm font-medium mb-2">
+                      {locale === 'es' ? 'Código Postal' : 'Zip Code'}
+                    </label>
+                    <input
+                      type="text"
+                      id="zip_code"
+                      name="zip_code"
+                      required
+                      value={customerInfo.address.zip_code}
+                      onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: { ...prev.address, zip_code: e.target.value } }))}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="federal_unit" className="block text-sm font-medium mb-2">
+                    {locale === 'es' ? 'Provincia/Estado' : 'State/Province'}
+                  </label>
+                  <input
+                    type="text"
+                    id="federal_unit"
+                    name="federal_unit"
+                    required
+                    value={customerInfo.address.federal_unit}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: { ...prev.address, federal_unit: e.target.value } }))}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
                 {!allItemsConfigured && (
                   <p className="text-sm text-orange-600 mb-2">
                     {locale === 'es' 
-                      ? '⚠️ Por favor, selecciona el tipo y tamaño para todos los productos' 
-                      : '⚠️ Please select type and size for all products'}
+                      ? '⚠️ Por favor, selecciona el tamaño para todos los productos' 
+                      : '⚠️ Please select size for all products'}
                   </p>
                 )}
                 <Button 

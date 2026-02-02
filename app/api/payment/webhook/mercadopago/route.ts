@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { EmailNotificationService, PaymentNotificationData } from '@/lib/email';
+import { supabaseAdmin } from '@/lib/supabase/client';
 
 /**
  * Webhook handler para notificaciones de Mercado Pago
@@ -136,6 +137,9 @@ async function processPaymentNotification(paymentId: string) {
       payer_email: payment.payer?.email
     });
 
+    // Guardar o actualizar orden en Supabase
+    await saveOrUpdateOrder(payment);
+
     // Procesar emails automáticos solo para pagos aprobados
     if (payment.status === 'approved') {
       await processApprovedPayment(payment);
@@ -244,6 +248,9 @@ async function processOrderNotification(orderId: string) {
       paid_amount: merchantOrder.paid_amount,
       payments: merchantOrder.payments?.length || 0,
     });
+
+    // Guardar o actualizar orden en Supabase
+    await saveOrUpdateOrderFromMerchantOrder(merchantOrder);
 
     // Procesar emails automáticos solo para órdenes pagadas
     if (merchantOrder.status === 'paid') {
@@ -375,6 +382,212 @@ function extractProductsFromPayment(payment: any): Array<{title: string, quantit
     quantity: 1,
     price: amount
   }];
+}
+
+/**
+ * Guarda o actualiza una orden en Supabase
+ */
+async function saveOrUpdateOrder(payment: any) {
+  try {
+    const orderData = {
+      payment_id: payment.id.toString(),
+      status: payment.status,
+      status_detail: payment.status_detail,
+      total_amount: payment.transaction_amount,
+      currency: payment.currency_id,
+      payment_method_id: payment.payment_method_id,
+      installments: payment.installments || 1,
+      customer_email: payment.payer?.email || '',
+      customer_name: payment.payer?.first_name && payment.payer?.last_name
+        ? `${payment.payer.first_name} ${payment.payer.last_name}`.trim()
+        : payment.payer?.first_name || '',
+      customer_phone: payment.payer?.phone?.number
+        ? `${payment.payer.phone.area_code || ''}${payment.payer.phone.number}`.trim()
+        : null,
+      shipping_address: payment.payer?.address || null,
+      items: extractProductsFromPayment(payment),
+      metadata: {
+        mercadopago_payment_id: payment.id,
+        date_created: payment.date_created,
+        date_approved: payment.date_approved,
+        date_last_updated: payment.date_last_updated,
+        operation_type: payment.operation_type,
+        payment_type_id: payment.payment_type_id,
+      },
+      updated_at: new Date().toISOString(),
+    };
+
+    // Buscar orden existente por payment_id
+    const { data: existingOrder } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('payment_id', payment.id.toString())
+      .single();
+
+    if (existingOrder) {
+      // Actualizar orden existente
+      const { error: updateError } = await supabaseAdmin
+        .from('orders')
+        .update(orderData)
+        .eq('id', existingOrder.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Registrar cambio de estado en historial
+      await addOrderStatusHistory(existingOrder.id, payment.status, payment.status_detail);
+
+      console.log('✅ Orden actualizada en Supabase:', existingOrder.id);
+    } else {
+      // Crear nueva orden
+      const { data: newOrder, error: insertError } = await supabaseAdmin
+        .from('orders')
+        .insert({
+          ...orderData,
+          external_reference: payment.external_reference || `order_${payment.id}`,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Registrar estado inicial en historial
+      await addOrderStatusHistory(newOrder.id, payment.status, payment.status_detail);
+
+      console.log('✅ Nueva orden guardada en Supabase:', newOrder.id);
+    }
+  } catch (error) {
+    console.error('❌ Error guardando orden en Supabase:', error);
+    // No lanzar error para no afectar el webhook
+  }
+}
+
+/**
+ * Guarda o actualiza orden desde Merchant Order
+ */
+async function saveOrUpdateOrderFromMerchantOrder(merchantOrder: any) {
+  try {
+    const payment = merchantOrder.payments?.[0];
+    if (!payment) {
+      console.warn('⚠️ Merchant Order sin pagos');
+      return;
+    }
+
+    // Obtener detalles del pago
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${payment.id}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!paymentResponse.ok) {
+      throw new Error(`Error obteniendo pago: ${paymentResponse.status}`);
+    }
+
+    const paymentData = await paymentResponse.json();
+
+    const orderData = {
+      mercadopago_order_id: merchantOrder.id.toString(),
+      payment_id: payment.id.toString(),
+      preference_id: merchantOrder.preference_id || null,
+      status: merchantOrder.status === 'paid' ? 'approved' : 'pending',
+      status_detail: paymentData.status_detail || null,
+      total_amount: merchantOrder.total_amount,
+      currency: merchantOrder.currency_id,
+      payment_method_id: paymentData.payment_method_id || null,
+      installments: paymentData.installments || 1,
+      customer_email: merchantOrder.payer?.email || paymentData.payer?.email || '',
+      customer_name: merchantOrder.payer?.nickname || 
+        (paymentData.payer?.first_name && paymentData.payer?.last_name
+          ? `${paymentData.payer.first_name} ${paymentData.payer.last_name}`.trim()
+          : paymentData.payer?.first_name || ''),
+      customer_phone: paymentData.payer?.phone?.number
+        ? `${paymentData.payer.phone.area_code || ''}${paymentData.payer.phone.number}`.trim()
+        : null,
+      shipping_address: paymentData.payer?.address || null,
+      items: extractProductsFromOrder(merchantOrder),
+      metadata: {
+        mercadopago_order_id: merchantOrder.id,
+        mercadopago_payment_id: payment.id,
+        date_created: merchantOrder.date_created,
+        date_last_updated: merchantOrder.date_last_updated,
+      },
+      updated_at: new Date().toISOString(),
+    };
+
+    // Buscar orden existente
+    const { data: existingOrder } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('payment_id', payment.id.toString())
+      .single();
+
+    if (existingOrder) {
+      const { error: updateError } = await supabaseAdmin
+        .from('orders')
+        .update(orderData)
+        .eq('id', existingOrder.id);
+
+      if (updateError) throw updateError;
+
+      await addOrderStatusHistory(
+        existingOrder.id,
+        orderData.status,
+        orderData.status_detail
+      );
+
+      console.log('✅ Orden actualizada desde Merchant Order:', existingOrder.id);
+    } else {
+      const { data: newOrder, error: insertError } = await supabaseAdmin
+        .from('orders')
+        .insert({
+          ...orderData,
+          external_reference: merchantOrder.external_reference || `order_${merchantOrder.id}`,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      await addOrderStatusHistory(newOrder.id, orderData.status, orderData.status_detail);
+
+      console.log('✅ Nueva orden guardada desde Merchant Order:', newOrder.id);
+    }
+  } catch (error) {
+    console.error('❌ Error guardando orden desde Merchant Order:', error);
+  }
+}
+
+/**
+ * Agrega entrada al historial de cambios de estado
+ */
+async function addOrderStatusHistory(
+  orderId: string,
+  status: string,
+  statusDetail?: string,
+  notes?: string
+) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('order_status_history')
+      .insert({
+        order_id: orderId,
+        status,
+        status_detail: statusDetail || null,
+        notes: notes || null,
+      });
+
+    if (error) {
+      console.error('❌ Error guardando historial:', error);
+    }
+  } catch (error) {
+    console.error('❌ Error en addOrderStatusHistory:', error);
+  }
 }
 
 /**

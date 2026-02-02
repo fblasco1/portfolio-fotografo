@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { getErrorMessage } from '@/lib/utils';
 import type {
   MercadoPagoInstance,
   CardToken,
@@ -10,6 +11,15 @@ import type {
   CardFormData,
   IdentificationType,
 } from '@/app/types/payment';
+
+/** Fallback cuando el SDK falla (public key inválida, red, etc.) */
+const FALLBACK_IDENTIFICATION_TYPES: IdentificationType[] = [
+  { id: 'DNI', name: 'DNI', type: 'number', min_length: 7, max_length: 8 },
+  { id: 'CI', name: 'CI', type: 'number', min_length: 7, max_length: 9 },
+  { id: 'CPF', name: 'CPF', type: 'number', min_length: 11, max_length: 11 },
+  { id: 'CC', name: 'Cédula', type: 'number', min_length: 6, max_length: 10 },
+  { id: 'RUT', name: 'RUT', type: 'string', min_length: 8, max_length: 9 },
+];
 
 interface UseMercadoPagoOptions {
   publicKey: string;
@@ -29,8 +39,6 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
       return;
     }
 
-
-    // Esperar a que el SDK esté disponible
     const checkSDK = () => {
       if (window.MercadoPago) {
         try {
@@ -38,11 +46,11 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
           setMp(mpInstance);
           setIsReady(true);
         } catch (err) {
-          setError(err as Error);
-          console.error('❌ Error inicializando Mercado Pago SDK:', err);
+          const e = err as Error;
+          setError(e);
+          console.error('❌ Error inicializando Mercado Pago SDK:', e?.message ?? String(err));
         }
       } else {
-        // Reintentar después de 100ms
         setTimeout(checkSDK, 100);
       }
     };
@@ -50,70 +58,74 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
     checkSDK();
   }, [publicKey, locale]);
 
-  // Obtener tipos de identificación
+  // Obtener tipos de identificación (usa fallback si SDK no está listo o falla)
   const getIdentificationTypes = useCallback(async (): Promise<IdentificationType[]> => {
     if (!mp) {
-      throw new Error('Mercado Pago SDK no está inicializado');
+      console.warn('Mercado Pago SDK no está listo, usando tipos de identificación por defecto');
+      return FALLBACK_IDENTIFICATION_TYPES;
     }
 
     try {
-      return await mp.getIdentificationTypes();
+      const types = await mp.getIdentificationTypes();
+      if (Array.isArray(types) && types.length > 0) return types;
+      return FALLBACK_IDENTIFICATION_TYPES;
     } catch (err) {
-      console.error('Error obteniendo tipos de identificación:', err);
-      throw err;
+      const msg = getErrorMessage(err);
+      console.warn('Tipos de identificación desde SDK fallaron, usando fallback:', msg);
+      return FALLBACK_IDENTIFICATION_TYPES;
     }
   }, [mp]);
 
-  // Obtener métodos de pago según BIN
+  // Obtener métodos de pago según BIN (devuelve [] si falla; no lanza)
   const getPaymentMethods = useCallback(async (bin: string): Promise<PaymentMethod[]> => {
     if (!mp) {
-      throw new Error('Mercado Pago SDK no está inicializado');
+      console.warn('Mercado Pago SDK no listo al obtener métodos de pago');
+      return [];
     }
 
     try {
       const methods = await mp.getPaymentMethods({ bin });
-      return methods;
+      return Array.isArray(methods) ? methods : methods?.results ?? [];
     } catch (err) {
-      console.error('Error obteniendo métodos de pago:', err);
-      throw err;
+      const msg = getErrorMessage(err);
+      console.warn('Métodos de pago desde SDK fallaron, se ignora BIN:', msg);
+      return [];
     }
   }, [mp]);
 
-  // Obtener emisores
+  // Obtener emisores (devuelve [] si falla)
   const getIssuers = useCallback(async (
     paymentMethodId: string,
     bin: string
   ): Promise<Issuer[]> => {
-    if (!mp) {
-      throw new Error('Mercado Pago SDK no está inicializado');
-    }
-
+    if (!mp) return [];
     try {
-      return await mp.getIssuers({ paymentMethodId, bin });
+      const issuers = await mp.getIssuers({ paymentMethodId, bin });
+      return Array.isArray(issuers) ? issuers : [];
     } catch (err) {
-      console.error('Error obteniendo emisores:', err);
-      throw err;
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('Emisores desde SDK fallaron:', msg);
+      return [];
     }
   }, [mp]);
 
-  // Obtener cuotas
+  // Obtener cuotas (devuelve [] si falla)
   const getInstallments = useCallback(async (
     amount: number,
     bin: string
   ): Promise<InstallmentOption[]> => {
-    if (!mp) {
-      throw new Error('Mercado Pago SDK no está inicializado');
-    }
-
+    if (!mp) return [];
     try {
-      return await mp.getInstallments({
+      const installments = await mp.getInstallments({
         amount: amount.toString(),
         bin,
         locale,
       });
+      return Array.isArray(installments) ? installments : [];
     } catch (err) {
-      console.error('Error obteniendo cuotas:', err);
-      throw err;
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('Cuotas desde SDK fallaron:', msg);
+      return [];
     }
   }, [mp, locale]);
 
@@ -138,8 +150,9 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
       const token = await mp.createCardToken(cardData);
       return token;
     } catch (err) {
-      console.error('❌ Error creando token de tarjeta:', err);
-      throw err;
+      const msg = getErrorMessage(err);
+      console.error('❌ Error creando token de tarjeta:', msg);
+      throw new Error(msg);
     }
   }, [mp]);
 
