@@ -4,9 +4,8 @@
 
 ### **Frontend (.env.local)**
 ```bash
-# Mercado Pago - Producción
-NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=APP-xxxxxxxxxxxxxxxxxxxxxxxx
-NEXT_PUBLIC_MERCADOPAGO_ENVIRONMENT=production
+# Mercado Pago - Producción (ambos deben ser APP_USR- del mismo par)
+NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=APP_USR-xxxxxxxxxxxxxxxxxxxxxxxx
 
 # Sanity CMS
 NEXT_PUBLIC_SANITY_PROJECT_ID=tu_proyecto_id
@@ -17,7 +16,7 @@ NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01
 ### **Backend (.env.local)**
 ```bash
 # Mercado Pago - Producción
-MERCADOPAGO_ACCESS_TOKEN=APP-xxxxxxxxxxxxxxxxxxxxxxxx
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-xxxxxxxxxxxxxxxxxxxxxxxx
 MERCADOPAGO_WEBHOOK_SECRET=tu_webhook_secret
 
 # Resend (Emails)
@@ -36,21 +35,19 @@ NEXT_PUBLIC_BASE_URL=https://tudominio.com
 ## ✅ **2. Configuración de Mercado Pago**
 
 ### **2.1. Credenciales de Producción**
-- [ ] Obtener `Access Token` de producción desde el panel de Mercado Pago
-- [ ] Obtener `Public Key` de producción
-- [ ] Verificar que las credenciales sean de **producción** (no test)
+- [ x ] Obtener `Access Token` de producción desde el panel de Mercado Pago
+- [ x ] Obtener `Public Key` de producción
+- [ x ] Verificar que las credenciales sean de **producción** (no test)
 
-### **2.2. Webhook de Producción (Checkout API)**
-- [ ] **NO configurar en el panel de Mercado Pago** (Checkout API se configura en código)
-- [ ] Verificar que `NEXT_PUBLIC_BASE_URL` esté configurado correctamente
-- [ ] Los webhooks se configuran automáticamente en cada pago
-- [ ] Obtener el `Webhook Secret` para validación (opcional)
-- [ ] Probar el webhook con pagos de prueba
+### **2.2. Webhook de Producción (Orders API)**
+- [ ] Configurar webhook en el panel de Mercado Pago (Tus integraciones → Notificaciones)
+- [ ] URL: `https://tu-dominio.com/api/payment/webhook/mercadopago`
+- [ ] Eventos: Pagos + Órdenes comerciales
+- [ ] Configurar `MERCADOPAGO_WEBHOOK_SECRET` para validación de firma
+- [ ] Probar con un pago de prueba
 
 ### **2.3. Configuración de la Aplicación**
-- [ ] Verificar que `MERCADOPAGO_ENVIRONMENT=production`
-- [ ] Configurar `notification_url` en el payload de pagos
-- [ ] Verificar que el `statement_descriptor` sea correcto
+- [ x ] Verificar que `NEXT_PUBLIC_BASE_URL` apunte al dominio de producción
 
 ## ✅ **3. Configuración de Emails**
 
@@ -124,25 +121,18 @@ NEXT_PUBLIC_BASE_URL=https://tudominio.com
 - [ ] Configurar rate limiting
 
 ### **8.2. Headers de Seguridad**
-- [ ] Configurar CSP (Content Security Policy)
-- [ ] Configurar HSTS
+- [x] Configurar CSP (Content Security Policy) — configurado en `next.config.ts` (solo producción)
+- [x] Configurar HSTS — configurado en `next.config.ts` (solo producción)
 - [ ] Verificar headers de seguridad
 
-## ✅ **9. Backup y Recuperación**
+## ✅ **9. Documentación**
 
-### **9.1. Backup de Datos**
-- [ ] Configurar backup automático de Sanity
-- [ ] Backup de configuración del servidor
-- [ ] Plan de recuperación ante desastres
-
-## ✅ **10. Documentación**
-
-### **10.1. Documentación Técnica**
+### **9.1. Documentación Técnica**
 - [ x ] Documentar proceso de despliegue
 - [ x ] Documentar configuración de variables de entorno
 - [ x ] Documentar proceso de backup
 
-### **10.2. Documentación de Usuario**
+### **9.2. Documentación de Usuario**
 - [ ] Guía de uso para el fotógrafo
 - [ x ] Documentación de administración
 - [ x ] Guía de resolución de problemas
@@ -167,16 +157,11 @@ curl -X GET "https://api.mercadopago.com/v1/payment_methods" \
 curl -X GET "https://tu_proyecto_id.api.sanity.io/v2024-01-01/data/query/production?query=*[_type == 'product']"
 ```
 
-### **Verificar Webhook (Checkout API)**
+### **Verificar Webhook**
 ```bash
-# Verificar que NEXT_PUBLIC_BASE_URL esté configurado
-echo $NEXT_PUBLIC_BASE_URL
-
-# En desarrollo, usar ngrok para testing
-ngrok http 3000
-# Configurar temporalmente: NEXT_PUBLIC_BASE_URL=https://abc123.ngrok.io
-
-# En producción, los webhooks se configuran automáticamente
+# Verificar que el webhook esté configurado en el panel de Mercado Pago
+# URL: https://tu-dominio.com/api/payment/webhook/mercadopago
+# Ver docs/webhook-setup.md
 ```
 
 ## 📞 **Contactos de Emergencia**
@@ -192,7 +177,7 @@ ngrok http 3000
 
 - [ X ] Todas las variables de entorno configuradas
 - [ X ] Credenciales de producción activas
-- [ X ] Webhook configurado automáticamente en código (Checkout API)
+- [ ] Webhook configurado en panel de Mercado Pago
 - [ ] Emails funcionando correctamente
 - [ X ] Sanity configurado para producción
 - [ X ] Dominio y SSL configurados

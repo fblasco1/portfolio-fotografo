@@ -71,13 +71,15 @@ export default async function Documentaries({ params }: DocumentariesPageProps) 
                       {/* Poster */}
                       {documentary.poster && (
                         <div className="lg:col-span-1">
-                          <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-md bg-gray-100">
-                            <Image
-                              src={urlFor(documentary.poster).width(400).height(600).url()}
-                              alt={title}
-                              fill
-                              className="object-contain"
-                            />
+                          <div className="w-full rounded-lg overflow-hidden shadow-md bg-gray-100 flex items-center justify-center p-4 min-h-[400px]">
+                            <div className="relative w-full h-full flex items-center justify-center">
+                              <img
+                                src={urlFor(documentary.poster).url()}
+                                alt={title}
+                                className="max-w-full max-h-[600px] w-auto h-auto object-contain"
+                                loading="lazy"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
