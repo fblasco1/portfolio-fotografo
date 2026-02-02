@@ -1,18 +1,8 @@
 # 🔗 Configuración de Webhook de Mercado Pago
 
-## ⚠️ **IMPORTANTE: Checkout API vs Otros Métodos**
+Este proyecto usa **Checkout API con Orders API v2**. La `notification_url` se envía en cada orden y el webhook se configura en el panel de Mercado Pago para recibir notificaciones de órdenes y pagos.
 
-### **Checkout API (Nuestro Caso)**
-- ✅ **Los webhooks se configuran EN EL CÓDIGO**
-- ✅ **No se configura en el panel de Mercado Pago**
-- ✅ **La `notification_url` se establece por transacción**
-- ✅ **Tiene prioridad sobre cualquier configuración global**
-
-### **Otros Métodos (Preference API, etc.)**
-- ❌ **Se configuran en el panel de Mercado Pago**
-- ❌ **Configuración global por aplicación**
-
-## 📋 **Configuración para Checkout API**
+## 📋 **Configuración**
 
 ### **1. Configuración Automática en Código**
 El webhook se configura automáticamente en el código cuando se crea cada pago:
@@ -28,22 +18,26 @@ private getNotificationUrl(): string | null {
   const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
   const params = new URLSearchParams({
     source_news: 'webhooks',
-    integration_type: 'checkout_api',
-    version: '2.0.0'
+    integration_type: 'orders_api',
+    version: '3.0.0'
   });
 
   return `${webhookUrl}?${params.toString()}`;
 }
 ```
 
-### **2. URL del Webhook Generada**
-```
-https://tu-dominio.com/api/payment/webhook/mercadopago?source_news=webhooks&integration_type=checkout_api&version=2.0.0
-```
+### **2. Configurar en el panel de Mercado Pago**
 
-### **3. Eventos Recibidos Automáticamente**
-- ✅ **payment** - Notificaciones de pagos
-- ✅ **merchant_order** - Notificaciones de órdenes
+1. Ir a [Mercado Pago Developers](https://www.mercadopago.com.ar/developers) → Tu integración → Tu aplicación.
+2. Ir a **"Notificaciones webhooks"**.
+3. Clic en **"Configurar notificaciones"**.
+4. URL: `https://tu-dominio.com/api/payment/webhook/mercadopago`
+5. Eventos: **Pagos** y **Órdenes comerciales** (topic_merchant_order_wh).
+6. Guardar.
+
+### **3. Eventos manejados**
+- **payment** – Notificaciones de pagos
+- **topic_merchant_order_wh** – Notificaciones de órdenes (Orders API)
 
 ### **4. Variables de Entorno Requeridas**
 ```bash
@@ -141,11 +135,11 @@ Configurar alertas para:
 
 ### **Problema: Webhook no llega**
 **Soluciones:**
-1. Verificar que `NEXT_PUBLIC_BASE_URL` esté configurado correctamente
-2. Verificar que la URL sea accesible desde internet
+1. Verificar que la URL esté configurada en el panel de Mercado Pago
+2. Verificar que la URL sea accesible desde internet (HTTPS)
 3. Verificar que el endpoint responda con 200 OK
 4. Revisar logs del servidor
-5. **NO configurar en el panel de Mercado Pago** (Checkout API se configura en código)
+5. Confirmar que los eventos "Pagos" y "Órdenes comerciales" estén seleccionados
 
 ### **Problema: Webhook llega pero falla**
 **Soluciones:**
@@ -191,12 +185,12 @@ echo $RESEND_API_KEY
 echo $RESEND_FROM_EMAIL
 ```
 
-## ✅ **Checklist de Webhook para Checkout API**
+## ✅ **Checklist de Webhook**
 
-- [ ] `NEXT_PUBLIC_BASE_URL` configurado correctamente
-- [ ] URL del webhook accesible desde internet
-- [ ] **NO configurar en panel de Mercado Pago** (Checkout API se configura en código)
-- [ ] Webhook Secret configurado en variables de entorno (opcional)
+- [ ] Webhook configurado en panel de Mercado Pago
+- [ ] URL correcta: `https://tu-dominio.com/api/payment/webhook/mercadopago`
+- [ ] Eventos: Pagos + Órdenes comerciales
+- [ ] `NEXT_PUBLIC_BASE_URL` configurado (para notification_url en órdenes)
 - [ ] Validación HMAC funcionando
 - [ ] Webhook responde en menos de 5 segundos
 - [ ] Emails se envían correctamente

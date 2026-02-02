@@ -65,24 +65,20 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 npm run dev
 ```
 
-## 🧪 Testing - Tarjetas de Prueba
+## 🧪 Testing - Pruebas de Integración
 
-### Tarjetas de Prueba Mercado Pago
+Para una guía completa de pruebas (cuentas de prueba, credenciales, simulación paso a paso), consulta:
 
-| Estado | Número | Titular | CVV | DNI |
-|--------|--------|---------|-----|-----|
-| ✅ Aprobado | `5031 7557 3453 0604` | `APRO` | `123` | `12345678` |
-| ⏳ Pendiente | `5031 7557 3453 0604` | `CONT` | `123` | `12345678` |
-| ❌ Rechazado | `5031 7557 3453 0604` | `OTHE` | `123` | `12345678` |
+**[docs/01-PRUEBAS-INTEGRACION-MERCADOPAGO.md](docs/01-PRUEBAS-INTEGRACION-MERCADOPAGO.md)**
 
-### Flujo de Prueba
+### Flujo rápido
 
-1. **Ir a la tienda**: `http://localhost:3000/es/shop`
-2. **Agregar productos** al carrito
-3. **Ir al checkout**: `http://localhost:3000/es/checkout`
-4. **Completar formulario** de contacto
-5. **Datos de pago** con tarjeta de prueba
-6. **Verificar resultado** en modal
+1. Ir a la tienda (`/es/gallery`)
+2. Agregar productos al carrito
+3. Ir al checkout (`/es/checkout`)
+4. Seleccionar tamaño de la imagen
+5. Completar información de contacto
+6. Completar datos de tarjeta (titular: `APRO`, DNI: `12345678` para pago aprobado)
 
 ## 🚀 Deploy a Producción
 
