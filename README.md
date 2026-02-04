@@ -32,6 +32,8 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_*` | Supabase (auth admin) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role para admin |
 | `RESEND_API_KEY` | Emails de notificación |
+| `RESEND_FROM_EMAIL` | Remitente (formato: Nombre \<email\>) |
+| `PHOTOGRAPHER_EMAIL` | Destinatario ventas y contacto |
 
 Ver `env.example` y [docs/CONFIGURACION-SUPABASE.md](docs/CONFIGURACION-SUPABASE.md) para el panel admin.
 

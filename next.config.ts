@@ -31,6 +31,7 @@ const nextConfig = {
       });
     }
 
+    if (securityHeaders.length === 0) return [];
     return [
       {
         source: '/:path*',

@@ -21,7 +21,8 @@ MERCADOPAGO_WEBHOOK_SECRET=tu_webhook_secret
 
 # Resend (Emails)
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxx
-RESEND_FROM_EMAIL=noreply@tudominio.com
+RESEND_FROM_EMAIL=Ventas <noreply@tudominio.com>
+PHOTOGRAPHER_EMAIL=tu-email@gmail.com
 
 # Sanity CMS
 SANITY_PROJECT_ID=tu_proyecto_id
@@ -40,10 +41,10 @@ NEXT_PUBLIC_BASE_URL=https://tudominio.com
 - [ x ] Verificar que las credenciales sean de **producción** (no test)
 
 ### **2.2. Webhook de Producción (Orders API)**
-- [ ] Configurar webhook en el panel de Mercado Pago (Tus integraciones → Notificaciones)
-- [ ] URL: `https://tu-dominio.com/api/payment/webhook/mercadopago`
-- [ ] Eventos: Pagos + Órdenes comerciales
-- [ ] Configurar `MERCADOPAGO_WEBHOOK_SECRET` para validación de firma
+- [ x ] Configurar webhook en el panel de Mercado Pago (Tus integraciones → Notificaciones)
+- [ x ] URL: `https://tu-dominio.com/api/payment/webhook/mercadopago`
+- [ x ] Eventos: Pagos + Órdenes comerciales
+- [ x ] Configurar `MERCADOPAGO_WEBHOOK_SECRET` para validación de firma
 - [ ] Probar con un pago de prueba
 
 ### **2.3. Configuración de la Aplicación**
@@ -89,10 +90,10 @@ NEXT_PUBLIC_BASE_URL=https://tudominio.com
 ## ✅ **6. Testing en Producción**
 
 ### **6.1. Pagos de Prueba**
-- [ ] Probar con tarjetas de prueba de Mercado Pago
-- [ ] Verificar que los pagos se procesen correctamente
-- [ ] Confirmar que los webhooks funcionen
-- [ ] Verificar que los emails se envíen
+- [ x ] Probar con tarjetas de prueba de Mercado Pago
+- [ x ] Verificar que los pagos se procesen correctamente
+- [ x ] Confirmar que los webhooks funcionen
+- [ x ] Verificar que los emails se envíen
 
 ### **6.2. Funcionalidades**
 - [ X ] Probar carrito de compras
@@ -177,7 +178,7 @@ curl -X GET "https://tu_proyecto_id.api.sanity.io/v2024-01-01/data/query/product
 
 - [ X ] Todas las variables de entorno configuradas
 - [ X ] Credenciales de producción activas
-- [ ] Webhook configurado en panel de Mercado Pago
+- [ X ] Webhook configurado en panel de Mercado Pago
 - [ ] Emails funcionando correctamente
 - [ X ] Sanity configurado para producción
 - [ X ] Dominio y SSL configurados

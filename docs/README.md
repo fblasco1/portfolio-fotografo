@@ -16,6 +16,7 @@
 | [CHECKLIST-CALIDAD-PRODUCCION.md](./CHECKLIST-CALIDAD-PRODUCCION.md) | Calidad MP, medición, pre-producción |
 | [webhook-setup.md](./webhook-setup.md) | Webhook Mercado Pago (Orders API) |
 | [production-checklist.md](./production-checklist.md) | Checklist de despliegue |
+| [MERGE-PRODUCCION.md](./MERGE-PRODUCCION.md) | Verificación pre-merge |
 
 ## Recursos externos
 

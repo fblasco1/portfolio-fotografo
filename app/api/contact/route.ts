@@ -15,9 +15,11 @@ export async function POST(request: Request) {
         // Usar el asunto proporcionado o el predeterminado
         const emailSubject = subject || "Contacto desde el sitio web";
         
+        const fromEmail = process.env.RESEND_FROM_EMAIL || "Contacto <noreply@tu-dominio.com>";
+        const toEmail = process.env.PHOTOGRAPHER_EMAIL || process.env.CONTACT_EMAIL || "cristianpirovanoportfolio@gmail.com";
         await resend.emails.send({
-            from: "Contacto <noreply@contacto.cristianpirovano.com>",
-            to: "cristianpirovanoportfolio@gmail.com",
+            from: fromEmail,
+            to: toEmail,
             subject: emailSubject,
             html: `
                 <p><strong>Nombre:</strong> ${name}</p>

@@ -28,42 +28,16 @@ export class MercadoPagoProvider implements PaymentProvider {
    * La notification_url se configura en la orden y tiene prioridad sobre configuración global
    */
   private getNotificationUrl(): string | null {
-    // URL de webhook de producción
-    const productionWebhookUrl = 'https://cristianpirovano.com/api/payment/webhook/mercadopago';
-    
-    // En desarrollo, usar la URL base configurada
-    if (process.env.NODE_ENV === 'development' && this.baseUrl) {
-      const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
-      const params = new URLSearchParams({
-        source_news: 'webhooks',
-        integration_type: 'orders_api',
-        version: '3.0.0'
-      });
-      return `${webhookUrl}?${params.toString()}`;
-    }
-    
-    // En producción, usar la URL fija
-    if (process.env.NODE_ENV === 'production') {
-      const params = new URLSearchParams({
-        source_news: 'webhooks',
-        integration_type: 'orders_api',
-        version: '3.0.0'
-      });
-      return `${productionWebhookUrl}?${params.toString()}`;
-    }
+    const base = this.baseUrl || process.env.NEXT_PUBLIC_BASE_URL;
+    if (!base || base.includes('localhost')) return null;
 
-    // Fallback a URL base si está configurada
-    if (this.baseUrl) {
-      const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
-      const params = new URLSearchParams({
-        source_news: 'webhooks',
-        integration_type: 'orders_api',
-        version: '3.0.0'
-      });
-      return `${webhookUrl}?${params.toString()}`;
-    }
-
-    return null;
+    const webhookUrl = `${base.replace(/\/$/, '')}/api/payment/webhook/mercadopago`;
+    const params = new URLSearchParams({
+      source_news: 'webhooks',
+      integration_type: 'orders_api',
+      version: '3.0.0'
+    });
+    return `${webhookUrl}?${params.toString()}`;
   }
 
   /**

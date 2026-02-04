@@ -34,8 +34,8 @@ export interface PaymentNotificationData {
  * Servicio para enviar notificaciones por email relacionadas con pagos
  */
 export class EmailNotificationService {
-  private fromEmail = "Ventas <noreply@contacto.cristianpirovano.com>";
-  private photographerEmail = "cristianpirovanoportfolio@gmail.com";
+  private fromEmail = process.env.RESEND_FROM_EMAIL || "Ventas <noreply@tu-dominio.com>";
+  private photographerEmail = process.env.PHOTOGRAPHER_EMAIL || "cristianpirovanoportfolio@gmail.com";
 
   /**
    * Envía notificación al fotógrafo sobre una nueva compra aprobada

@@ -7,24 +7,7 @@ Este proyecto usa **Checkout API con Orders API v2**. La `notification_url` se e
 ### **1. Configuración Automática en Código**
 El webhook se configura automáticamente en el código cuando se crea cada pago:
 
-```typescript
-// En lib/payment/mercadopago.service.ts
-private getNotificationUrl(): string | null {
-  // Solo en producción
-  if (!this.baseUrl || this.baseUrl.includes('localhost')) {
-    return null;
-  }
-
-  const webhookUrl = `${this.baseUrl}/api/payment/webhook/mercadopago`;
-  const params = new URLSearchParams({
-    source_news: 'webhooks',
-    integration_type: 'orders_api',
-    version: '3.0.0'
-  });
-
-  return `${webhookUrl}?${params.toString()}`;
-}
-```
+La `notification_url` se genera desde `NEXT_PUBLIC_BASE_URL`. Si la URL base está configurada y no es localhost, se construye automáticamente.
 
 ### **2. Configurar en el panel de Mercado Pago**
 
@@ -187,17 +170,17 @@ echo $RESEND_FROM_EMAIL
 
 ## ✅ **Checklist de Webhook**
 
-- [ ] Webhook configurado en panel de Mercado Pago
-- [ ] URL correcta: `https://tu-dominio.com/api/payment/webhook/mercadopago`
-- [ ] Eventos: Pagos + Órdenes comerciales
-- [ ] `NEXT_PUBLIC_BASE_URL` configurado (para notification_url en órdenes)
-- [ ] Validación HMAC funcionando
-- [ ] Webhook responde en menos de 5 segundos
-- [ ] Emails se envían correctamente
-- [ ] Logs de webhook funcionando
-- [ ] Testing con pagos de prueba completado
-- [ ] Monitoreo y alertas configurados
-- [ ] Verificar que `notification_url` se genere automáticamente en cada pago
+- [ x ] Webhook configurado en panel de Mercado Pago
+- [ x ] URL correcta: `https://tu-dominio.com/api/payment/webhook/mercadopago`
+- [ x ] Eventos: Pagos + Órdenes comerciales
+- [ x ] `NEXT_PUBLIC_BASE_URL` configurado (para notification_url en órdenes)
+- [ x ] Validación HMAC funcionando
+- [  ] Webhook responde en menos de 5 segundos
+- [ x ] Emails se envían correctamente
+- [ x ] Logs de webhook funcionando
+- [ x ] Testing con pagos de prueba completado
+- [ x ] Monitoreo y alertas configurados
+- [ x ] Verificar que `notification_url` se genere automáticamente en cada pago
 
 ## 🔄 **Reintentos de Mercado Pago**
 
