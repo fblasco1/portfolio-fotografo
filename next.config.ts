@@ -16,7 +16,7 @@ const nextConfig = {
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob: https://cdn.sanity.io https://res.cloudinary.com",
           "font-src 'self' https://studio-static.sanity.io",
-          "connect-src 'self' https://api.mercadopago.com https://sdk.mercadopago.com https://*.sanity.io https://*.supabase.co wss://*.supabase.co",
+          "connect-src 'self' https://api.mercadopago.com https://sdk.mercadopago.com https://dolarapi.com https://*.sanity.io https://*.supabase.co wss://*.supabase.co",
           "frame-src 'self' https://www.mercadopago.com https://www.mercadopago.com.ar",
           "frame-ancestors 'self'",
           "base-uri 'self'",
