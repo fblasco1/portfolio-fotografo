@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const beginDate = searchParams.get('begin_date');
     const endDate = searchParams.get('end_date');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 50);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     const mpStatus = status && status !== 'all' ? mapOrderStatusToMP(status) : undefined;

@@ -409,65 +409,9 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
-   * Crear pago usando Payments API directa (solo para credenciales TEST).
-   * Permite usar tarjetas de prueba sin gastar dinero real.
-   */
-  private async createPaymentLegacy(paymentData: PaymentRequest, orderId: string): Promise<PaymentResponse> {
-    const payerAddress = paymentData.payer.address
-      ? this.sanitizePayerAddress(paymentData.payer.address)
-      : undefined;
-
-    const payload = {
-      transaction_amount: paymentData.transaction_amount,
-      token: paymentData.token,
-      description: paymentData.description || 'Compra en Portfolio Fotográfico (prueba)',
-      installments: paymentData.installments,
-      payment_method_id: paymentData.payment_method_id || 'visa',
-      ...(paymentData.issuer_id && { issuer_id: paymentData.issuer_id }),
-      external_reference: orderId,
-      statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO',
-      payer: {
-        email: paymentData.payer.email,
-        first_name: paymentData.payer.first_name,
-        last_name: paymentData.payer.last_name,
-        identification: paymentData.payer.identification,
-        ...(paymentData.payer.phone && { phone: paymentData.payer.phone }),
-        ...(payerAddress && Object.keys(payerAddress).length > 0 && { address: payerAddress }),
-      },
-      ...(this.getNotificationUrl() && { notification_url: this.getNotificationUrl() }),
-      metadata: {
-        ...(paymentData.metadata || {}),
-        platform: 'portfolio-fotografo',
-        integration_type: 'payments_api_test',
-        order_id: orderId,
-      },
-    };
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🧪 Modo prueba: Payments API con tarjetas de prueba (sin cobro real)');
-    }
-
-    const response = await fetch('https://api.mercadopago.com/v1/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Idempotency-Key': `payment_${orderId}_${Date.now()}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = this.getErrorMessage(errorData, response.status);
-      throw new Error(errorMessage);
-    }
-
-    return response.json();
-  }
-
-  /**
-   * Crear un pago usando API Orders (flujo de dos pasos) o Payments API (modo prueba)
+   * Crear un pago usando exclusivamente Orders API (flujo de dos pasos)
+   * 1. Crear orden (POST /v1/orders)
+   * 2. Crear pago asociado a la orden (POST /v1/payments con order)
    * @param paymentData Datos del pago incluyendo token de tarjeta
    */
   async createPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
@@ -481,24 +425,29 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
 
     try {
+      // La Orders API requiere credenciales de producción (APP_USR-)
+      if (this.accessToken.startsWith('TEST-')) {
+        throw new Error(
+          'La Orders API no acepta credenciales de prueba (TEST-). Usa credenciales de producción (APP_USR-) desde el panel de Mercado Pago.'
+        );
+      }
+
       // Generar ID de orden único y robusto para external_reference
-      // Formato: order_timestamp_random_cartItems
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 9);
       const cartItemsCount = paymentData.metadata?.cart_items?.length || 0;
       const orderId = paymentData.external_reference || `order_${timestamp}_${random}_${cartItemsCount}items`;
 
-      // MODO PRUEBA: Credenciales TEST + Payments API = tarjetas de prueba sin cobro real
-      if (this.accessToken.startsWith('TEST-')) {
-        return this.createPaymentLegacy(paymentData, orderId);
-      }
-      
-      // MODO PRODUCCIÓN: API Orders (credenciales APP_USR-)
-      // PASO A: Crear Orden de Mercado Pago (sin notification_url)
+      // PASO A: Crear Orden de Mercado Pago (POST /v1/orders)
       const order = await this.createOrder(paymentData, orderId);
       const mercadopagoOrderId = order.id;
 
-      // PASO B: Crear Pago asociado a la Orden (con notification_url)
+      // PASO B: Crear Pago asociado a la Orden (POST /v1/payments con order)
+      // order.id debe ser numérico según la API de Pagos de Mercado Pago
+      const orderIdNumeric = Number(mercadopagoOrderId);
+      if (Number.isNaN(orderIdNumeric)) {
+        throw new Error(`order.id inválido (debe ser numérico): ${mercadopagoOrderId}`);
+      }
       const paymentPayload = {
         token: paymentData.token,
         transaction_amount: paymentData.transaction_amount,
@@ -507,7 +456,7 @@ export class MercadoPagoProvider implements PaymentProvider {
         ...(paymentData.issuer_id && { issuer_id: paymentData.issuer_id }),
         // Asociar pago a la orden
         order: {
-          id: mercadopagoOrderId,
+          id: orderIdNumeric,
           type: 'online', // ✅ Requerido: tipo de orden
         },
         payer: {

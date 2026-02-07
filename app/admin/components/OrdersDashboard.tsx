@@ -14,7 +14,7 @@ function toYmd(d: Date) {
 export default function OrdersDashboard() {
   const defaultBegin = (() => {
     const d = new Date();
-    d.setDate(d.getDate() - 90);
+    d.setDate(d.getDate() - 30);
     return toYmd(d);
   })();
   const defaultEnd = toYmd(new Date());

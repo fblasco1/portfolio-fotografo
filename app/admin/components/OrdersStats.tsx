@@ -28,7 +28,7 @@ export default function OrdersStats({ beginDate, endDate }: OrdersStatsProps) {
     const fetchStats = async () => {
       try {
         const params = new URLSearchParams({
-          limit: '500',
+          limit: '50',
           begin_date: beginDate,
           end_date: endDate,
         });

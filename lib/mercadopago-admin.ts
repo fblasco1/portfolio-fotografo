@@ -105,8 +105,8 @@ export interface MPPayment {
 
 /**
  * Buscar órdenes en Mercado Pago
- * Usa la API de órdenes (v1/orders) o merchant_orders como fallback
- * Requiere begin_date y end_date (obligatorios en MP)
+ * Usa merchant_orders/search con date_created_from/date_created_to (params documentados)
+ * Las órdenes creadas vía Orders API aparecen en merchant_orders
  */
 export async function searchOrders(params: {
   limit?: number;
@@ -120,7 +120,6 @@ export async function searchOrders(params: {
 } = {}): Promise<MPOrder[]> {
   const now = new Date();
   const toYmd = (d: Date) => d.toISOString().slice(0, 10);
-  /** Convierte YYYY-MM-DD a RFC 3339 (requerido por MP) */
   const toRfc3339 = (ymd: string, endOfDay = false) => {
     if (/^\d{4}-\d{2}-\d{2}T/.test(ymd)) return ymd;
     return endOfDay ? `${ymd}T23:59:59.999Z` : `${ymd}T00:00:00.000Z`;
@@ -131,52 +130,26 @@ export async function searchOrders(params: {
     d.setDate(d.getDate() - 30);
     return toYmd(d);
   })();
-  const begin = toRfc3339(beginYmd);
-  const end = toRfc3339(endYmd, true);
+  const dateCreatedFrom = toRfc3339(beginYmd);
+  const dateCreatedTo = toRfc3339(endYmd, true);
 
-  const baseParams = new URLSearchParams();
-  baseParams.set('begin_date', begin);
-  baseParams.set('end_date', end);
-  if (params.limit) baseParams.set('limit', String(params.limit));
-  if (params.offset) baseParams.set('offset', String(params.offset));
-  if (params.status) baseParams.set('status', params.status);
-  if (params.external_reference) baseParams.set('external_reference', params.external_reference);
-
-  const query = baseParams.toString();
-
-  // Intentar Orders API (nuevo) - requiere begin_date/end_date
-  try {
-    const path = `/v1/orders?${query}`;
-    const data = await mpFetch<MPOrdersSearchResponse | MPOrder[]>(path);
-    if (Array.isArray(data)) return data;
-    const elements = (data as MPOrdersSearchResponse).elements;
-    if (elements?.length) return elements;
-  } catch (e) {
-    if (!String(e).includes('404') && !String(e).includes('not found')) {
-      console.warn('Orders API search failed, trying merchant_orders:', e);
-    }
-  }
-
-  // Fallback: merchant_orders (doc: no requiere begin/end_date)
   const moParams = new URLSearchParams();
-  if (params.limit) moParams.set('limit', String(params.limit));
-  if (params.offset) moParams.set('offset', String(params.offset));
+  moParams.set('date_created_from', dateCreatedFrom);
+  moParams.set('date_created_to', dateCreatedTo);
+  moParams.set('limit', String(Math.min(params.limit || 50, 50)));
+  moParams.set('offset', String(params.offset || 0));
   if (params.status) moParams.set('status', params.status);
   if (params.external_reference) moParams.set('external_reference', params.external_reference);
+
   try {
-    const path = `/merchant_orders/search${moParams.toString() ? `?${moParams.toString()}` : ''}`;
+    const path = `/merchant_orders/search?${moParams.toString()}`;
     const data = await mpFetch<{ elements?: MPOrder[]; results?: MPOrder[] } | MPOrder[]>(path);
     let list: MPOrder[] = Array.isArray(data) ? data : [];
     const obj = data as { elements?: MPOrder[]; results?: MPOrder[] };
     if (!Array.isArray(data)) list = obj.elements || obj.results || [];
-    // Filtrar por rango de fechas (merchant_orders no acepta begin/end_date)
-    const beginTs = new Date(begin).getTime();
-    const endTs = new Date(end).getTime();
-    return list.filter((o) => {
-      const created = new Date((o as any).date_created || 0).getTime();
-      return created >= beginTs && created <= endTs;
-    });
-  } catch {
+    return list;
+  } catch (e) {
+    console.warn('merchant_orders search failed:', e);
     return [];
   }
 }
@@ -194,8 +167,18 @@ export async function getOrder(orderId: string): Promise<MPOrder> {
 }
 
 /**
- * Reembolsar una orden
- * Intenta order refund; si falla, intenta refund del pago asociado
+ * Reembolsar un pago por ID (usado internamente cuando la orden tiene pago asociado)
+ */
+function refundPayment(paymentId: string): Promise<unknown> {
+  return mpFetch(`/v1/payments/${paymentId}/refunds`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
+/**
+ * Reembolsar una orden (Orders API)
+ * Intenta order refund; si falla, intenta refund del pago asociado a la orden
  */
 export async function refundOrder(orderId: string): Promise<unknown> {
   try {
@@ -209,17 +192,14 @@ export async function refundOrder(orderId: string): Promise<unknown> {
       (order as any)?.transactions?.payments?.[0]?.id ??
       (order as any)?.payments?.[0]?.id;
     if (paymentId) {
-      return mpFetch(`/v1/payments/${paymentId}/refunds`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
+      return refundPayment(String(paymentId));
     }
     throw e;
   }
 }
 
 /**
- * Obtener un pago por ID
+ * Obtener un pago por ID (usado por webhook u otras partes del sistema)
  */
 export async function getPayment(paymentId: string): Promise<MPPayment> {
   return mpFetch<MPPayment>(`/v1/payments/${paymentId}`);

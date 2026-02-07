@@ -31,14 +31,14 @@ export default function Footer({ locale, socialMedia }: Props) {
           </p>
           
           {socialLinks.length > 0 && (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {socialLinks.map(({ name, url, icon: Icon }) => (
                 <a
                   key={name}
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-white hover:text-gray-300 transition-colors"
+                  className="flex min-w-[44px] min-h-[44px] items-center justify-center rounded-md text-white hover:text-gray-300 transition-colors touch-manipulation"
                   aria-label={name}
                   title={name}
                 >
