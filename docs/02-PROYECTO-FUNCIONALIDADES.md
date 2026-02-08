@@ -83,11 +83,15 @@ Galería → Agregar al carrito → Carrito → Checkout → Pago MP → Resulta
 
 ### Dashboard de Órdenes
 
-- Alimentado por **API de Mercado Pago** (sin Supabase para órdenes)
-- Filtro por rango de fechas (Desde / Hasta)
+- Alimentado por **Supabase** (órdenes persistidas)
+- La orden se guarda **al crear el pago** (info del cliente que la API MP no devuelve después)
+- Los **webhooks** actualizan el estado (processed, refunded, etc.)
+- Filtro por rango de fechas (Desde / Hasta, máx. 30 días)
 - Filtro por estado (Todas, Pending, Approved, Rejected)
-- Estadísticas: total órdenes, aprobadas, pendientes, rechazadas, ingresos
-- Botón **Reembolsar** en órdenes aprobadas
+- Detalle: info del pagador y del pago (desde Supabase)
+- Botón **Reembolsar** en órdenes aprobadas (vía API Mercado Pago)
+
+Ver `docs/FLUJO-ORDENES-SUPABASE.md`.
 
 ### Sanity Studio
 
@@ -102,8 +106,8 @@ Galería → Agregar al carrito → Carrito → Checkout → Pago MP → Resulta
 |----------|--------|-------------|
 | `/api/payment/v2/create-payment` | POST | Crear pago (Orders API o Payments API) |
 | `/api/payment/webhook/mercadopago` | POST | Webhook de notificaciones MP |
-| `/api/admin/orders` | GET | Listar órdenes (proxy a MP) |
-| `/api/admin/orders/[id]` | GET | Detalle de orden |
+| `/api/admin/orders` | GET | Listar órdenes (desde Supabase) |
+| `/api/admin/orders/[id]` | GET | Detalle de orden (desde Supabase) |
 | `/api/admin/orders/[id]/refund` | POST | Reembolsar orden |
 | `/api/admin/payments/[id]` | GET | Consultar pago por ID |
 | `/api/pricing` | GET | Precios desde Sanity |
@@ -149,7 +153,8 @@ components/
 
 lib/
 ├── payment/            # mercadopago.service, payment-factory
-├── mercadopago-admin   # API admin (orders, refunds)
+├── orders/             # supabase-orders (persistir órdenes al crear)
+├── mercadopago-admin   # API admin (refunds)
 └── email/              # Notificaciones
 
 contexts/

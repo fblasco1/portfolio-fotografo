@@ -1,50 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { searchOrders, mapMPOrderStatusToOrderStatus } from '@/lib/mercadopago-admin';
+import { supabaseAdmin } from '@/lib/supabase/client';
 import type { Order } from '@/app/types/admin';
 
-function mapMPOrderToOrder(mp: import('@/lib/mercadopago-admin').MPOrder): Order {
-  const payer = mp.payer;
-  const payment =
-    (mp as any).transactions?.payments?.[0] || (mp as any).payments?.[0];
-  const status = mapMPOrderStatusToOrderStatus(
-    mp.status,
-    payment?.status,
-    payment?.status_detail || mp.status_detail
-  );
-
-  const payerName =
-    (payer as any)?.name ||
-    (payer ? [payer.first_name, payer.last_name].filter(Boolean).join(' ') : null) ||
-    null;
+function mapSupabaseOrderToOrder(row: Record<string, unknown>): Order {
+  const id = (row.mercadopago_order_id as string) || (row.id as string);
+  const payer = (row.payer as Record<string, unknown> | null) || null;
+  const paymentInfo = (row.payment_info as Record<string, unknown>) || {};
+  const status = (row.status as string) || 'pending';
+  const validStatuses = ['pending', 'approved', 'rejected', 'in_process', 'cancelled', 'refunded'];
+  const orderStatus = validStatuses.includes(status) ? status as Order['status'] : 'pending';
 
   return {
-    id: String(mp.id),
-    user_id: null,
-    customer_email: payer?.email || '',
-    customer_name: payerName,
-    customer_phone: payer?.phone?.number
-      ? `${payer.phone.area_code || ''}${payer.phone.number || ''}`.trim() || null
-      : null,
-    payer: payer ? { ...payer, name: payerName || (payer as any).name } : null,
-    payment_id: payment?.id?.toString() || null,
-    preference_id: null,
-    mercadopago_order_id: String(mp.id),
-    status,
-    status_detail: payment?.status_detail || mp.status_detail || null,
-    total_amount: parseFloat(String(mp.total_amount || 0)) || 0,
-    currency: mp.currency || 'ARS',
-    payment_method_id: null,
-    installments: 1,
-    items: ((mp as any).items || []).map((item: any) => ({
-      title: item.title,
-      quantity: item.quantity,
-      price: parseFloat(String(item.unit_price || 0)) * (item.quantity || 1),
-    })),
-    shipping_address: payer?.address || null,
-    metadata: { external_reference: (mp as any).external_reference },
-    created_at: (mp as any).created_date || mp.date_created,
-    updated_at: (mp as any).last_updated_date || (mp as any).created_date || mp.date_created,
+    id: String(id),
+    user_id: (row.user_id as string) || null,
+    customer_email: (row.customer_email as string) || '',
+    customer_name: (row.customer_name as string) || null,
+    customer_phone: (row.customer_phone as string) || null,
+    payer: payer && Object.keys(payer).length > 0 ? payer as Order['payer'] : null,
+    payment_id: (row.payment_id as string) || null,
+    preference_id: (row.preference_id as string) || null,
+    mercadopago_order_id: (row.mercadopago_order_id as string) || null,
+    status: orderStatus,
+    status_detail: (row.status_detail as string) || null,
+    total_amount: Number(row.total_amount) || 0,
+    currency: (row.currency as string) || 'ARS',
+    payment_method_id: (row.payment_method_id as string) || null,
+    installments: Number(row.installments) || 1,
+    items: Array.isArray(row.items) ? (row.items as Array<{ title?: string; quantity?: number; price?: number }>).map((item) => ({
+      title: item.title || 'Producto',
+      quantity: item.quantity || 1,
+      price: Number(item.price) || 0,
+    })) : [],
+    shipping_address: row.shipping_address || null,
+    metadata: (row.metadata as Record<string, unknown>) || {},
+    created_at: (row.created_at as string) || new Date().toISOString(),
+    updated_at: (row.updated_at as string) || new Date().toISOString(),
   };
 }
 
@@ -61,15 +52,29 @@ export async function GET(request: NextRequest) {
     const beginDate = searchParams.get('begin_date');
     const endDate = searchParams.get('end_date');
 
-    const mpStatus = status && status !== 'all' ? mapOrderStatusToMP(status) : undefined;
+    let query = supabaseAdmin
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    const orders = await searchOrders({
-      status: mpStatus,
-      begin_date: beginDate || undefined,
-      end_date: endDate || undefined,
-    });
+    if (beginDate) {
+      query = query.gte('created_at', `${beginDate}T00:00:00.000Z`);
+    }
+    if (endDate) {
+      const end = new Date(`${endDate}T23:59:59.999Z`);
+      query = query.lte('created_at', end.toISOString());
+    }
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
 
-    const mapped: Order[] = orders.map(mapMPOrderToOrder);
+    const { data: rows, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    const mapped: Order[] = (rows || []).map((row) => mapSupabaseOrderToOrder(row as Record<string, unknown>));
 
     return NextResponse.json({ orders: mapped, total: mapped.length });
   } catch (error) {
@@ -79,16 +84,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-function mapOrderStatusToMP(status: string): string {
-  const map: Record<string, string> = {
-    approved: 'processed',
-    pending: 'created',
-    rejected: 'failed',
-    in_process: 'processing',
-    cancelled: 'canceled', // MP usa "canceled" (US)
-    refunded: 'refunded',
-  };
-  return map[status] || 'created';
 }

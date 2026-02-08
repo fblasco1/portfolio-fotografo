@@ -24,6 +24,19 @@ Verificar que estén configuradas:
 - URL: `{NEXT_PUBLIC_BASE_URL}/api/payment/webhook/mercadopago`
 - Eventos: Pagos + Órdenes comerciales
 
+## Migración Supabase (obligatoria)
+
+Antes del deploy, ejecutar en Supabase SQL Editor:
+
+```sql
+-- Contenido de supabase/migrations/002_add_payer_and_payment_to_orders.sql
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payer JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_info JSONB DEFAULT '{}'::jsonb;
+CREATE INDEX IF NOT EXISTS idx_orders_mercadopago_order_id ON orders(mercadopago_order_id);
+```
+
+O: `npx supabase db push`
+
 ## Build
 
 ```bash

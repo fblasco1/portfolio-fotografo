@@ -19,10 +19,15 @@ La `notification_url` se genera desde `NEXT_PUBLIC_BASE_URL`. Si la URL base est
 6. Guardar.
 
 ### **3. Eventos manejados**
-- **payment** – Notificaciones de pagos
-- **topic_merchant_order_wh** – Notificaciones de órdenes (Orders API)
+- **payment** – Notificaciones de pagos (legacy)
+- **order** – Notificaciones de órdenes (Online Payments API)
 
-### **4. Variables de Entorno Requeridas**
+### **4. Flujo de órdenes y persistencia**
+- La orden se **persiste en Supabase al crear** el pago (info del cliente que MP no devuelve después).
+- El webhook **actualiza** la orden existente cuando cambia el estado (processed, refunded, etc.).
+- Si la orden no existe (fallback), el webhook la inserta.
+
+### **5. Variables de Entorno Requeridas**
 ```bash
 # URL base de tu aplicación (para generar notification_url)
 NEXT_PUBLIC_BASE_URL=https://tu-dominio.com

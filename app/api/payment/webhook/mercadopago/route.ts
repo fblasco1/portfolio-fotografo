@@ -293,6 +293,19 @@ function extractProductsFromPayment(payment: any): Array<{title: string, quantit
  */
 async function saveOrUpdateOrder(payment: any) {
   try {
+    const payer = payment.payer ? {
+      id: payment.payer.id,
+      name: payment.payer.first_name && payment.payer.last_name
+        ? `${payment.payer.first_name} ${payment.payer.last_name}`.trim()
+        : payment.payer.first_name,
+      email: payment.payer.email,
+      first_name: payment.payer.first_name,
+      last_name: payment.payer.last_name,
+      phone: payment.payer.phone,
+      identification: payment.payer.identification,
+      address: payment.payer.address,
+    } : null;
+
     const orderData = {
       payment_id: payment.id.toString(),
       status: payment.status,
@@ -302,13 +315,23 @@ async function saveOrUpdateOrder(payment: any) {
       payment_method_id: payment.payment_method_id,
       installments: payment.installments || 1,
       customer_email: payment.payer?.email || '',
-      customer_name: payment.payer?.first_name && payment.payer?.last_name
-        ? `${payment.payer.first_name} ${payment.payer.last_name}`.trim()
-        : payment.payer?.first_name || '',
+      customer_name: payer?.name || (payer?.first_name && payer?.last_name
+        ? `${payer.first_name} ${payer.last_name}`.trim()
+        : payer?.first_name) || '',
       customer_phone: payment.payer?.phone?.number
         ? `${payment.payer.phone.area_code || ''}${payment.payer.phone.number}`.trim()
         : null,
       shipping_address: payment.payer?.address || null,
+      payer: payer || {},
+      payment_info: {
+        id: payment.id,
+        status: payment.status,
+        status_detail: payment.status_detail,
+        transaction_amount: payment.transaction_amount,
+        amount: payment.transaction_amount,
+        date_approved: payment.date_approved,
+        payment_method: payment.payment_method,
+      },
       items: extractProductsFromPayment(payment),
       metadata: {
         mercadopago_payment_id: payment.id,
@@ -381,22 +404,43 @@ async function saveOrUpdateOrderFromOnlinePaymentOrder(order: any) {
       return;
     }
 
+    const payer = order.payer ? {
+      id: order.payer.id,
+      name: (order.payer as any).name || [order.payer.first_name, order.payer.last_name].filter(Boolean).join(' ') || null,
+      email: order.payer.email,
+      first_name: order.payer.first_name,
+      last_name: order.payer.last_name,
+      phone: order.payer.phone,
+      identification: (order.payer as any).identification,
+      address: order.payer.address,
+    } : null;
+
     const orderData = {
       mercadopago_order_id: order.id?.toString(),
       payment_id: payment.id?.toString(),
       preference_id: null,
-      status: order.status === 'processed' ? 'approved' : 'pending',
+      status: order.status === 'processed' ? 'approved' : order.status === 'refunded' ? 'refunded' : order.status === 'canceled' || order.status === 'cancelled' ? 'cancelled' : order.status === 'failed' ? 'rejected' : 'pending',
       status_detail: payment.status_detail || order.status_detail || null,
       total_amount: parseFloat(order.total_amount ?? order.total_paid_amount ?? '0'),
       currency: order.currency_id || 'ARS',
       payment_method_id: payment.payment_method?.id || null,
       installments: payment.payment_method?.installments ?? 1,
       customer_email: order.payer?.email || '',
-      customer_name: [order.payer?.first_name, order.payer?.last_name].filter(Boolean).join(' ') || '',
+      customer_name: payer?.name || [order.payer?.first_name, order.payer?.last_name].filter(Boolean).join(' ') || '',
       customer_phone: order.payer?.phone?.number
         ? `${order.payer.phone.area_code || ''}${order.payer.phone.number}`.trim()
         : null,
       shipping_address: order.payer?.address || null,
+      payer: payer || {},
+      payment_info: payment ? {
+        id: payment.id,
+        status: payment.status,
+        status_detail: payment.status_detail,
+        transaction_amount: payment.transaction_amount ?? payment.amount ?? order.total_amount,
+        amount: payment.amount ?? payment.transaction_amount ?? order.total_amount,
+        date_approved: payment.date_approved,
+        payment_method: payment.payment_method,
+      } : {},
       items: extractProductsFromOrder(order),
       metadata: {
         mercadopago_order_id: order.id,
@@ -407,11 +451,18 @@ async function saveOrUpdateOrderFromOnlinePaymentOrder(order: any) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data: existingOrder } = await supabaseAdmin
+    // Buscar por payment_id o mercadopago_order_id (la orden se crea al hacer el pago, el webhook actualiza estado)
+    const { data: existingByPayment } = await supabaseAdmin
       .from('orders')
       .select('id')
       .eq('payment_id', payment.id?.toString())
       .single();
+    const { data: existingByOrderId } = existingByPayment ? { data: null } : await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('mercadopago_order_id', order.id?.toString())
+      .single();
+    const existingOrder = existingByPayment || existingByOrderId;
 
     if (existingOrder) {
       const { error: updateError } = await supabaseAdmin
@@ -427,7 +478,7 @@ async function saveOrUpdateOrderFromOnlinePaymentOrder(order: any) {
         orderData.status_detail
       );
 
-      console.log('✅ Orden actualizada desde Online Payments:', existingOrder.id);
+      console.log('✅ Orden actualizada por webhook (estado):', existingOrder.id);
     } else {
       const { data: newOrder, error: insertError } = await supabaseAdmin
         .from('orders')
@@ -442,7 +493,7 @@ async function saveOrUpdateOrderFromOnlinePaymentOrder(order: any) {
 
       await addOrderStatusHistory(newOrder.id, orderData.status, orderData.status_detail);
 
-      console.log('✅ Nueva orden guardada desde Online Payments:', newOrder.id);
+      console.log('✅ Orden insertada por webhook (fallback - no existía al crear):', newOrder.id);
     }
   } catch (error) {
     console.error('❌ Error guardando orden desde Online Payments:', error);

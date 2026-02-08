@@ -30,11 +30,16 @@ Tras login: **Panel** (`/admin`) → Órdenes (`/admin/dashboard`) | Contenido (
 
 Crear `.env.local`. Obtener URL y keys en Supabase Dashboard → Settings → API. Reemplazar `SUPABASE_SERVICE_ROLE_KEY`.
 
-### 3. Migración SQL
+### 3. Migraciones SQL
 
-- SQL Editor → New Query
-- Pegar contenido de `supabase/migrations/001_create_orders_tables.sql`
-- Run. Verificar tablas `orders` y `order_status_history`.
+Ejecutar en orden en SQL Editor → New Query:
+
+1. `supabase/migrations/001_create_orders_tables.sql` — Tabla base
+2. `supabase/migrations/002_add_payer_and_payment_to_orders.sql` — Columnas `payer`, `payment_info`
+
+O con CLI: `npx supabase db push`
+
+Ver `docs/FLUJO-ORDENES-SUPABASE.md` para el flujo de persistencia de órdenes.
 
 ### 4. Usuario admin
 

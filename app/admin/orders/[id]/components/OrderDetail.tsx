@@ -12,8 +12,53 @@ interface OrderDetailProps {
   orderId: string;
 }
 
+function PaymentInfoCard({ payment }: { payment: Record<string, unknown> }) {
+  if (payment._error) {
+    return <p className="text-sm text-amber-700">{String(payment._error)}</p>;
+  }
+  const renderValue = (val: unknown): React.ReactNode => {
+    if (val == null) return '—';
+    if (typeof val === 'boolean') return val ? 'Sí' : 'No';
+    if (typeof val === 'object' && !Array.isArray(val) && val !== null) {
+      return (
+        <pre className="text-xs bg-stone-100 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto">
+          {JSON.stringify(val, null, 2)}
+        </pre>
+      );
+    }
+    return String(val);
+  };
+
+  const skipKeys = new Set(['metadata', 'additional_info', '_error']);
+  const entries = Object.entries(payment).filter(([k]) => !skipKeys.has(k));
+
+  return (
+    <div className="space-y-2">
+      {entries.map(([key, value]) => (
+        <div key={key} className="text-sm">
+          <span className="font-medium text-stone-600">{key}:</span>{' '}
+          <span className="text-stone-900">{renderValue(value)}</span>
+        </div>
+      ))}
+      {(payment.metadata || payment.additional_info) && (
+        <details className="mt-2">
+          <summary className="font-medium text-stone-600 cursor-pointer">metadata / additional_info</summary>
+          <pre className="text-xs bg-stone-100 p-2 rounded mt-2 overflow-x-auto max-h-40 overflow-y-auto">
+            {JSON.stringify(
+              { metadata: payment.metadata, additional_info: payment.additional_info },
+              null,
+              2
+            )}
+          </pre>
+        </details>
+      )}
+    </div>
+  );
+}
+
 export default function OrderDetail({ orderId }: OrderDetailProps) {
   const [order, setOrder] = useState<Order | null>(null);
+  const [payment, setPayment] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refunding, setRefunding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +74,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
       }
       const data = await res.json();
       setOrder(data.order);
+      setPayment(data.payment ? (data.payment as Record<string, unknown>) : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar la orden');
       setOrder(null);
@@ -245,12 +291,14 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
                 <h3 className="text-lg font-semibold mb-4 text-stone-900">
                   Pago Mercado Pago
                 </h3>
-                <p className="text-sm text-stone-600">
+                <p className="text-sm text-stone-600 mb-4">
                   Payment ID: <code className="font-mono">{order.payment_id}</code>
                 </p>
-                <p className="text-xs text-stone-500 mt-2">
-                  Puedes verificar el estado en el panel de Mercado Pago
-                </p>
+                {payment ? (
+                  <PaymentInfoCard payment={payment} />
+                ) : (
+                  <p className="text-sm text-stone-500">Sin información de pago en la orden</p>
+                )}
               </Card>
             )}
           </div>

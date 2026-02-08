@@ -111,9 +111,6 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
                 ID
               </th>
               <th className="text-left p-3 text-sm font-medium text-stone-600">
-                Cliente
-              </th>
-              <th className="text-left p-3 text-sm font-medium text-stone-600">
                 Total
               </th>
               <th className="text-left p-3 text-sm font-medium text-stone-600">
@@ -130,7 +127,7 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
           <tbody>
             {orders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center p-8 text-stone-500">
+                <td colSpan={5} className="text-center p-8 text-stone-500">
                   No hay órdenes
                 </td>
               </tr>
@@ -144,16 +141,6 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
                     <code className="text-xs text-stone-700">
                       {order.id.length > 12 ? `${order.id.slice(0, 12)}...` : order.id}
                     </code>
-                  </td>
-                  <td className="p-3">
-                    <div>
-                      <div className="font-medium text-stone-900">
-                        {order.customer_name || 'N/A'}
-                      </div>
-                      <div className="text-sm text-stone-500">
-                        {order.customer_email}
-                      </div>
-                    </div>
                   </td>
                   <td className="p-3 text-stone-900">
                     {new Intl.NumberFormat('es-AR', {

@@ -7,6 +7,7 @@ import type {
   Issuer,
 } from '@/app/types/payment';
 import { getProductPrice } from './config';
+import { saveOrderAtCreation } from '@/lib/orders/supabase-orders';
 
 export class MercadoPagoProvider implements PaymentProvider {
   name = 'mercadopago';
@@ -447,6 +448,30 @@ export class MercadoPagoProvider implements PaymentProvider {
       const payment = order?.transactions?.payments?.[0];
       const amount = parseFloat(order?.total_amount || order?.total_paid_amount || '0');
       const createdDate = order?.created_date || order?.last_updated_date || new Date().toISOString();
+
+      // Persistir orden en Supabase al crear (info del cliente que no se puede obtener después de la API MP)
+      const cartItems = paymentData.metadata?.cart_items || [];
+      const totalQty = cartItems.reduce((s: number, i: any) => s + (i.quantity || 1), 0) || 1;
+      const unitPrice = amount / totalQty;
+      const itemsForSupabase = cartItems.length > 0
+        ? cartItems.map((item: any) => ({
+            title: item.title || 'Producto',
+            quantity: item.quantity || 1,
+            price: unitPrice * (item.quantity || 1),
+          }))
+        : [{ title: 'Compra', quantity: 1, price: amount }];
+      await saveOrderAtCreation({
+        order: order as any,
+        payer: {
+          email: paymentData.payer.email,
+          first_name: paymentData.payer.first_name,
+          last_name: paymentData.payer.last_name,
+          phone: paymentData.payer.phone,
+          identification: paymentData.payer.identification,
+          address: paymentData.payer.address,
+        },
+        items: itemsForSupabase,
+      });
 
       const data: PaymentResponse = {
         id: payment?.id ?? order?.id ?? '',
