@@ -82,7 +82,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
           <div className="rounded-lg bg-red-50 p-6 text-red-700">
             <p className="font-medium">{error || 'Orden no encontrada'}</p>
             <Link href="/admin/dashboard" className="mt-4 inline-block">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 min-h-[44px] px-4 cursor-pointer hover:bg-stone-100 active:scale-[0.98] transition-all">
                 <ArrowLeft className="h-4 w-4" />
                 Volver al Panel
               </Button>
@@ -98,7 +98,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
       <div className="container mx-auto px-4 py-8">
         <AdminNav />
         <Link href="/admin/dashboard">
-          <Button variant="ghost" className="mb-4 gap-2">
+          <Button variant="ghost" className="mb-4 gap-2 min-h-[44px] px-4 cursor-pointer hover:bg-stone-100 active:scale-[0.98] transition-all">
             <ArrowLeft className="h-4 w-4" />
             Volver al Panel
           </Button>
@@ -115,13 +115,58 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-stone-600">Cliente</label>
-                <p className="font-medium text-stone-900">
-                  {order.customer_name || 'N/A'}
-                </p>
-                <p className="text-sm text-stone-600">{order.customer_email}</p>
-                {order.customer_phone && (
-                  <p className="text-sm text-stone-600">{order.customer_phone}</p>
+                <label className="text-sm font-medium text-stone-600">
+                  Información del pagador (payer)
+                </label>
+                {order.payer ? (
+                  <div className="mt-2 space-y-1 text-sm text-stone-700 bg-stone-50 rounded-lg p-4">
+                    {order.payer.name && (
+                      <p><span className="font-medium text-stone-600">Nombre:</span> {order.payer.name}</p>
+                    )}
+                    {(order.payer.first_name || order.payer.last_name) && !order.payer.name && (
+                      <p>
+                        <span className="font-medium text-stone-600">Nombre:</span>{' '}
+                        {[order.payer.first_name, order.payer.last_name].filter(Boolean).join(' ')}
+                      </p>
+                    )}
+                    {order.payer.email && (
+                      <p><span className="font-medium text-stone-600">Email:</span> {order.payer.email}</p>
+                    )}
+                    {order.payer.id && (
+                      <p><span className="font-medium text-stone-600">ID payer:</span> {order.payer.id}</p>
+                    )}
+                    {(order.payer.phone?.number || order.customer_phone) && (
+                      <p>
+                        <span className="font-medium text-stone-600">Teléfono:</span>{' '}
+                        {order.payer.phone?.area_code && order.payer.phone?.number
+                          ? `+${order.payer.phone.area_code} ${order.payer.phone.number}`
+                          : order.customer_phone || order.payer.phone?.number}
+                      </p>
+                    )}
+                    {order.payer.identification?.type && (
+                      <p>
+                        <span className="font-medium text-stone-600">Documento:</span>{' '}
+                        {order.payer.identification.type} {order.payer.identification.number}
+                      </p>
+                    )}
+                    {order.payer.address && Object.keys(order.payer.address).length > 0 && (
+                      <p>
+                        <span className="font-medium text-stone-600">Dirección:</span>{' '}
+                        {[
+                          order.payer.address.street_name,
+                          order.payer.address.street_number,
+                          order.payer.address.city,
+                          order.payer.address.zip_code,
+                          order.payer.address.federal_unit,
+                          order.payer.address.country_name,
+                        ]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="font-medium text-stone-900">{order.customer_name || 'N/A'}</p>
                 )}
               </div>
 
@@ -152,7 +197,7 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
                   onClick={handleRefund}
                   disabled={refunding}
                   variant="outline"
-                  className="w-full border-amber-300 text-amber-800 hover:bg-amber-50 gap-2"
+                  className="w-full min-h-[44px] border-amber-300 text-amber-800 hover:bg-amber-50 hover:border-amber-400 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer gap-2 transition-all"
                 >
                   <RotateCcw className="h-4 w-4" />
                   {refunding ? 'Procesando...' : 'Reembolsar orden'}

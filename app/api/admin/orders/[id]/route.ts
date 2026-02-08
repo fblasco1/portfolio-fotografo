@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { getOrder } from '@/lib/mercadopago-admin';
+import { getOrder, mapMPOrderStatusToOrderStatus } from '@/lib/mercadopago-admin';
 import type { Order } from '@/app/types/admin';
 
 function mapMPOrderToOrder(mp: import('@/lib/mercadopago-admin').MPOrder): Order {
   const payer = mp.payer;
   const payment =
     (mp as any).transactions?.payments?.[0] || (mp as any).payments?.[0];
-  const status = mapMPStatusToOrderStatus(mp.status, payment?.status);
+  const status = mapMPOrderStatusToOrderStatus(
+    mp.status,
+    payment?.status,
+    payment?.status_detail || mp.status_detail
+  );
+
+  const payerName =
+    (payer as any)?.name ||
+    (payer ? [payer.first_name, payer.last_name].filter(Boolean).join(' ') : null) ||
+    null;
 
   return {
     id: String(mp.id),
     user_id: null,
     customer_email: payer?.email || '',
-    customer_name: payer
-      ? [payer.first_name, payer.last_name].filter(Boolean).join(' ') || null
-      : null,
+    customer_name: payerName,
     customer_phone: payer?.phone?.number
       ? `${payer.phone.area_code || ''}${payer.phone.number || ''}`.trim() || null
       : null,
+    payer: payer ? { ...payer, name: payerName || (payer as any).name } : null,
     payment_id: payment?.id?.toString() || null,
     preference_id: null,
     mercadopago_order_id: String(mp.id),
@@ -41,21 +49,6 @@ function mapMPOrderToOrder(mp: import('@/lib/mercadopago-admin').MPOrder): Order
     created_at: mp.date_created,
     updated_at: (mp as any).last_updated_date || mp.date_created,
   };
-}
-
-function mapMPStatusToOrderStatus(
-  orderStatus: string,
-  paymentStatus?: string
-): Order['status'] {
-  // Online Payments: processed = pagado
-  if (orderStatus === 'closed' || orderStatus === 'processed' || paymentStatus === 'approved') return 'approved';
-  if (orderStatus === 'cancelled' || paymentStatus === 'cancelled') return 'cancelled';
-  if (orderStatus === 'expired') return 'rejected';
-  if (orderStatus === 'refunded' || paymentStatus === 'refunded' || paymentStatus === 'charged_back') return 'refunded';
-  if (paymentStatus === 'in_process' || paymentStatus === 'pending') return 'in_process';
-  if (orderStatus === 'open' || orderStatus === 'pending' || paymentStatus === 'pending') return 'pending';
-  if (paymentStatus === 'rejected') return 'rejected';
-  return 'pending';
 }
 
 export async function GET(

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/app/[locale]/components/ui/card';
 import { Button } from '@/app/[locale]/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import type { Order } from '@/app/types/admin';
 
@@ -74,6 +74,16 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
     <Card className="p-6 border-stone-200 shadow-sm">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-stone-900">Órdenes</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => { setLoading(true); fetchOrders(); }}
+          disabled={loading}
+          className="gap-2 min-h-[36px] cursor-pointer hover:bg-stone-100"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refrescar
+        </Button>
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
@@ -83,6 +93,8 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
             variant={filter === status ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(status)}
+            className="min-h-[36px] px-3 cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all"
+            aria-pressed={filter === status}
           >
             {status === 'all'
               ? 'Todas'
@@ -160,8 +172,12 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
                     })}
                   </td>
                   <td className="p-3">
-                    <Link href={`/admin/orders/${encodeURIComponent(order.id)}`}>
-                      <Button variant="ghost" size="sm">
+                    <Link
+                      href={`/admin/orders/${encodeURIComponent(order.id)}`}
+                      className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md hover:bg-stone-100 active:bg-stone-200 transition-colors"
+                      aria-label="Ver detalle de la orden"
+                    >
+                      <Button variant="ghost" size="sm" className="cursor-pointer hover:bg-stone-100">
                         <Eye className="h-4 w-4" />
                       </Button>
                     </Link>

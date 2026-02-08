@@ -1,9 +1,21 @@
+export interface OrderPayer {
+  id?: string;
+  name?: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: { area_code?: string; number?: string };
+  address?: Record<string, string>;
+  identification?: { type?: string; number?: string };
+}
+
 export interface Order {
   id: string;
   user_id: string | null;
   customer_email: string;
   customer_name: string | null;
   customer_phone: string | null;
+  payer?: OrderPayer | null;
   payment_id: string | null;
   preference_id: string | null;
   mercadopago_order_id: string | null;

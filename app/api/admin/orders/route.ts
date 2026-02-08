@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { searchOrders } from '@/lib/mercadopago-admin';
+import { searchOrders, mapMPOrderStatusToOrderStatus } from '@/lib/mercadopago-admin';
 import type { Order } from '@/app/types/admin';
 
 function mapMPOrderToOrder(mp: import('@/lib/mercadopago-admin').MPOrder): Order {
   const payer = mp.payer;
   const payment =
     (mp as any).transactions?.payments?.[0] || (mp as any).payments?.[0];
-  const status = mapMPStatusToOrderStatus(mp.status, payment?.status);
+  const status = mapMPOrderStatusToOrderStatus(
+    mp.status,
+    payment?.status,
+    payment?.status_detail || mp.status_detail
+  );
+
+  const payerName =
+    (payer as any)?.name ||
+    (payer ? [payer.first_name, payer.last_name].filter(Boolean).join(' ') : null) ||
+    null;
 
   return {
     id: String(mp.id),
     user_id: null,
     customer_email: payer?.email || '',
-    customer_name: payer
-      ? [payer.first_name, payer.last_name].filter(Boolean).join(' ') || null
-      : null,
+    customer_name: payerName,
     customer_phone: payer?.phone?.number
       ? `${payer.phone.area_code || ''}${payer.phone.number || ''}`.trim() || null
       : null,
+    payer: payer ? { ...payer, name: payerName || (payer as any).name } : null,
     payment_id: payment?.id?.toString() || null,
     preference_id: null,
     mercadopago_order_id: String(mp.id),
@@ -35,23 +43,9 @@ function mapMPOrderToOrder(mp: import('@/lib/mercadopago-admin').MPOrder): Order
     })),
     shipping_address: payer?.address || null,
     metadata: { external_reference: (mp as any).external_reference },
-    created_at: mp.date_created,
-    updated_at: (mp as any).last_updated_date || mp.date_created,
+    created_at: (mp as any).created_date || mp.date_created,
+    updated_at: (mp as any).last_updated_date || (mp as any).created_date || mp.date_created,
   };
-}
-
-function mapMPStatusToOrderStatus(
-  orderStatus: string,
-  paymentStatus?: string
-): Order['status'] {
-  if (orderStatus === 'closed' || paymentStatus === 'approved') return 'approved';
-  if (orderStatus === 'cancelled' || paymentStatus === 'cancelled') return 'cancelled';
-  if (orderStatus === 'expired') return 'rejected';
-  if (paymentStatus === 'refunded' || paymentStatus === 'charged_back') return 'refunded';
-  if (paymentStatus === 'in_process' || paymentStatus === 'pending') return 'in_process';
-  if (orderStatus === 'open' || paymentStatus === 'pending') return 'pending';
-  if (paymentStatus === 'rejected') return 'rejected';
-  return 'pending';
 }
 
 export async function GET(request: NextRequest) {
@@ -66,17 +60,13 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const beginDate = searchParams.get('begin_date');
     const endDate = searchParams.get('end_date');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 50);
-    const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     const mpStatus = status && status !== 'all' ? mapOrderStatusToMP(status) : undefined;
 
     const orders = await searchOrders({
-      limit,
-      offset,
       status: mpStatus,
-      ...(beginDate && { begin_date: beginDate }),
-      ...(endDate && { end_date: endDate }),
+      begin_date: beginDate || undefined,
+      end_date: endDate || undefined,
     });
 
     const mapped: Order[] = orders.map(mapMPOrderToOrder);
@@ -93,12 +83,12 @@ export async function GET(request: NextRequest) {
 
 function mapOrderStatusToMP(status: string): string {
   const map: Record<string, string> = {
-    approved: 'closed',
-    pending: 'open',
-    rejected: 'expired',
-    in_process: 'open',
-    cancelled: 'cancelled',
-    refunded: 'closed',
+    approved: 'processed',
+    pending: 'created',
+    rejected: 'failed',
+    in_process: 'processing',
+    cancelled: 'canceled', // MP usa "canceled" (US)
+    refunded: 'refunded',
   };
-  return map[status] || 'open';
+  return map[status] || 'created';
 }

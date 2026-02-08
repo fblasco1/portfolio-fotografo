@@ -31,7 +31,14 @@ async function mpFetch<T>(
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     const msg = (errData as any)?.message || errData?.errors?.[0]?.message || res.statusText;
-    throw new Error(`Mercado Pago API: ${msg}`);
+    const details = (errData as any)?.details ?? errData?.errors?.[0]?.details;
+    const detailStr = details != null
+      ? (typeof details === 'string' ? details : JSON.stringify(details))
+      : '';
+    const fullMsg = detailStr
+      ? `Mercado Pago API: ${msg}. Details: ${detailStr}`
+      : `Mercado Pago API: ${msg}`;
+    throw new Error(fullMsg);
   }
 
   return res.json() as Promise<T>;
@@ -60,11 +67,13 @@ export interface MPOrder {
   payments?: Array<{ id: number | string; status: string; status_detail?: string; transaction_amount?: number; amount?: string }>;
   payer?: {
     id?: string;
+    name?: string;
     email?: string;
     first_name?: string;
     last_name?: string;
     phone?: { area_code?: string; number?: string };
     address?: Record<string, string>;
+    identification?: { type?: string; number?: string };
   };
   /** transactions.payments (Online Payments: id string PAY01...) */
   transactions?: {
@@ -84,6 +93,43 @@ export interface MPOrdersSearchResponse {
   elements?: MPOrder[];
   next_offset?: number;
   total?: number;
+}
+
+/** Online Payments API: created, processed, action_required, failed, processing, refunded, canceled */
+export type OrderStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'in_process'
+  | 'cancelled'
+  | 'refunded';
+
+export function mapMPOrderStatusToOrderStatus(
+  orderStatus: string,
+  paymentStatus?: string,
+  statusDetail?: string
+): OrderStatus {
+  const os = (orderStatus || '').toLowerCase();
+  const ps = (paymentStatus || '').toLowerCase();
+  const sd = (statusDetail || '').toLowerCase();
+
+  // processed = todas las transacciones exitosas → approved
+  if (os === 'processed' || ps === 'approved' || sd === 'accredited') return 'approved';
+  // refunded
+  if (os === 'refunded' || ps === 'refunded' || ps === 'charged_back' || sd === 'refunded' || sd === 'partially_refunded')
+    return 'refunded';
+  // canceled (MP usa spelling US)
+  if (os === 'canceled' || os === 'cancelled' || ps === 'canceled' || ps === 'cancelled' || sd === 'canceled')
+    return 'cancelled';
+  // failed / rejected
+  if (os === 'failed' || ps === 'rejected') return 'rejected';
+  // processing, action_required, in_process
+  if (os === 'processing' || os === 'action_required' || ps === 'in_process' || ps === 'pending' || sd === 'in_process')
+    return 'in_process';
+  // created, open
+  if (os === 'created' || os === 'open') return 'pending';
+
+  return 'pending';
 }
 
 export interface MPPayment {
@@ -109,8 +155,6 @@ export interface MPPayment {
  * Buscar órdenes en Mercado Pago (Online Payments API)
  */
 export async function searchOrders(params: {
-  limit?: number;
-  offset?: number;
   status?: string;
   date_created_from?: string;
   date_created_to?: string;
@@ -120,39 +164,55 @@ export async function searchOrders(params: {
 } = {}): Promise<MPOrder[]> {
   const now = new Date();
   const toYmd = (d: Date) => d.toISOString().slice(0, 10);
-  const toRfc3339 = (ymd: string, endOfDay = false) => {
+  const toIso8601 = (ymd: string, endOfDay = false) => {
     if (/^\d{4}-\d{2}-\d{2}T/.test(ymd)) return ymd;
-    return endOfDay ? `${ymd}T23:59:59.999Z` : `${ymd}T00:00:00.000Z`;
+    if (endOfDay) {
+      return `${ymd}T23:59:59.999Z`;
+    }
+    return `${ymd}T00:00:00.000Z`;
   };
-  const endYmd = params.end_date ?? params.date_created_to ?? toYmd(now);
-  const beginYmd = params.begin_date ?? params.date_created_from ?? (() => {
+  let endYmd = params.end_date ?? params.date_created_to ?? toYmd(now);
+  let beginYmd = params.begin_date ?? params.date_created_from ?? (() => {
     const d = new Date(now);
     d.setDate(d.getDate() - 30);
     return toYmd(d);
   })();
-  const dateCreatedFrom = toRfc3339(beginYmd);
-  const dateCreatedTo = toRfc3339(endYmd, true);
-  const limit = Math.min(params.limit || 50, 50);
-  const offset = params.offset || 0;
+  const beginDate = new Date(beginYmd + 'T00:00:00.000Z');
+  let endDate = new Date(endYmd + 'T00:00:00.000Z');
+  const diffMs = endDate.getTime() - beginDate.getTime();
+  const maxRangeMs = 29 * 24 * 60 * 60 * 1000; // 29 días: MP permite máx 1 month
+  if (diffMs > maxRangeMs) {
+    endDate = new Date(beginDate.getTime() + maxRangeMs);
+    endYmd = endDate.toISOString().slice(0, 10);
+  }
+  const diffDays = Math.ceil((endDate.getTime() - beginDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays > 30) {
+    throw new Error(`Mercado Pago API: Invalid date range. Details: date range: maximum allowed is 1 month`);
+  }
+  const beginDateIso = toIso8601(beginYmd);
+  const endDateIso = toIso8601(endYmd, true);
 
-  const searchParams = new URLSearchParams();
-  searchParams.set('begin_date', dateCreatedFrom);
-  searchParams.set('end_date', dateCreatedTo);
-  searchParams.set('limit', String(limit));
-  searchParams.set('offset', String(offset));
-  if (params.status) searchParams.set('status', params.status);
-  if (params.external_reference) searchParams.set('external_reference', params.external_reference);
+  const p = new URLSearchParams();
+  p.set('begin_date', beginDateIso);
+  p.set('end_date', endDateIso);
+
+  const path = `/v1/orders?${p.toString()}`;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[MP] searchOrders:', path);
+  }
 
   try {
-    const data = await mpFetch<{ elements?: MPOrder[]; results?: MPOrder[] } | MPOrder[]>(
-      `/v1/orders?${searchParams.toString()}`
-    );
-    let list: MPOrder[] = Array.isArray(data) ? data : [];
-    const obj = data as { elements?: MPOrder[]; results?: MPOrder[] };
-    if (!Array.isArray(data)) list = obj.elements || obj.results || [];
-    return list;
+    const data = await mpFetch<{ elements?: MPOrder[]; results?: MPOrder[]; data?: MPOrder[] } | MPOrder[]>(path);
+    const list = Array.isArray(data) ? data : (data as any).elements || (data as any).results || (data as any).data || [];
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[MP] searchOrders ok:', list.length, 'orders');
+    }
+    const filtered = params.status
+      ? list.filter((o: MPOrder) => (o.status || '').toLowerCase() === (params.status || '').toLowerCase())
+      : list;
+    return filtered;
   } catch (e) {
-    console.warn('searchOrders failed:', e);
+    console.warn('[MP] searchOrders failed:', e);
     return [];
   }
 }
