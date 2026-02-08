@@ -216,138 +216,42 @@ async function processApprovedPayment(payment: any) {
 }
 
 /**
- * Procesa notificaciones de orden comercial de Mercado Pago
+ * Procesa notificaciones de orden de Mercado Pago (Online Payments API)
  */
 async function processOrderNotification(orderId: string) {
-  try {
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    
-    if (!accessToken) {
-      throw new Error('MERCADOPAGO_ACCESS_TOKEN no configurado');
-    }
+  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
-    // Obtener detalles de la orden
-    const response = await fetch(`https://api.mercadopago.com/v1/merchant_orders/${orderId}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error obteniendo orden: ${response.status}`);
-    }
-
-    const merchantOrder = await response.json();
-
-    console.log('📦 Orden comercial recibida:', {
-      id: merchantOrder.id,
-      status: merchantOrder.status,
-      external_reference: merchantOrder.external_reference,
-      total_amount: merchantOrder.total_amount,
-      paid_amount: merchantOrder.paid_amount,
-      payments: merchantOrder.payments?.length || 0,
-    });
-
-    // Guardar o actualizar orden en Supabase
-    await saveOrUpdateOrderFromMerchantOrder(merchantOrder);
-
-    // Procesar emails automáticos solo para órdenes pagadas
-    if (merchantOrder.status === 'paid') {
-      await processApprovedOrder(merchantOrder);
-    }
-
-    return merchantOrder;
-  } catch (error) {
-    console.error('❌ Error procesando notificación de orden:', error);
-    throw error;
+  if (!accessToken) {
+    throw new Error('MERCADOPAGO_ACCESS_TOKEN no configurado');
   }
-}
 
-/**
- * Procesa órdenes pagadas enviando emails automáticos
- */
-async function processApprovedOrder(merchantOrder: any) {
-  try {
-    console.log('🎉 Procesando orden pagada:', merchantOrder.id);
-
-    // Extraer información del primer pago (en tarjeta siempre hay 1 pago)
-    const payment = merchantOrder.payments?.[0];
-    if (!payment) {
-      console.error('❌ Orden pagada sin información de pago');
-      return;
+  const response = await fetch(`https://api.mercadopago.com/v1/orders/${orderId}`, {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
     }
+  });
 
-    // Obtener detalles del pago para información del cliente
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${payment.id}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!paymentResponse.ok) {
-      console.error('❌ Error obteniendo detalles del pago:', payment.id);
-      return;
-    }
-
-    const paymentData = await paymentResponse.json();
-
-    // Construir datos de notificación
-    const notificationData: PaymentNotificationData = {
-      paymentId: payment.id.toString(),
-      status: payment.status,
-      statusDetail: paymentData.status_detail || '',
-      transactionAmount: payment.transaction_amount,
-      currency: merchantOrder.currency_id,
-      paymentMethod: paymentData.payment_method_id,
-      installments: paymentData.installments || 1,
-      customerEmail: merchantOrder.payer?.email || paymentData.payer?.email || '',
-      customerName: merchantOrder.payer?.nickname || 
-        (paymentData.payer?.first_name && paymentData.payer?.last_name 
-          ? `${paymentData.payer.first_name} ${paymentData.payer.last_name}`.trim()
-          : paymentData.payer?.first_name || ''),
-      customerPhone: paymentData.payer?.phone?.number ? 
-        `${paymentData.payer.phone.area_code || ''}${paymentData.payer.phone.number}`.trim() : undefined,
-      customerAddress: paymentData.payer?.address ? {
-        street_name: paymentData.payer.address.street_name,
-        street_number: paymentData.payer.address.street_number,
-        city: paymentData.payer.address.city,
-        zip_code: paymentData.payer.address.zip_code,
-        country: paymentData.payer.address.federal_unit
-      } : undefined,
-      products: extractProductsFromOrder(merchantOrder),
-      orderId: merchantOrder.external_reference || `order_${merchantOrder.id}`,
-      dateCreated: paymentData.date_created,
-      dateApproved: paymentData.date_approved
-    };
-
-    // Inicializar servicio de emails
-    const emailService = new EmailNotificationService();
-
-    // Enviar emails en paralelo
-    const [photographerEmailSent, customerEmailSent] = await Promise.allSettled([
-      emailService.sendPhotographerNotification(notificationData),
-      emailService.sendCustomerConfirmation(notificationData)
-    ]);
-
-    // Log resultados
-    if (photographerEmailSent.status === 'fulfilled' && photographerEmailSent.value) {
-      console.log('✅ Email enviado al fotógrafo exitosamente');
-    } else {
-      console.error('❌ Error enviando email al fotógrafo:', photographerEmailSent.status === 'rejected' ? photographerEmailSent.reason : 'Error desconocido');
-    }
-
-    if (customerEmailSent.status === 'fulfilled' && customerEmailSent.value) {
-      console.log('✅ Email enviado al cliente exitosamente');
-    } else {
-      console.error('❌ Error enviando email al cliente:', customerEmailSent.status === 'rejected' ? customerEmailSent.reason : 'Error desconocido');
-    }
-
-  } catch (error) {
-    console.error('❌ Error procesando orden aprobada:', error);
+  if (!response.ok) {
+    throw new Error(`Error obteniendo orden: ${response.status}`);
   }
+
+  const order = await response.json();
+  console.log('📦 Orden Online Payments recibida:', {
+    id: order.id,
+    status: order.status,
+    external_reference: order.external_reference,
+    total_amount: order.total_amount,
+    payments: order.transactions?.payments?.length || 0
+  });
+
+  await saveOrUpdateOrderFromOnlinePaymentOrder(order);
+
+  if (order.status === 'processed') {
+    await processApprovedOrderFromOnlinePayment(order);
+  }
+
+  return order;
 }
 
 /**
@@ -466,65 +370,47 @@ async function saveOrUpdateOrder(payment: any) {
 }
 
 /**
- * Guarda o actualiza orden desde Merchant Order
+ * Guarda o actualiza orden desde Online Payments (v1/orders)
+ * No usa v1/payments porque los IDs PAY01... no son compatibles con Payments API
  */
-async function saveOrUpdateOrderFromMerchantOrder(merchantOrder: any) {
+async function saveOrUpdateOrderFromOnlinePaymentOrder(order: any) {
   try {
-    const payment = merchantOrder.payments?.[0];
+    const payment = order.transactions?.payments?.[0];
     if (!payment) {
-      console.warn('⚠️ Merchant Order sin pagos');
+      console.warn('⚠️ Orden Online Payments sin pagos');
       return;
     }
 
-    // Obtener detalles del pago
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${payment.id}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!paymentResponse.ok) {
-      throw new Error(`Error obteniendo pago: ${paymentResponse.status}`);
-    }
-
-    const paymentData = await paymentResponse.json();
-
     const orderData = {
-      mercadopago_order_id: merchantOrder.id.toString(),
-      payment_id: payment.id.toString(),
-      preference_id: merchantOrder.preference_id || null,
-      status: merchantOrder.status === 'paid' ? 'approved' : 'pending',
-      status_detail: paymentData.status_detail || null,
-      total_amount: merchantOrder.total_amount,
-      currency: merchantOrder.currency_id,
-      payment_method_id: paymentData.payment_method_id || null,
-      installments: paymentData.installments || 1,
-      customer_email: merchantOrder.payer?.email || paymentData.payer?.email || '',
-      customer_name: merchantOrder.payer?.nickname || 
-        (paymentData.payer?.first_name && paymentData.payer?.last_name
-          ? `${paymentData.payer.first_name} ${paymentData.payer.last_name}`.trim()
-          : paymentData.payer?.first_name || ''),
-      customer_phone: paymentData.payer?.phone?.number
-        ? `${paymentData.payer.phone.area_code || ''}${paymentData.payer.phone.number}`.trim()
+      mercadopago_order_id: order.id?.toString(),
+      payment_id: payment.id?.toString(),
+      preference_id: null,
+      status: order.status === 'processed' ? 'approved' : 'pending',
+      status_detail: payment.status_detail || order.status_detail || null,
+      total_amount: parseFloat(order.total_amount ?? order.total_paid_amount ?? '0'),
+      currency: order.currency_id || 'ARS',
+      payment_method_id: payment.payment_method?.id || null,
+      installments: payment.payment_method?.installments ?? 1,
+      customer_email: order.payer?.email || '',
+      customer_name: [order.payer?.first_name, order.payer?.last_name].filter(Boolean).join(' ') || '',
+      customer_phone: order.payer?.phone?.number
+        ? `${order.payer.phone.area_code || ''}${order.payer.phone.number}`.trim()
         : null,
-      shipping_address: paymentData.payer?.address || null,
-      items: extractProductsFromOrder(merchantOrder),
+      shipping_address: order.payer?.address || null,
+      items: extractProductsFromOrder(order),
       metadata: {
-        mercadopago_order_id: merchantOrder.id,
+        mercadopago_order_id: order.id,
         mercadopago_payment_id: payment.id,
-        date_created: merchantOrder.date_created,
-        date_last_updated: merchantOrder.date_last_updated,
+        date_created: order.created_date || order.date_created,
+        date_last_updated: order.last_updated_date || order.date_last_updated,
       },
       updated_at: new Date().toISOString(),
     };
 
-    // Buscar orden existente
     const { data: existingOrder } = await supabaseAdmin
       .from('orders')
       .select('id')
-      .eq('payment_id', payment.id.toString())
+      .eq('payment_id', payment.id?.toString())
       .single();
 
     if (existingOrder) {
@@ -541,13 +427,13 @@ async function saveOrUpdateOrderFromMerchantOrder(merchantOrder: any) {
         orderData.status_detail
       );
 
-      console.log('✅ Orden actualizada desde Merchant Order:', existingOrder.id);
+      console.log('✅ Orden actualizada desde Online Payments:', existingOrder.id);
     } else {
       const { data: newOrder, error: insertError } = await supabaseAdmin
         .from('orders')
         .insert({
           ...orderData,
-          external_reference: merchantOrder.external_reference || `order_${merchantOrder.id}`,
+          external_reference: order.external_reference || `order_${order.id}`,
         })
         .select()
         .single();
@@ -556,10 +442,61 @@ async function saveOrUpdateOrderFromMerchantOrder(merchantOrder: any) {
 
       await addOrderStatusHistory(newOrder.id, orderData.status, orderData.status_detail);
 
-      console.log('✅ Nueva orden guardada desde Merchant Order:', newOrder.id);
+      console.log('✅ Nueva orden guardada desde Online Payments:', newOrder.id);
     }
   } catch (error) {
-    console.error('❌ Error guardando orden desde Merchant Order:', error);
+    console.error('❌ Error guardando orden desde Online Payments:', error);
+  }
+}
+
+/**
+ * Procesa órdenes aprobadas de Online Payments (sin llamar a v1/payments)
+ */
+async function processApprovedOrderFromOnlinePayment(order: any) {
+  try {
+    const payment = order.transactions?.payments?.[0];
+    if (!payment) return;
+
+    const notificationData: PaymentNotificationData = {
+      paymentId: payment.id?.toString(),
+      status: payment.status || 'approved',
+      statusDetail: payment.status_detail || '',
+      transactionAmount: parseFloat(payment.amount ?? order.total_amount ?? '0'),
+      currency: order.currency_id || 'ARS',
+      paymentMethod: payment.payment_method?.id || '',
+      installments: payment.payment_method?.installments ?? 1,
+      customerEmail: order.payer?.email || '',
+      customerName: [order.payer?.first_name, order.payer?.last_name].filter(Boolean).join(' ') || '',
+      customerPhone: order.payer?.phone?.number
+        ? `${order.payer.phone.area_code || ''}${order.payer.phone.number}`.trim()
+        : undefined,
+      customerAddress: order.payer?.address ? {
+        street_name: order.payer.address.street_name,
+        street_number: order.payer.address.street_number,
+        city: order.payer.address.city,
+        zip_code: order.payer.address.zip_code,
+        country: order.payer.address.federal_unit
+      } : undefined,
+      products: extractProductsFromOrder(order),
+      orderId: order.external_reference || `order_${order.id}`,
+      dateCreated: order.created_date || order.date_created,
+      dateApproved: order.last_updated_date || order.date_created
+    };
+
+    const emailService = new EmailNotificationService();
+    const [photographerEmailSent, customerEmailSent] = await Promise.allSettled([
+      emailService.sendPhotographerNotification(notificationData),
+      emailService.sendCustomerConfirmation(notificationData)
+    ]);
+
+    if (photographerEmailSent.status === 'fulfilled' && photographerEmailSent.value) {
+      console.log('✅ Email enviado al fotógrafo (Online Payments)');
+    }
+    if (customerEmailSent.status === 'fulfilled' && customerEmailSent.value) {
+      console.log('✅ Email enviado al cliente (Online Payments)');
+    }
+  } catch (error) {
+    console.error('❌ Error procesando orden aprobada Online Payments:', error);
   }
 }
 
@@ -660,7 +597,8 @@ export async function POST(request: NextRequest) {
         break;
         
       case 'topic_merchant_order_wh':
-        console.log('📦 Procesando notificación de orden comercial');
+      case 'order':
+        console.log('📦 Procesando notificación de orden (Online Payments)');
         await processOrderNotification(webhookData.data.id);
         processed = true;
         break;

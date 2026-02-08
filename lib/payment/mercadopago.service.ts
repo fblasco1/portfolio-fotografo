@@ -293,13 +293,14 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /**
-   * Crear una orden de Mercado Pago (Paso A)
-   * Implementa las mejores prácticas de seguridad y validación de Mercado Pago
+   * Crear orden con pago incluido (Online Payments API)
+   * Una sola llamada: POST /v1/orders con transactions procesa orden + pago
+   * Ref: https://www.mercadopago.com.ar/developers/en/reference/orders/online-payments/create/post
    */
   private async createOrder(
     paymentData: PaymentRequest,
     orderId: string
-  ): Promise<{ id: number }> {
+  ): Promise<Record<string, any>> {
     const cartItems = paymentData.metadata?.cart_items || [];
     
     if (cartItems.length === 0) {
@@ -403,134 +404,89 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
 
     const orderResponse = await response.json();
-
-
-    return { id: orderResponse.id };
+    return orderResponse;
   }
 
   /**
-   * Crear un pago usando exclusivamente Orders API (flujo de dos pasos)
-   * 1. Crear orden (POST /v1/orders)
-   * 2. Crear pago asociado a la orden (POST /v1/payments con order)
-   * @param paymentData Datos del pago incluyendo token de tarjeta
+   * Mapear status de Online Payments a PaymentResponse
+   */
+  private mapOrderStatusToPaymentStatus(status: string): PaymentResponse['status'] {
+    const map: Record<string, PaymentResponse['status']> = {
+      processed: 'approved',
+      refunded: 'refunded',
+      cancelled: 'cancelled',
+      expired: 'rejected',
+    };
+    return map[status] || 'pending';
+  }
+
+  /**
+   * Crear pago usando Online Payments API (una sola llamada)
+   * POST /v1/orders crea orden + pago en una transacción
+   * Elimina el problema de order_id numérico (Online Payments usa IDs alfanuméricos ORD01..., PAY01...)
    */
   async createPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
     if (!this.accessToken) {
       console.error('❌ Mercado Pago no está configurado - accessToken vacío');
       throw new Error('Mercado Pago no está configurado');
     }
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔑 Iniciando createPayment con token:', this.accessToken.substring(0, 20) + '...');
-    }
 
     try {
-      // La Orders API requiere credenciales de producción (APP_USR-)
       if (this.accessToken.startsWith('TEST-')) {
         throw new Error(
-          'La Orders API no acepta credenciales de prueba (TEST-). Usa credenciales de producción (APP_USR-) desde el panel de Mercado Pago.'
+          'La Online Payments API no acepta credenciales de prueba (TEST-). Usa credenciales de producción (APP_USR-).'
         );
       }
 
-      // Generar ID de orden único y robusto para external_reference
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 9);
       const cartItemsCount = paymentData.metadata?.cart_items?.length || 0;
       const orderId = paymentData.external_reference || `order_${timestamp}_${random}_${cartItemsCount}items`;
 
-      // PASO A: Crear Orden de Mercado Pago (POST /v1/orders)
       const order = await this.createOrder(paymentData, orderId);
-      const mercadopagoOrderId = order.id;
+      const payment = order?.transactions?.payments?.[0];
+      const amount = parseFloat(order?.total_amount || order?.total_paid_amount || '0');
+      const createdDate = order?.created_date || order?.last_updated_date || new Date().toISOString();
 
-      // PASO B: Crear Pago asociado a la Orden (POST /v1/payments con order)
-      // order.id debe ser numérico según la API de Pagos de Mercado Pago
-      const orderIdNumeric = Number(mercadopagoOrderId);
-      if (Number.isNaN(orderIdNumeric)) {
-        throw new Error(`order.id inválido (debe ser numérico): ${mercadopagoOrderId}`);
-      }
-      const paymentPayload = {
-        token: paymentData.token,
-        transaction_amount: paymentData.transaction_amount,
-        installments: paymentData.installments,
-        ...(paymentData.payment_method_id && { payment_method_id: paymentData.payment_method_id }),
-        ...(paymentData.issuer_id && { issuer_id: paymentData.issuer_id }),
-        // Asociar pago a la orden
-        order: {
-          id: orderIdNumeric,
-          type: 'online', // ✅ Requerido: tipo de orden
+      const data: PaymentResponse = {
+        id: payment?.id ?? order?.id ?? '',
+        status: this.mapOrderStatusToPaymentStatus(order?.status || 'pending'),
+        status_detail: order?.status_detail || payment?.status_detail || '',
+        transaction_amount: amount,
+        currency_id: order?.currency_id || paymentData.currency_id || 'ARS',
+        date_created: createdDate,
+        date_approved: order?.status === 'processed' ? createdDate : null,
+        date_last_updated: order?.last_updated_date || createdDate,
+        money_release_date: null,
+        payment_method_id: payment?.payment_method?.id || paymentData.payment_method_id || 'visa',
+        payment_type_id: payment?.payment_method?.type || 'credit_card',
+        installments: payment?.payment_method?.installments ?? paymentData.installments ?? 1,
+        external_reference: order?.external_reference || orderId,
+        transaction_details: {
+          net_received_amount: amount,
+          total_paid_amount: amount,
+          overpaid_amount: 0,
+          installment_amount: amount,
+        },
+        card: {
+          first_six_digits: '',
+          last_four_digits: '',
+          expiration_month: 0,
+          expiration_year: 0,
+          date_created: '',
+          date_last_updated: '',
+          cardholder: { name: '', identification: { number: '', type: '' } },
         },
         payer: {
+          id: order?.user_id?.toString() || '',
           email: paymentData.payer.email,
-          first_name: paymentData.payer.first_name,
-          last_name: paymentData.payer.last_name,
-          identification: paymentData.payer.identification,
-          address: paymentData.payer.address,
-          phone: paymentData.payer.phone,
-        },
-        description: paymentData.description || 'Compra en Portfolio Fotográfico',
-        external_reference: paymentData.external_reference || orderId, // ✅ Siempre presente y único
-        statement_descriptor: paymentData.statement_descriptor || 'CRISTIAN PIROVANO',
-        // ✅ Configurar notification_url en el pago (OBLIGATORIO para webhooks)
-        // Tiene prioridad sobre configuración global
-        ...(this.getNotificationUrl() ? {
-          notification_url: this.getNotificationUrl()
-        } : {}),
-        metadata: {
-          ...(paymentData.metadata || {}),
-          platform: 'portfolio-fotografo',
-          integration_type: 'orders_api',
-          integration_version: '3.0.0',
-          order_id: orderId,
-          mercadopago_order_id: mercadopagoOrderId,
-          created_at: new Date().toISOString(),
+          identification: paymentData.payer.identification || { type: '', number: '' },
+          type: 'customer',
         },
       };
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('💳 Creando pago asociado a orden:', {
-          orderId,
-          mercadopagoOrderId,
-          amount: paymentPayload.transaction_amount,
-          installments: paymentPayload.installments,
-          notification_url: paymentPayload.notification_url || 'No configurada',
-        });
-      }
-
-      // Generar Idempotency Key único
-      const idempotencyKey = `payment_${orderId}_${Date.now()}`;
-
-      const response = await fetch('https://api.mercadopago.com/v1/payments', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-          'X-Idempotency-Key': idempotencyKey,
-          'X-Platform-Id': 'portfolio-fotografo',
-          'X-Integrator-Id': 'dev_portfolio',
-        },
-        body: JSON.stringify(paymentPayload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.error('❌ Error procesando pago:', errorData);
-        }
-
-        const errorMessage = this.getErrorMessage(errorData, response.status);
-        throw new Error(errorMessage);
-      }
-
-      const data: PaymentResponse = await response.json();
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Pago procesado exitosamente:', {
-          paymentId: data.id,
-          status: data.status,
-          orderId,
-          mercadopagoOrderId,
-        });
+        console.log('✅ Pago procesado (Online Payments):', { orderId: order?.id, paymentId: payment?.id, status: data.status });
       }
 
       return data;

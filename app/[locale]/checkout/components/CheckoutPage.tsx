@@ -30,7 +30,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
   // Estado para el modal de resultado
   const [showResultModal, setShowResultModal] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'approved' | 'pending' | 'rejected' | 'in_process' | 'cancelled' | null>(null);
-  const [paymentId, setPaymentId] = useState<number | undefined>();
+  const [paymentId, setPaymentId] = useState<number | string | undefined>();
   
   // Estado para datos del cliente
   const [customerInfo, setCustomerInfo] = useState({

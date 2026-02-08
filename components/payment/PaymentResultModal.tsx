@@ -7,7 +7,7 @@ import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 interface PaymentResultModalProps {
   isOpen: boolean;
   status: 'approved' | 'pending' | 'rejected' | 'in_process' | 'cancelled' | null;
-  paymentId?: number;
+  paymentId?: number | string;
   statusDetail?: string;
   onClose: () => void;
   onGoHome: () => void;

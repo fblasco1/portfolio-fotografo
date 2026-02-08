@@ -47,12 +47,13 @@ function mapMPStatusToOrderStatus(
   orderStatus: string,
   paymentStatus?: string
 ): Order['status'] {
-  if (orderStatus === 'closed' || paymentStatus === 'approved') return 'approved';
+  // Online Payments: processed = pagado
+  if (orderStatus === 'closed' || orderStatus === 'processed' || paymentStatus === 'approved') return 'approved';
   if (orderStatus === 'cancelled' || paymentStatus === 'cancelled') return 'cancelled';
   if (orderStatus === 'expired') return 'rejected';
-  if (paymentStatus === 'refunded' || paymentStatus === 'charged_back') return 'refunded';
+  if (orderStatus === 'refunded' || paymentStatus === 'refunded' || paymentStatus === 'charged_back') return 'refunded';
   if (paymentStatus === 'in_process' || paymentStatus === 'pending') return 'in_process';
-  if (orderStatus === 'open' || paymentStatus === 'pending') return 'pending';
+  if (orderStatus === 'open' || orderStatus === 'pending' || paymentStatus === 'pending') return 'pending';
   if (paymentStatus === 'rejected') return 'rejected';
   return 'pending';
 }

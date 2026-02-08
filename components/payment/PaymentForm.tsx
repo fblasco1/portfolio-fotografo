@@ -12,7 +12,7 @@ import { MercadoPagoScript } from './MercadoPagoScript';
 import type { CardFormData, Installment, PaymentMethod, IdentificationType } from '@/app/types/payment';
 
 interface PaymentFormProps {
-  onSuccess: (paymentId: number, status: string) => void;
+  onSuccess: (paymentId: number | string, status: string) => void;
   onError: (error: string) => void;
   customerInfo?: {
     email: string;

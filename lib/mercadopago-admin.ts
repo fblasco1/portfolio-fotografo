@@ -15,7 +15,7 @@ function getAccessToken(): string {
 
 async function mpFetch<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit & { headers?: Record<string, string> } = {}
 ): Promise<T> {
   const token = getAccessToken();
   const url = `${MP_BASE}${path}`;
@@ -24,7 +24,7 @@ async function mpFetch<T>(
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     },
   });
 
@@ -57,7 +57,7 @@ export interface MPOrder {
     unit_price: string;
     category_id?: string;
   }>;
-  payments?: Array<{ id: number; status: string; status_detail?: string; transaction_amount: number }>;
+  payments?: Array<{ id: number | string; status: string; status_detail?: string; transaction_amount?: number; amount?: string }>;
   payer?: {
     id?: string;
     email?: string;
@@ -66,14 +66,16 @@ export interface MPOrder {
     phone?: { area_code?: string; number?: string };
     address?: Record<string, string>;
   };
-  /** merchant_orders usa payments, Orders API usa transactions.payments */
+  /** transactions.payments (Online Payments: id string PAY01...) */
   transactions?: {
     payments?: Array<{
-      id: number;
+      id: number | string;
       status: string;
       status_detail?: string;
-      transaction_amount: number;
+      transaction_amount?: number;
+      amount?: string;
       date_approved?: string;
+      payment_method?: { id?: string; installments?: number };
     }>;
   };
 }
@@ -104,9 +106,7 @@ export interface MPPayment {
 }
 
 /**
- * Buscar órdenes en Mercado Pago
- * Usa merchant_orders/search con date_created_from/date_created_to (params documentados)
- * Las órdenes creadas vía Orders API aparecen en merchant_orders
+ * Buscar órdenes en Mercado Pago (Online Payments API)
  */
 export async function searchOrders(params: {
   limit?: number;
@@ -132,70 +132,53 @@ export async function searchOrders(params: {
   })();
   const dateCreatedFrom = toRfc3339(beginYmd);
   const dateCreatedTo = toRfc3339(endYmd, true);
+  const limit = Math.min(params.limit || 50, 50);
+  const offset = params.offset || 0;
 
-  const moParams = new URLSearchParams();
-  moParams.set('date_created_from', dateCreatedFrom);
-  moParams.set('date_created_to', dateCreatedTo);
-  moParams.set('limit', String(Math.min(params.limit || 50, 50)));
-  moParams.set('offset', String(params.offset || 0));
-  if (params.status) moParams.set('status', params.status);
-  if (params.external_reference) moParams.set('external_reference', params.external_reference);
+  const searchParams = new URLSearchParams();
+  searchParams.set('begin_date', dateCreatedFrom);
+  searchParams.set('end_date', dateCreatedTo);
+  searchParams.set('limit', String(limit));
+  searchParams.set('offset', String(offset));
+  if (params.status) searchParams.set('status', params.status);
+  if (params.external_reference) searchParams.set('external_reference', params.external_reference);
 
   try {
-    const path = `/merchant_orders/search?${moParams.toString()}`;
-    const data = await mpFetch<{ elements?: MPOrder[]; results?: MPOrder[] } | MPOrder[]>(path);
+    const data = await mpFetch<{ elements?: MPOrder[]; results?: MPOrder[] } | MPOrder[]>(
+      `/v1/orders?${searchParams.toString()}`
+    );
     let list: MPOrder[] = Array.isArray(data) ? data : [];
     const obj = data as { elements?: MPOrder[]; results?: MPOrder[] };
     if (!Array.isArray(data)) list = obj.elements || obj.results || [];
     return list;
   } catch (e) {
-    console.warn('merchant_orders search failed:', e);
+    console.warn('searchOrders failed:', e);
     return [];
   }
 }
 
 /**
- * Obtener una orden por ID
- * Prueba v1/orders y luego v1/merchant_orders
+ * Obtener una orden por ID (Online Payments API)
  */
 export async function getOrder(orderId: string): Promise<MPOrder> {
-  try {
-    return await mpFetch<MPOrder>(`/v1/orders/${orderId}`);
-  } catch {
-    return mpFetch<MPOrder>(`/v1/merchant_orders/${orderId}`);
-  }
+  return mpFetch<MPOrder>(`/v1/orders/${orderId}`);
 }
 
 /**
- * Reembolsar un pago por ID (usado internamente cuando la orden tiene pago asociado)
+ * Reembolsar una orden (Online Payments API)
+ * POST /v1/orders/{order_id}/refund con X-Idempotency-Key
+ * Reembolso total: body vacío. Reembolso parcial: { amount: number }
  */
-function refundPayment(paymentId: string): Promise<unknown> {
-  return mpFetch(`/v1/payments/${paymentId}/refunds`, {
+export async function refundOrder(orderId: string, amount?: number): Promise<unknown> {
+  const idempotencyKey = `refund_${orderId}_${Date.now()}`;
+  const body = amount != null ? { amount } : {};
+  return mpFetch(`/v1/orders/${orderId}/refund`, {
     method: 'POST',
-    body: JSON.stringify({}),
+    headers: {
+      'X-Idempotency-Key': idempotencyKey,
+    },
+    body: JSON.stringify(body),
   });
-}
-
-/**
- * Reembolsar una orden (Orders API)
- * Intenta order refund; si falla, intenta refund del pago asociado a la orden
- */
-export async function refundOrder(orderId: string): Promise<unknown> {
-  try {
-    return await mpFetch(`/v1/orders/${orderId}/refund`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-  } catch (e) {
-    const order = await getOrder(orderId).catch(() => null);
-    const paymentId =
-      (order as any)?.transactions?.payments?.[0]?.id ??
-      (order as any)?.payments?.[0]?.id;
-    if (paymentId) {
-      return refundPayment(String(paymentId));
-    }
-    throw e;
-  }
 }
 
 /**

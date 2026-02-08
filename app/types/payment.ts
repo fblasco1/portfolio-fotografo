@@ -122,7 +122,7 @@ export interface PaymentRequest {
 }
 
 export interface PaymentResponse {
-  id: number;
+  id: number | string; // Online Payments API devuelve string (PAY01...)
   status: 'approved' | 'pending' | 'rejected' | 'in_process' | 'cancelled' | 'refunded' | 'charged_back';
   status_detail: string;
   transaction_amount: number;
