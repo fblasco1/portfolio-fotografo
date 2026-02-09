@@ -334,6 +334,7 @@ async function saveOrUpdateOrder(payment: any) {
       },
       items: extractProductsFromPayment(payment),
       metadata: {
+        external_reference: payment.external_reference || `order_${payment.id}`,
         mercadopago_payment_id: payment.id,
         date_created: payment.date_created,
         date_approved: payment.date_approved,
@@ -370,10 +371,7 @@ async function saveOrUpdateOrder(payment: any) {
       // Crear nueva orden
       const { data: newOrder, error: insertError } = await supabaseAdmin
         .from('orders')
-        .insert({
-          ...orderData,
-          external_reference: payment.external_reference || `order_${payment.id}`,
-        })
+        .insert(orderData)
         .select()
         .single();
 
@@ -443,6 +441,7 @@ async function saveOrUpdateOrderFromOnlinePaymentOrder(order: any) {
       } : {},
       items: extractProductsFromOrder(order),
       metadata: {
+        external_reference: order.external_reference || `order_${order.id}`,
         mercadopago_order_id: order.id,
         mercadopago_payment_id: payment.id,
         date_created: order.created_date || order.date_created,
@@ -482,10 +481,7 @@ async function saveOrUpdateOrderFromOnlinePaymentOrder(order: any) {
     } else {
       const { data: newOrder, error: insertError } = await supabaseAdmin
         .from('orders')
-        .insert({
-          ...orderData,
-          external_reference: order.external_reference || `order_${order.id}`,
-        })
+        .insert(orderData)
         .select()
         .single();
 

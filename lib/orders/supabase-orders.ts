@@ -20,6 +20,7 @@ export interface SaveOrderAtCreationParams {
     status: string;
     total_amount?: string | number;
     currency_id?: string;
+    currency?: string;
     date_created?: string;
     last_updated_date?: string;
     external_reference?: string;
@@ -69,7 +70,7 @@ export async function saveOrderAtCreation(params: SaveOrderAtCreationParams): Pr
       status: mapMPStatusToOrderStatus(order.status || 'pending'),
       status_detail: payment?.status_detail || null,
       total_amount: parseFloat(String(order.total_amount || 0)) || 0,
-      currency: order.currency_id || 'ARS',
+      currency: order.currency_id || order.currency || 'ARS',
       payment_method_id: payment?.payment_method?.id || null,
       installments: payment?.payment_method?.installments ?? 1,
       customer_email: payer?.email || '',
@@ -88,26 +89,47 @@ export async function saveOrderAtCreation(params: SaveOrderAtCreationParams): Pr
         date_approved: payment.date_approved,
         payment_method: payment.payment_method,
       } : {},
-      items: items.map((item) => ({
-        title: item.title,
-        quantity: item.quantity,
-        price: item.price ?? (item.unit_price ? item.unit_price * item.quantity : 0),
-      })),
+      items: items.map((item) => {
+        const rawPrice = item.price ?? (item.unit_price ? item.unit_price * item.quantity : 0);
+        return {
+          title: item.title,
+          quantity: item.quantity,
+          price: parseFloat(Number(rawPrice).toFixed(2)),
+        };
+      }),
       metadata: {
-        external_reference: order.external_reference,
+        external_reference: order.external_reference || `order_${order.id}`,
         mercadopago_order_id: order.id,
         mercadopago_payment_id: payment?.id,
         date_created: order.date_created,
         date_last_updated: order.last_updated_date,
       },
-      external_reference: order.external_reference || `order_${order.id}`,
     };
 
-    const { error } = await supabaseAdmin.from('orders').insert(orderData);
+    const { data: insertedOrder, error } = await supabaseAdmin
+      .from('orders')
+      .insert(orderData)
+      .select('id')
+      .single();
 
     if (error) {
       console.error('❌ Error guardando orden al crear:', error);
       return;
+    }
+
+    const orderStatus = mapMPStatusToOrderStatus(order.status || 'pending');
+    if (insertedOrder?.id) {
+      const { error: historyError } = await supabaseAdmin
+        .from('order_status_history')
+        .insert({
+          order_id: insertedOrder.id,
+          status: orderStatus,
+          status_detail: payment?.status_detail || null,
+          notes: 'Estado inicial al crear la orden',
+        });
+      if (historyError) {
+        console.error('❌ Error guardando historial inicial:', historyError);
+      }
     }
 
     if (process.env.NODE_ENV === 'development') {

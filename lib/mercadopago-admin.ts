@@ -230,7 +230,7 @@ export async function getOrder(orderId: string): Promise<MPOrder> {
  * Reembolso total: body vacío. Reembolso parcial: { amount: number }
  */
 export async function refundOrder(orderId: string, amount?: number): Promise<unknown> {
-  const idempotencyKey = `refund_${orderId}_${Date.now()}`;
+  const idempotencyKey = `refund_${orderId}`;
   const body = amount != null ? { amount } : {};
   return mpFetch(`/v1/orders/${orderId}/refund`, {
     method: 'POST',
