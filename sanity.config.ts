@@ -10,15 +10,7 @@ import {deskTool} from 'sanity/desk'
 import {schema} from './sanity/schemaTypes'
 import {structure} from './sanity/structure'
 
-// Configuración segura con valores por defecto (mismo approach que lib/sanity.ts)
-const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || 'demo-project'
-const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
-const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2025-08-18'
-
-// Logging para debugging
-if (projectId === 'demo-project' || dataset === 'production' && !process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
-  console.warn('⚠️ Sanity Studio usando configuración por defecto. Configura las variables de entorno.')
-}
+import {apiVersion, dataset, projectId} from './sanity/env'
 
 export default defineConfig({
   basePath: '/admin/studio',
