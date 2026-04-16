@@ -2,6 +2,8 @@
  * This configuration is used to for the Sanity Studio that's mounted on the `\app\admin\[[...tool]]\page.tsx` route
  */
 
+'use client'
+
 import {visionTool} from '@sanity/vision'
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'

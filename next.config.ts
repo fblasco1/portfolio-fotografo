@@ -40,16 +40,43 @@ const nextConfig = {
     ];
   },
   transpilePackages: [
-    'next-international', 
-    'international-types'
-  ],
-  serverExternalPackages: [
-    '@sanity/client', 
-    '@sanity/image-url',
-    'next-sanity',
+    'next-international',
+    'international-types',
+    'sanity',
     '@sanity/vision',
-    'sanity'
+    'next-sanity',
   ],
+  webpack: (config, { isServer }) => {
+    // Next.js enlaza `react$` → `next/dist/compiled/react` (create-compiler-aliases.ts).
+    // Esa copia puede ir por detrás de react en package.json y no exportar useEffectEvent,
+    // que Sanity 5.x importa desde "react". Hay que sustituir las mismas claves que usa Next (`…$`).
+    if (!isServer) {
+      const prev = config.resolve.conditionNames
+      if (Array.isArray(prev)) {
+        config.resolve.conditionNames = prev.filter((n) => n !== 'react-server')
+      }
+      const alias = config.resolve.alias
+      if (alias && typeof alias === 'object' && !Array.isArray(alias)) {
+        const r = require.resolve('react')
+        const rd = require.resolve('react-dom')
+        alias['react$'] = r
+        alias['react/jsx-runtime$'] = require.resolve('react/jsx-runtime')
+        alias['react/jsx-dev-runtime$'] = require.resolve('react/jsx-dev-runtime')
+        try {
+          alias['react/compiler-runtime$'] = require.resolve('react/compiler-runtime')
+        } catch {
+          /* opcional según versión de React */
+        }
+        alias['react-dom$'] = rd
+        alias['next/dist/compiled/react$'] = r
+        alias['next/dist/compiled/react-dom$'] = rd
+        alias['next/dist/compiled/react/jsx-runtime$'] = require.resolve('react/jsx-runtime')
+        alias['next/dist/compiled/react/jsx-dev-runtime$'] = require.resolve('react/jsx-dev-runtime')
+      }
+    }
+    return config
+  },
+  serverExternalPackages: ['@sanity/client', '@sanity/image-url'],
   eslint: {
     ignoreDuringBuilds: true,
   },
