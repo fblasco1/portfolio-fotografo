@@ -1,10 +1,23 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import AdminNav from '../components/AdminNav'
 
-export default function StudioLayout({
+const ADMIN_EMAIL = 'pirovanofotografia@gmail.com'
+
+export default async function StudioLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user || user.email !== ADMIN_EMAIL) {
+    redirect('/admin/login')
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-stone-50 to-stone-100">
       <div className="sticky top-0 z-50 flex-shrink-0 border-b border-stone-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
