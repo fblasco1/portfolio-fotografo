@@ -1,49 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { useActionState } from 'react'
 import { Button } from '@/app/[locale]/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/[locale]/components/ui/card'
 import { Input } from '@/app/[locale]/components/ui/input'
 import { Label } from '@/app/[locale]/components/ui/label'
 import { Lock } from 'lucide-react'
+import { loginAsAdmin } from './actions'
+
+const loginInitialState: { error: string | null } = { error: null }
 
 export default function AdminLoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) throw error
-
-      if (data.user) {
-        if (data.user.email === 'pirovanofotografia@gmail.com') {
-          router.push('/admin')
-          router.refresh()
-        } else {
-          await supabase.auth.signOut()
-          setError('No tienes permisos de administrador')
-        }
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [state, formAction, isPending] = useActionState(loginAsAdmin, loginInitialState)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-stone-50 to-stone-100 px-4">
@@ -58,20 +26,20 @@ export default function AdminLoginPage() {
           <CardDescription>Inicia sesión para gestionar órdenes y contenido</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            {error && (
+          <form action={formAction} className="space-y-4">
+            {state.error && (
               <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                {error}
+                {state.error}
               </div>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 placeholder="admin@ejemplo.com"
               />
             </div>
@@ -79,19 +47,19 @@ export default function AdminLoginPage() {
               <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 placeholder="••••••••"
               />
             </div>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isPending}
               className="w-full bg-stone-700 hover:bg-stone-800 text-white"
             >
-              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+              {isPending ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>
           </form>
         </CardContent>

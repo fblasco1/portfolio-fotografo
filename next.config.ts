@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path')
+
 const nextConfig = {
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production';
@@ -12,7 +14,7 @@ const nextConfig = {
         key: 'Content-Security-Policy',
         value: [
           "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://core.sanity-cdn.com",
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob: https://cdn.sanity.io https://res.cloudinary.com",
           "font-src 'self' https://studio-static.sanity.io",
@@ -47,9 +49,10 @@ const nextConfig = {
     'next-sanity',
   ],
   webpack: (config, { isServer }) => {
-    // Next.js enlaza `react$` → `next/dist/compiled/react` (create-compiler-aliases.ts).
-    // Esa copia puede ir por detrás de react en package.json y no exportar useEffectEvent,
-    // que Sanity 5.x importa desde "react". Hay que sustituir las mismas claves que usa Next (`…$`).
+    // Sanity 5.x importa `useEffectEvent` desde "react"; la copia empaquetada por Next
+    // puede no exportarlo. Redirigimos react/react-dom a los de node_modules.
+    // Importante: alias también los directorios completos (`…/cjs/…`), no solo `…$`,
+    // para que react y react-dom coincidan en runtime (evitar "Incompatible React versions").
     if (!isServer) {
       const prev = config.resolve.conditionNames
       if (Array.isArray(prev)) {
@@ -59,6 +62,8 @@ const nextConfig = {
       if (alias && typeof alias === 'object' && !Array.isArray(alias)) {
         const r = require.resolve('react')
         const rd = require.resolve('react-dom')
+        const reactPkgDir = path.dirname(require.resolve('react/package.json'))
+        const reactDomPkgDir = path.dirname(require.resolve('react-dom/package.json'))
         alias['react$'] = r
         alias['react/jsx-runtime$'] = require.resolve('react/jsx-runtime')
         alias['react/jsx-dev-runtime$'] = require.resolve('react/jsx-dev-runtime')
@@ -68,6 +73,8 @@ const nextConfig = {
           /* opcional según versión de React */
         }
         alias['react-dom$'] = rd
+        alias['next/dist/compiled/react'] = reactPkgDir
+        alias['next/dist/compiled/react-dom'] = reactDomPkgDir
         alias['next/dist/compiled/react$'] = r
         alias['next/dist/compiled/react-dom$'] = rd
         alias['next/dist/compiled/react/jsx-runtime$'] = require.resolve('react/jsx-runtime')

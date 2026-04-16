@@ -1,21 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { logoutAdmin } from '@/app/admin/login/actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/[locale]/components/ui/card'
 import { Button } from '@/app/[locale]/components/ui/button'
 import { ShoppingBag, FileText, LogOut } from 'lucide-react'
 
 export default function AdminHub() {
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/admin/login')
-    router.refresh()
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100">
       <div className="container mx-auto px-4 py-12 max-w-2xl">
@@ -24,10 +15,12 @@ export default function AdminHub() {
             <h1 className="text-2xl font-bold text-stone-900">Panel de Administración</h1>
             <p className="text-stone-600 mt-1">Elige qué deseas gestionar</p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            Cerrar sesión
-          </Button>
+          <form action={logoutAdmin} className="inline">
+            <Button type="submit" variant="outline" size="sm" className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </Button>
+          </form>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

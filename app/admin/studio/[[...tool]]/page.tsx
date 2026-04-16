@@ -7,7 +7,8 @@
 
 import dynamic from 'next/dynamic'
 
+const Studio = dynamic(() => import('./studio-client'), { ssr: false })
+
 export default function StudioPage() {
-  const Studio = dynamic(() => import('./studio-client'), {ssr: false})
   return <Studio />
 }

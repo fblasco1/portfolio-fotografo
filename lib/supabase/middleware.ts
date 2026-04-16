@@ -34,7 +34,7 @@ export async function updateSessionAndCheckAdmin(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user || user.email !== ADMIN_EMAIL) {
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
       return { response: NextResponse.redirect(new URL('/admin/login', request.url)), user: null }
     }
 

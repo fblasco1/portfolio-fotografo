@@ -1,20 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { usePathname } from 'next/navigation'
+import { logoutAdmin } from '@/app/admin/login/actions'
 import { Button } from '@/app/[locale]/components/ui/button'
 import { LayoutDashboard, FileText, LogOut, ShoppingBag } from 'lucide-react'
 
 export default function AdminNav() {
-  const router = useRouter()
   const pathname = usePathname() || ''
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/admin/login')
-    router.refresh()
-  }
 
   const isHub = pathname === '/admin' || pathname === '/admin/'
   const isDashboard = pathname.startsWith('/admin/dashboard') || pathname.startsWith('/admin/orders')
@@ -49,10 +42,12 @@ export default function AdminNav() {
         </Link>
       )}
       <div className="flex-1" />
-      <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
-        <LogOut className="h-4 w-4" />
-        Cerrar sesión
-      </Button>
+      <form action={logoutAdmin} className="inline">
+        <Button type="submit" variant="outline" size="sm" className="gap-2">
+          <LogOut className="h-4 w-4" />
+          Cerrar sesión
+        </Button>
+      </form>
     </nav>
   )
 }

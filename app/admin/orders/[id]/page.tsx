@@ -12,7 +12,7 @@ export default async function OrderDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || user.email !== 'pirovanofotografia@gmail.com') {
+  if (!user || user.email?.toLowerCase() !== 'pirovanofotografia@gmail.com') {
     redirect('/admin/login');
   }
 

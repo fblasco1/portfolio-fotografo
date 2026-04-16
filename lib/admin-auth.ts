@@ -14,7 +14,7 @@ export async function requireAdmin(): Promise<{ user: { id: string; email: strin
     throw new Error('Unauthorized');
   }
 
-  if (user.email !== ADMIN_EMAIL) {
+  if (user.email?.toLowerCase() !== ADMIN_EMAIL) {
     throw new Error('Forbidden');
   }
 
