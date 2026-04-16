@@ -197,11 +197,14 @@ export default function ProductCard({
     router.push(`/${locale}/contact?${params.toString()}`);
   };
 
-  const photos = [{
-    url: highResImage,
-    title: productData.title,
-    description: productData.subtitle
-  }];
+  const photos = [
+    {
+      kind: "image" as const,
+      url: highResImage,
+      title: productData.title,
+      description: productData.subtitle,
+    },
+  ];
 
   return (
     <>
@@ -306,8 +309,6 @@ export default function ProductCard({
           onClose={() => setShowSlider(false)}
           showNavigation={false}
           showCounter={false}
-          viewerTitle={productData.title}
-          viewerSubtitle={productData.subtitle}
         />
       )}
 

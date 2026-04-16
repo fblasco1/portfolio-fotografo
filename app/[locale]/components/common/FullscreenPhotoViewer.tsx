@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import Image from "next/image";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight, X, ShoppingCart } from "lucide-react";
 import { useCurrentLocale } from "@/locales/client";
 import { useCart } from "@/contexts/CartContext";
 
 export interface ViewerPhoto {
   url: string;
+  /** Diapositiva solo texto (título, ubicación, cuerpo); `url` vacío. */
+  kind?: "text" | "image";
   title?: string;
   description?: string;
+  /** Texto largo solo en diapositiva `kind: "text"`. */
+  body?: string;
   id?: string;
 }
 
@@ -19,35 +22,51 @@ interface FullscreenPhotoViewerProps {
   initialIndex?: number;
   showNavigation?: boolean;
   showCounter?: boolean;
-  viewerTitle?: string;
-  viewerSubtitle?: string;
-  /** Texto largo de la carpeta (p. ej. desde Sanity); se muestra en la pantalla inicial mientras se precargan las fotos. */
-  folderDescription?: string;
   allowAddToCart?: boolean;
 }
 
-type ViewerPhase = "intro" | "gallery";
-
-function usePhotoPreloadKey(photos: ViewerPhoto[]): string {
-  return useMemo(() => photos.map((p) => p.url).join("\n"), [photos]);
+function isTextSlide(photo: ViewerPhoto | undefined): boolean {
+  return photo?.kind === "text";
 }
 
-function preloadImages(urls: string[]): Promise<void> {
-  if (urls.length === 0) return Promise.resolve();
+function useImageUrlsKey(photos: ViewerPhoto[]): string {
+  return useMemo(
+    () =>
+      photos
+        .filter((p) => !isTextSlide(p) && p.url)
+        .map((p) => p.url)
+        .join("\n"),
+    [photos],
+  );
+}
 
-  return new Promise((resolve) => {
-    let pending = urls.length;
-    const done = () => {
-      pending -= 1;
-      if (pending <= 0) resolve();
-    };
-    for (const url of urls) {
-      const img = new window.Image();
-      img.onload = done;
-      img.onerror = done;
-      img.src = url;
-    }
-  });
+function preloadImages(urls: string[]): void {
+  for (const url of urls) {
+    const img = new window.Image();
+    img.src = url;
+  }
+}
+
+function SlideImage({
+  src,
+  alt,
+  fetchPriority,
+}: {
+  src: string;
+  alt: string;
+  fetchPriority?: "high" | "low" | "auto";
+}) {
+  return (
+    // Imagen directa desde CDN (URLs ya optimizadas en Sanity); sin loader ni Next/Image para máxima fluidez al navegar.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      className="max-h-full max-w-full object-contain"
+      decoding="async"
+      fetchPriority={fetchPriority ?? "auto"}
+    />
+  );
 }
 
 export default function FullscreenPhotoViewer({
@@ -56,27 +75,20 @@ export default function FullscreenPhotoViewer({
   initialIndex = 0,
   showNavigation = true,
   showCounter = true,
-  viewerTitle,
-  viewerSubtitle,
-  folderDescription,
   allowAddToCart = false,
 }: FullscreenPhotoViewerProps) {
   const locale = useCurrentLocale() as "es" | "en";
   const { addItem } = useCart();
-  const preloadKey = usePhotoPreloadKey(photos);
+  const imageUrlsKey = useImageUrlsKey(photos);
 
-  const validInitialIndex = photos.length > 0
-    ? Math.min(Math.max(initialIndex, 0), photos.length - 1)
-    : 0;
+  const validInitialIndex =
+    photos.length > 0 ? Math.min(Math.max(initialIndex, 0), photos.length - 1) : 0;
   const [currentIndex, setCurrentIndex] = useState(validInitialIndex);
-  const [isLoading, setIsLoading] = useState(true);
   const [addedToCart, setAddedToCart] = useState(false);
-  const [phase, setPhase] = useState<ViewerPhase>("intro");
-  const [preloadDone, setPreloadDone] = useState(false);
-  const introEnteredAt = useRef<number>(0);
 
-  const totalPhotos = photos.length;
+  const totalSlides = photos.length;
   const currentPhoto = photos[currentIndex];
+  const onTextSlide = isTextSlide(currentPhoto);
 
   const handleClose = useCallback(() => {
     onClose();
@@ -90,54 +102,21 @@ export default function FullscreenPhotoViewer({
   }, [initialIndex, photos.length]);
 
   useEffect(() => {
-    setIsLoading(true);
-  }, [currentIndex, phase]);
-
-  useEffect(() => {
-    if (!currentPhoto?.url) {
-      setIsLoading(false);
-    }
-  }, [currentPhoto?.url]);
-
-  useEffect(() => {
-    const urls = photos.map((p) => p.url).filter(Boolean);
-    let cancelled = false;
-    setPreloadDone(false);
-    setPhase("intro");
-    introEnteredAt.current = Date.now();
-
-    if (urls.length === 0) {
-      setPreloadDone(true);
-      setPhase("gallery");
-      return;
-    }
-
-    void (async () => {
-      await preloadImages(urls);
-      if (cancelled) return;
-      setPreloadDone(true);
-      const elapsed = Date.now() - introEnteredAt.current;
-      const minIntroMs = 450;
-      const wait = Math.max(0, minIntroMs - elapsed);
-      window.setTimeout(() => {
-        if (!cancelled) setPhase("gallery");
-      }, wait);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [preloadKey]);
+    const urls = photos
+      .filter((p) => !isTextSlide(p) && p.url)
+      .map((p) => p.url);
+    preloadImages(urls);
+  }, [imageUrlsKey]);
 
   const nextPhoto = useCallback(() => {
-    if (phase !== "gallery" || !showNavigation || totalPhotos <= 1) return;
-    setCurrentIndex((prev) => (prev + 1) % totalPhotos);
-  }, [phase, showNavigation, totalPhotos]);
+    if (!showNavigation || totalSlides <= 1) return;
+    setCurrentIndex((prev) => (prev + 1) % totalSlides);
+  }, [showNavigation, totalSlides]);
 
   const prevPhoto = useCallback(() => {
-    if (phase !== "gallery" || !showNavigation || totalPhotos <= 1) return;
-    setCurrentIndex((prev) => (prev - 1 + totalPhotos) % totalPhotos);
-  }, [phase, showNavigation, totalPhotos]);
+    if (!showNavigation || totalSlides <= 1) return;
+    setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
+  }, [showNavigation, totalSlides]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -146,7 +125,7 @@ export default function FullscreenPhotoViewer({
         handleClose();
         return;
       }
-      if (phase !== "gallery" || !showNavigation) return;
+      if (!showNavigation) return;
       if (event.key === "ArrowRight") {
         event.preventDefault();
         nextPhoto();
@@ -158,28 +137,26 @@ export default function FullscreenPhotoViewer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [phase, showNavigation, nextPhoto, prevPhoto, handleClose]);
+  }, [showNavigation, nextPhoto, prevPhoto, handleClose]);
 
   const resolvedTitle = useMemo(() => {
-    if (viewerTitle) return viewerTitle;
     return currentPhoto?.title || "";
-  }, [viewerTitle, currentPhoto]);
+  }, [currentPhoto]);
 
   const resolvedSubtitle = useMemo(() => {
-    if (viewerSubtitle) return viewerSubtitle;
     return currentPhoto?.description || "";
-  }, [viewerSubtitle, currentPhoto]);
+  }, [currentPhoto]);
 
   useEffect(() => {
     setAddedToCart(false);
   }, [currentIndex]);
 
   const handleAddToCart = useCallback(() => {
-    if (!allowAddToCart || !currentPhoto) return;
+    if (!allowAddToCart || !currentPhoto?.url || isTextSlide(currentPhoto)) return;
 
     const uniqueId = currentPhoto.id
-      ? `${currentPhoto.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      : `photo_${currentIndex}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      ? `${currentPhoto.id}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+      : `photo_${currentIndex}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     const photoTitle = resolvedTitle || currentPhoto.title || `Foto ${currentIndex + 1}`;
     const photoSubtitle = resolvedSubtitle || currentPhoto.description || "";
@@ -215,19 +192,13 @@ export default function FullscreenPhotoViewer({
     );
   }
 
-  const introTitle = viewerTitle || currentPhoto?.title || "";
-  const introBody =
-    folderDescription?.trim() ||
-    (locale === "es"
-      ? "Preparando las fotografías de esta serie…"
-      : "Preparing photographs from this series…");
+  const firstImageIndex = photos.findIndex((p) => !isTextSlide(p) && p.url);
 
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-busy={phase === "intro" && !preloadDone}
       onClick={handleClose}
     >
       <button
@@ -242,7 +213,7 @@ export default function FullscreenPhotoViewer({
         <X size={28} />
       </button>
 
-      {phase === "gallery" && showNavigation && totalPhotos > 1 && (
+      {showNavigation && totalSlides > 1 && (
         <>
           <button
             type="button"
@@ -273,51 +244,30 @@ export default function FullscreenPhotoViewer({
         className="relative w-full h-full flex flex-col items-center justify-center px-4 py-12"
         onClick={(event) => event.stopPropagation()}
       >
-        {phase === "intro" && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6 text-center max-w-2xl mx-auto">
-            {introTitle && (
-              <h2 className="text-2xl sm:text-3xl font-semibold tracking-wide text-white mb-4">
-                {introTitle}
-              </h2>
-            )}
-            {viewerSubtitle && (
-              <p className="text-sm uppercase tracking-[0.25em] text-stone-400 mb-6">
-                {viewerSubtitle}
-              </p>
-            )}
-            <p className="text-base sm:text-lg text-stone-200 leading-relaxed whitespace-pre-wrap">
-              {introBody}
-            </p>
-            <div className="mt-10 flex flex-col items-center gap-3" aria-hidden="true">
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-white/30 border-t-white/90" />
-              <p className="text-xs text-stone-500 uppercase tracking-widest">
-                {locale === "es" ? "Cargando imágenes" : "Loading images"}
-              </p>
+        <div className="relative flex h-[calc(100vh-220px)] max-h-[80vh] w-full max-w-5xl items-center justify-center overflow-hidden bg-black">
+          {onTextSlide ? (
+            <div className="flex max-h-full w-full flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center">
+              {currentPhoto?.title && (
+                <h2 className="text-2xl sm:text-3xl font-semibold tracking-wide text-white">
+                  {currentPhoto.title}
+                </h2>
+              )}
+              {currentPhoto?.description && (
+                <p className="mt-3 text-sm uppercase tracking-[0.25em] text-stone-400">
+                  {currentPhoto.description}
+                </p>
+              )}
+              {currentPhoto?.body ? (
+                <p className="mt-8 max-w-2xl text-base leading-relaxed text-stone-200 whitespace-pre-wrap">
+                  {currentPhoto.body}
+                </p>
+              ) : null}
             </div>
-          </div>
-        )}
-
-        {phase === "gallery" && isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-            <div className="animate-spin rounded-full h-24 w-24 border-t-2 border-b-2 border-white/70" />
-          </div>
-        )}
-
-        <div
-          className={`relative w-full max-w-5xl h-[calc(100vh-220px)] max-h-[80vh] flex items-center justify-center overflow-hidden bg-black transition-opacity duration-300 ${
-            phase === "intro" ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
-          {currentPhoto?.url ? (
-            <Image
+          ) : currentPhoto?.url ? (
+            <SlideImage
               src={currentPhoto.url}
               alt={currentPhoto?.description || currentPhoto?.title || "Photo"}
-              fill
-              sizes="100vw"
-              className="object-contain"
-              priority
-              unoptimized
-              onLoad={() => setIsLoading(false)}
+              fetchPriority={currentIndex === firstImageIndex || firstImageIndex === -1 ? "high" : "auto"}
             />
           ) : (
             <div className="bg-white p-8 rounded-lg max-w-2xl max-h-full overflow-y-auto text-gray-800 shadow-lg">
@@ -326,8 +276,8 @@ export default function FullscreenPhotoViewer({
           )}
         </div>
 
-        {phase === "gallery" &&
-          (resolvedTitle || resolvedSubtitle || (showCounter && totalPhotos > 1) || allowAddToCart) && (
+        {!onTextSlide &&
+          (resolvedTitle || resolvedSubtitle || (showCounter && totalSlides > 1) || allowAddToCart) && (
             <div className="mt-8 text-center text-white px-4 space-y-3">
               {resolvedTitle && (
                 <h2 className="text-2xl font-semibold tracking-wide">{resolvedTitle}</h2>
@@ -336,7 +286,7 @@ export default function FullscreenPhotoViewer({
                 {resolvedSubtitle && (
                   <p className="text-sm text-gray-300 leading-relaxed">{resolvedSubtitle}</p>
                 )}
-                {allowAddToCart && currentPhoto && (
+                {allowAddToCart && currentPhoto && currentPhoto.url && (
                   <button
                     type="button"
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
@@ -368,15 +318,23 @@ export default function FullscreenPhotoViewer({
                   </button>
                 )}
               </div>
-              {showCounter && totalPhotos > 1 && (
+              {showCounter && totalSlides > 1 && (
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
                   {locale === "es"
-                    ? `${currentIndex + 1} de ${totalPhotos}`
-                    : `${currentIndex + 1} of ${totalPhotos}`}
+                    ? `${currentIndex + 1} de ${totalSlides}`
+                    : `${currentIndex + 1} of ${totalSlides}`}
                 </p>
               )}
             </div>
           )}
+
+        {onTextSlide && showCounter && totalSlides > 1 && (
+          <p className="mt-8 text-xs uppercase tracking-[0.3em] text-gray-400">
+            {locale === "es"
+              ? `${currentIndex + 1} de ${totalSlides}`
+              : `${currentIndex + 1} of ${totalSlides}`}
+          </p>
+        )}
       </div>
     </div>
   );

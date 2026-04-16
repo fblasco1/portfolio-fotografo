@@ -27,13 +27,34 @@ function getGalleryDescription(gallery: SanityGallery, locale: string): string |
   return text || undefined;
 }
 
-function getViewerPhotos(gallery: SanityGallery, locale: string): ViewerPhoto[] {
+/** URLs acotadas para menos peso y carga más rápida desde el CDN de Sanity. */
+function sanityViewerUrl(source: unknown): string {
+  try {
+    return urlFor(source).width(2400).quality(85).url();
+  } catch {
+    return urlFor(source).url();
+  }
+}
+
+/** Primera diapositiva: texto; luego portada (si existe) y el resto de fotos. */
+function getViewerSlides(gallery: SanityGallery, locale: string): ViewerPhoto[] {
   const title = getGalleryTitle(gallery, locale);
-  const photos: ViewerPhoto[] = [];
+  const longDescription = getGalleryDescription(gallery, locale);
+  const slides: ViewerPhoto[] = [
+    {
+      kind: "text",
+      url: "",
+      title,
+      description: gallery.location,
+      body: longDescription ?? "",
+      id: `${gallery._id}_text`,
+    },
+  ];
 
   if (gallery.cover) {
-    photos.push({
-      url: urlFor(gallery.cover).url(),
+    slides.push({
+      kind: "image",
+      url: sanityViewerUrl(gallery.cover),
       title,
       description: gallery.location,
       id: `${gallery._id}_cover`,
@@ -42,8 +63,9 @@ function getViewerPhotos(gallery: SanityGallery, locale: string): ViewerPhoto[] 
 
   if (gallery.photos && gallery.photos.length > 0) {
     gallery.photos.forEach((photo, index) => {
-      photos.push({
-        url: urlFor(photo).url(),
+      slides.push({
+        kind: "image",
+        url: sanityViewerUrl(photo),
         title,
         description: gallery.location,
         id: `${gallery._id}_photo_${index}`,
@@ -51,23 +73,18 @@ function getViewerPhotos(gallery: SanityGallery, locale: string): ViewerPhoto[] 
     });
   }
 
-  return photos;
+  return slides;
 }
 
 export default function SanityPhotoGallery({ galleries, locale }: SanityPhotoGalleryProps) {
   const [selectedGallery, setSelectedGallery] = useState<SanityGallery | null>(null);
 
-  const viewerPhotos = useMemo(
-    () => (selectedGallery ? getViewerPhotos(selectedGallery, locale) : []),
+  const viewerSlides = useMemo(
+    () => (selectedGallery ? getViewerSlides(selectedGallery, locale) : []),
     [selectedGallery, locale],
   );
 
-  const showNav = viewerPhotos.length > 1;
-
-  const folderDescription = useMemo(
-    () => (selectedGallery ? getGalleryDescription(selectedGallery, locale) : undefined),
-    [selectedGallery, locale],
-  );
+  const showNav = viewerSlides.length > 1;
 
   return (
     <div className="container mx-auto px-4 pt-32 pb-16">
@@ -83,11 +100,8 @@ export default function SanityPhotoGallery({ galleries, locale }: SanityPhotoGal
       </div>
       {selectedGallery && (
         <FullscreenPhotoViewer
-          photos={viewerPhotos}
+          photos={viewerSlides}
           onClose={() => setSelectedGallery(null)}
-          viewerTitle={getGalleryTitle(selectedGallery, locale)}
-          viewerSubtitle={selectedGallery.location}
-          folderDescription={folderDescription}
           showNavigation={showNav}
           showCounter={showNav}
           allowAddToCart={true}
