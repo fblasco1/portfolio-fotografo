@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, X, ShoppingCart } from "lucide-react";
 import { useCurrentLocale } from "@/locales/client";
@@ -10,7 +10,7 @@ export interface ViewerPhoto {
   url: string;
   title?: string;
   description?: string;
-  id?: string; // ID único para agregar al carrito
+  id?: string;
 }
 
 interface FullscreenPhotoViewerProps {
@@ -21,7 +21,33 @@ interface FullscreenPhotoViewerProps {
   showCounter?: boolean;
   viewerTitle?: string;
   viewerSubtitle?: string;
-  allowAddToCart?: boolean; // Permitir agregar al carrito desde el visor
+  /** Texto largo de la carpeta (p. ej. desde Sanity); se muestra en la pantalla inicial mientras se precargan las fotos. */
+  folderDescription?: string;
+  allowAddToCart?: boolean;
+}
+
+type ViewerPhase = "intro" | "gallery";
+
+function usePhotoPreloadKey(photos: ViewerPhoto[]): string {
+  return useMemo(() => photos.map((p) => p.url).join("\n"), [photos]);
+}
+
+function preloadImages(urls: string[]): Promise<void> {
+  if (urls.length === 0) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    let pending = urls.length;
+    const done = () => {
+      pending -= 1;
+      if (pending <= 0) resolve();
+    };
+    for (const url of urls) {
+      const img = new window.Image();
+      img.onload = done;
+      img.onerror = done;
+      img.src = url;
+    }
+  });
 }
 
 export default function FullscreenPhotoViewer({
@@ -32,17 +58,22 @@ export default function FullscreenPhotoViewer({
   showCounter = true,
   viewerTitle,
   viewerSubtitle,
+  folderDescription,
   allowAddToCart = false,
 }: FullscreenPhotoViewerProps) {
   const locale = useCurrentLocale() as "es" | "en";
   const { addItem } = useCart();
-  // Asegurar que el índice inicial sea válido y muestre la primera foto
-  const validInitialIndex = photos.length > 0 
+  const preloadKey = usePhotoPreloadKey(photos);
+
+  const validInitialIndex = photos.length > 0
     ? Math.min(Math.max(initialIndex, 0), photos.length - 1)
     : 0;
   const [currentIndex, setCurrentIndex] = useState(validInitialIndex);
   const [isLoading, setIsLoading] = useState(true);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [phase, setPhase] = useState<ViewerPhase>("intro");
+  const [preloadDone, setPreloadDone] = useState(false);
+  const introEnteredAt = useRef<number>(0);
 
   const totalPhotos = photos.length;
   const currentPhoto = photos[currentIndex];
@@ -60,7 +91,7 @@ export default function FullscreenPhotoViewer({
 
   useEffect(() => {
     setIsLoading(true);
-  }, [currentIndex]);
+  }, [currentIndex, phase]);
 
   useEffect(() => {
     if (!currentPhoto?.url) {
@@ -68,24 +99,55 @@ export default function FullscreenPhotoViewer({
     }
   }, [currentPhoto?.url]);
 
+  useEffect(() => {
+    const urls = photos.map((p) => p.url).filter(Boolean);
+    let cancelled = false;
+    setPreloadDone(false);
+    setPhase("intro");
+    introEnteredAt.current = Date.now();
+
+    if (urls.length === 0) {
+      setPreloadDone(true);
+      setPhase("gallery");
+      return;
+    }
+
+    void (async () => {
+      await preloadImages(urls);
+      if (cancelled) return;
+      setPreloadDone(true);
+      const elapsed = Date.now() - introEnteredAt.current;
+      const minIntroMs = 450;
+      const wait = Math.max(0, minIntroMs - elapsed);
+      window.setTimeout(() => {
+        if (!cancelled) setPhase("gallery");
+      }, wait);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [preloadKey]);
+
   const nextPhoto = useCallback(() => {
-    if (!showNavigation || totalPhotos <= 1) return;
+    if (phase !== "gallery" || !showNavigation || totalPhotos <= 1) return;
     setCurrentIndex((prev) => (prev + 1) % totalPhotos);
-  }, [showNavigation, totalPhotos]);
+  }, [phase, showNavigation, totalPhotos]);
 
   const prevPhoto = useCallback(() => {
-    if (!showNavigation || totalPhotos <= 1) return;
+    if (phase !== "gallery" || !showNavigation || totalPhotos <= 1) return;
     setCurrentIndex((prev) => (prev - 1 + totalPhotos) % totalPhotos);
-  }, [showNavigation, totalPhotos]);
+  }, [phase, showNavigation, totalPhotos]);
 
   useEffect(() => {
-    if (!showNavigation) return;
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         handleClose();
-      } else if (event.key === "ArrowRight") {
+        return;
+      }
+      if (phase !== "gallery" || !showNavigation) return;
+      if (event.key === "ArrowRight") {
         event.preventDefault();
         nextPhoto();
       } else if (event.key === "ArrowLeft") {
@@ -96,19 +158,7 @@ export default function FullscreenPhotoViewer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showNavigation, nextPhoto, prevPhoto, handleClose]);
-
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        handleClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [handleClose]);
+  }, [phase, showNavigation, nextPhoto, prevPhoto, handleClose]);
 
   const resolvedTitle = useMemo(() => {
     if (viewerTitle) return viewerTitle;
@@ -120,30 +170,27 @@ export default function FullscreenPhotoViewer({
     return currentPhoto?.description || "";
   }, [viewerSubtitle, currentPhoto]);
 
-  // Resetear estado de "agregado al carrito" cuando cambia la foto
   useEffect(() => {
     setAddedToCart(false);
   }, [currentIndex]);
 
   const handleAddToCart = useCallback(() => {
     if (!allowAddToCart || !currentPhoto) return;
-    
-    // Generar ID único usando timestamp para evitar duplicados
-    const uniqueId = currentPhoto.id 
+
+    const uniqueId = currentPhoto.id
       ? `${currentPhoto.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       : `photo_${currentIndex}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const photoTitle = resolvedTitle || currentPhoto.title || `Foto ${currentIndex + 1}`;
     const photoSubtitle = resolvedSubtitle || currentPhoto.description || "";
-    
+
     addItem({
       id: uniqueId,
       title: photoTitle,
       subtitle: photoSubtitle,
       image: currentPhoto.url,
-      // No agregamos productType ni size aquí, se seleccionarán en checkout
     });
-    
+
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   }, [allowAddToCart, currentPhoto, currentIndex, resolvedTitle, resolvedSubtitle, addItem]);
@@ -168,11 +215,19 @@ export default function FullscreenPhotoViewer({
     );
   }
 
+  const introTitle = viewerTitle || currentPhoto?.title || "";
+  const introBody =
+    folderDescription?.trim() ||
+    (locale === "es"
+      ? "Preparando las fotografías de esta serie…"
+      : "Preparing photographs from this series…");
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
+      aria-busy={phase === "intro" && !preloadDone}
       onClick={handleClose}
     >
       <button
@@ -187,7 +242,7 @@ export default function FullscreenPhotoViewer({
         <X size={28} />
       </button>
 
-      {showNavigation && totalPhotos > 1 && (
+      {phase === "gallery" && showNavigation && totalPhotos > 1 && (
         <>
           <button
             type="button"
@@ -218,13 +273,41 @@ export default function FullscreenPhotoViewer({
         className="relative w-full h-full flex flex-col items-center justify-center px-4 py-12"
         onClick={(event) => event.stopPropagation()}
       >
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="animate-spin rounded-full h-24 w-24 border-t-2 border-b-2 border-white/70"></div>
+        {phase === "intro" && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6 text-center max-w-2xl mx-auto">
+            {introTitle && (
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-wide text-white mb-4">
+                {introTitle}
+              </h2>
+            )}
+            {viewerSubtitle && (
+              <p className="text-sm uppercase tracking-[0.25em] text-stone-400 mb-6">
+                {viewerSubtitle}
+              </p>
+            )}
+            <p className="text-base sm:text-lg text-stone-200 leading-relaxed whitespace-pre-wrap">
+              {introBody}
+            </p>
+            <div className="mt-10 flex flex-col items-center gap-3" aria-hidden="true">
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-white/30 border-t-white/90" />
+              <p className="text-xs text-stone-500 uppercase tracking-widest">
+                {locale === "es" ? "Cargando imágenes" : "Loading images"}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="relative w-full max-w-5xl h-[calc(100vh-220px)] max-h-[80vh] flex items-center justify-center overflow-hidden bg-black">
+        {phase === "gallery" && isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+            <div className="animate-spin rounded-full h-24 w-24 border-t-2 border-b-2 border-white/70" />
+          </div>
+        )}
+
+        <div
+          className={`relative w-full max-w-5xl h-[calc(100vh-220px)] max-h-[80vh] flex items-center justify-center overflow-hidden bg-black transition-opacity duration-300 ${
+            phase === "intro" ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
+        >
           {currentPhoto?.url ? (
             <Image
               src={currentPhoto.url}
@@ -233,8 +316,8 @@ export default function FullscreenPhotoViewer({
               sizes="100vw"
               className="object-contain"
               priority
-              loading="eager"
-              onLoadingComplete={() => setIsLoading(false)}
+              unoptimized
+              onLoad={() => setIsLoading(false)}
             />
           ) : (
             <div className="bg-white p-8 rounded-lg max-w-2xl max-h-full overflow-y-auto text-gray-800 shadow-lg">
@@ -243,60 +326,58 @@ export default function FullscreenPhotoViewer({
           )}
         </div>
 
-        {(resolvedTitle || resolvedSubtitle || (showCounter && totalPhotos > 1) || allowAddToCart) && (
-          <div className="mt-8 text-center text-white px-4 space-y-3">
-            {resolvedTitle && (
-              <h2 className="text-2xl font-semibold tracking-wide">{resolvedTitle}</h2>
-            )}
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              {resolvedSubtitle && (
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  {resolvedSubtitle}
+        {phase === "gallery" &&
+          (resolvedTitle || resolvedSubtitle || (showCounter && totalPhotos > 1) || allowAddToCart) && (
+            <div className="mt-8 text-center text-white px-4 space-y-3">
+              {resolvedTitle && (
+                <h2 className="text-2xl font-semibold tracking-wide">{resolvedTitle}</h2>
+              )}
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                {resolvedSubtitle && (
+                  <p className="text-sm text-gray-300 leading-relaxed">{resolvedSubtitle}</p>
+                )}
+                {allowAddToCart && currentPhoto && (
+                  <button
+                    type="button"
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      addedToCart
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-stone-700/80 hover:bg-stone-600/80"
+                    }`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleAddToCart();
+                    }}
+                    aria-label={locale === "es" ? "Agregar al carrito" : "Add to cart"}
+                  >
+                    {addedToCart ? (
+                      <>
+                        <span className="text-lg">✓</span>
+                        <span className="text-sm font-medium">
+                          {locale === "es" ? "Agregado" : "Added"}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">+</span>
+                        <span className="text-sm font-medium">
+                          {locale === "es" ? "Agregar al carrito" : "Add to cart"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+              {showCounter && totalPhotos > 1 && (
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
+                  {locale === "es"
+                    ? `${currentIndex + 1} de ${totalPhotos}`
+                    : `${currentIndex + 1} of ${totalPhotos}`}
                 </p>
               )}
-              {allowAddToCart && currentPhoto && (
-                <button
-                  type="button"
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    addedToCart 
-                      ? 'bg-green-600 hover:bg-green-700' 
-                      : 'bg-stone-700/80 hover:bg-stone-600/80'
-                  }`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleAddToCart();
-                  }}
-                  aria-label={locale === "es" ? "Agregar al carrito" : "Add to cart"}
-                >
-                  {addedToCart ? (
-                    <>
-                      <span className="text-lg">✓</span>
-                      <span className="text-sm font-medium">
-                        {locale === "es" ? "Agregado" : "Added"}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-lg">+</span>
-                      <span className="text-sm font-medium">
-                        {locale === "es" ? "Agregar al carrito" : "Add to cart"}
-                      </span>
-                    </>
-                  )}
-                </button>
-              )}
             </div>
-            {showCounter && totalPhotos > 1 && (
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">
-                {locale === "es"
-                  ? `${currentIndex + 1} de ${totalPhotos}`
-                  : `${currentIndex + 1} of ${totalPhotos}`}
-              </p>
-            )}
-          </div>
-        )}
+          )}
       </div>
     </div>
   );
 }
-

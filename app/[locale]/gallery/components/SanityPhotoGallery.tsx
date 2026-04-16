@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { SanityGallery } from "@/app/types/gallery";
 import SanityGalleryCard from "./SanityGalleryCard";
 import FullscreenPhotoViewer, { type ViewerPhoto } from "@/app/[locale]/components/common/FullscreenPhotoViewer";
@@ -20,37 +20,54 @@ function getGalleryTitle(gallery: SanityGallery, locale: string): string {
   );
 }
 
+function getGalleryDescription(gallery: SanityGallery, locale: string): string | undefined {
+  const content =
+    gallery.content[locale as keyof typeof gallery.content] || gallery.content.es;
+  const text = content?.description?.trim();
+  return text || undefined;
+}
+
 function getViewerPhotos(gallery: SanityGallery, locale: string): ViewerPhoto[] {
   const title = getGalleryTitle(gallery, locale);
   const photos: ViewerPhoto[] = [];
-  
-  // Agregar la imagen de portada como primera foto si existe
+
   if (gallery.cover) {
     photos.push({
       url: urlFor(gallery.cover).url(),
       title,
       description: gallery.location,
-      id: `${gallery._id}_cover`, // ID único para la portada
+      id: `${gallery._id}_cover`,
     });
   }
-  
-  // Agregar las demás fotos del carrusel
+
   if (gallery.photos && gallery.photos.length > 0) {
     gallery.photos.forEach((photo, index) => {
       photos.push({
         url: urlFor(photo).url(),
         title,
         description: gallery.location,
-        id: `${gallery._id}_photo_${index}`, // ID único para cada foto
+        id: `${gallery._id}_photo_${index}`,
       });
     });
   }
-  
+
   return photos;
 }
 
 export default function SanityPhotoGallery({ galleries, locale }: SanityPhotoGalleryProps) {
   const [selectedGallery, setSelectedGallery] = useState<SanityGallery | null>(null);
+
+  const viewerPhotos = useMemo(
+    () => (selectedGallery ? getViewerPhotos(selectedGallery, locale) : []),
+    [selectedGallery, locale],
+  );
+
+  const showNav = viewerPhotos.length > 1;
+
+  const folderDescription = useMemo(
+    () => (selectedGallery ? getGalleryDescription(selectedGallery, locale) : undefined),
+    [selectedGallery, locale],
+  );
 
   return (
     <div className="container mx-auto px-4 pt-32 pb-16">
@@ -66,23 +83,17 @@ export default function SanityPhotoGallery({ galleries, locale }: SanityPhotoGal
       </div>
       {selectedGallery && (
         <FullscreenPhotoViewer
-          photos={getViewerPhotos(selectedGallery, locale)}
+          photos={viewerPhotos}
           onClose={() => setSelectedGallery(null)}
           viewerTitle={getGalleryTitle(selectedGallery, locale)}
           viewerSubtitle={selectedGallery.location}
-          showNavigation={(() => {
-            const photos = getViewerPhotos(selectedGallery, locale);
-            return photos.length > 1;
-          })()}
-          showCounter={(() => {
-            const photos = getViewerPhotos(selectedGallery, locale);
-            return photos.length > 1;
-          })()}
+          folderDescription={folderDescription}
+          showNavigation={showNav}
+          showCounter={showNav}
           allowAddToCart={true}
         />
       )}
-      
-      {/* Carrito flotante */}
+
       <Cart locale={locale} variant="floating" />
     </div>
   );

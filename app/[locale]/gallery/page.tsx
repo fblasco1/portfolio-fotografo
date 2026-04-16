@@ -1,10 +1,43 @@
+import type { Metadata } from "next";
 import { client } from "@/lib/sanity";
 import { galleriesQuery } from "@/lib/queries";
 import type { SanityGallery } from "../../types/gallery";
 import SanityPhotoGallery from "./components/SanityPhotoGallery";
+import { getSiteUrl, localePath } from "@/lib/site-url";
 
 interface GalleryPageProps {
   params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: GalleryPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const base = getSiteUrl();
+  const canonical = `${base}${localePath(locale, "/gallery")}`;
+  const isEs = locale === "es";
+  const title = isEs ? "Galería" : "Gallery";
+  const description = isEs
+    ? "Galerías fotográficas y reportajes visuales de Cristian Pirovano, fotoperiodista. Argentina y Latinoamérica."
+    : "Photo galleries and visual reportage by Cristian Pirovano, photojournalist. Argentina and Latin America.";
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical,
+      languages: {
+        en: `${base}${localePath("en", "/gallery")}`,
+        es: `${base}${localePath("es", "/gallery")}`,
+        "x-default": `${base}${localePath("en", "/gallery")}`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      locale: isEs ? "es_AR" : "en_US",
+      type: "website",
+    },
+  };
 }
 
 export default async function Gallery({ params }: GalleryPageProps) {

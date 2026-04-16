@@ -1,6 +1,44 @@
+import type { Metadata } from "next";
 import { client } from "@/lib/sanity";
 import { settingsQuery } from "@/lib/queries";
 import SlideshowClient from "@/app/[locale]/components/page-specific/SlideshowClient";
+import { getSiteUrl, localePath } from "@/lib/site-url";
+
+interface HomePageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: HomePageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const settings = await client.fetch(settingsQuery);
+  const localized =
+    settings?.content?.[locale as keyof typeof settings.content] || settings?.content?.es;
+  const siteTitle = localized?.siteTitle || "Cristian Pirovano";
+  const siteDescription =
+    localized?.siteDescription || "Portfolio de Cristian Pirovano, fotoperiodista.";
+  const base = getSiteUrl();
+  const canonical = `${base}${localePath(locale, "/")}`;
+
+  return {
+    title: siteTitle,
+    description: siteDescription,
+    alternates: {
+      canonical,
+      languages: {
+        en: `${base}${localePath("en", "/")}`,
+        es: `${base}${localePath("es", "/")}`,
+        "x-default": `${base}${localePath("en", "/")}`,
+      },
+    },
+    openGraph: {
+      title: siteTitle,
+      description: siteDescription,
+      url: canonical,
+      locale: locale === "es" ? "es_AR" : "en_US",
+      type: "website",
+    },
+  };
+}
 
 export default async function Home() {
   try {
