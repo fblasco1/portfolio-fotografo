@@ -9,10 +9,25 @@ export default async function StudioLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    redirect('/admin/login')
+  }
+
+  let user: { email?: string | null } | null = null
+
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser()
+
+    user = currentUser
+  } catch {
+    redirect('/admin/login')
+  }
 
   if (!user || user.email !== ADMIN_EMAIL) {
     redirect('/admin/login')
