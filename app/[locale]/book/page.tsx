@@ -34,7 +34,7 @@ export default async function BookLanding({ params }: BookPageProps) {
     }
 
     return (
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-h-0 lg:min-h-0 lg:overflow-hidden">
         <SanityHeroSection bookData={bookData} locale={locale} />
         <SanityNewsletterSection bookData={bookData} locale={locale} />
       </main>

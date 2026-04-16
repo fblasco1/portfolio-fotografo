@@ -119,7 +119,7 @@ export class MercadoPagoProvider implements PaymentProvider {
       id: string;
       title: string;
       quantity: number;
-      productType: 'photos' | 'postcards' | 'photo' | 'postcard';
+      productType: 'photos' | 'postcards' | 'photo' | 'postcard' | 'book';
     }>,
     region: string,
     totalAmount: number
@@ -143,13 +143,18 @@ export class MercadoPagoProvider implements PaymentProvider {
                                    item.productType === 'postcard' ? 'postcards' : 
                                    item.productType;
       
+      const description =
+        normalizedProductType === 'book'
+          ? `Libro en preventa — ${item.title || 'Libro'}`
+          : `${normalizedProductType === 'photos' ? 'Fotografía impresa' : 'Postal'} del Portfolio Fotográfico - ${item.title || 'Producto'}`;
+
       return {
         // Remover campo 'id' - no está permitido en API Orders
         title: item.title || 'Producto del Portfolio', // ✅ Requisito: Nombre del item
-        description: `${normalizedProductType === 'photos' ? 'Fotografía impresa' : 'Postal'} del Portfolio Fotográfico - ${item.title || 'Producto'}`, // ✅ Requisito: Descripción del item
+        description, // ✅ Requisito: Descripción del item
         // Usar categorías válidas de Mercado Pago según tipo de producto
         // Categorías válidas: art, electronics, fashion, food, home, services, tickets, travel, others
-        category_id: normalizedProductType === 'photos' ? 'art' : 'others', // ✅ Requisito: Categoría del item
+        category_id: normalizedProductType === 'photos' || normalizedProductType === 'book' ? 'art' : 'others', // ✅ Requisito: Categoría del item
         quantity: item.quantity || 1, // ✅ Requisito: Cantidad del producto
         unit_price: baseUnitPrice, // ✅ Requisito: Precio del item
       };

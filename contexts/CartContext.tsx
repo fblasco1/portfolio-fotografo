@@ -7,14 +7,18 @@ import { useCurrentLocale } from '@/locales/client';
 
 export type ProductSize = '15x21' | '20x30' | '30x45' | 'custom';
 
+export type CartProductType = 'photos' | 'postcards' | 'book';
+
 interface CartItem {
   id: string;
   title: string;
   subtitle: string;
   image: string;
-  productType?: 'photos' | 'postcards'; // Opcional inicialmente, se selecciona en checkout
+  productType?: CartProductType; // Opcional inicialmente, se selecciona en checkout (book va completo al agregar)
   quantity: number;
   size?: ProductSize; // Opcional inicialmente, se selecciona en checkout
+  /** Precio unitario en moneda local (región); obligatorio para productType book */
+  unitPriceLocal?: number;
 }
 
 interface CartTotals {

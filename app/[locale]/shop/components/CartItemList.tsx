@@ -11,9 +11,9 @@ interface CartItem {
   title: string;
   subtitle: string;
   image: string;
-  productType: 'photos' | 'postcards';
+  productType?: 'photos' | 'postcards' | 'book';
   quantity: number;
-  size: ProductSize;
+  size?: ProductSize;
 }
 
 interface CartItemListProps {
@@ -24,6 +24,8 @@ interface CartItemListProps {
   onRemoveItem: (itemId: string) => void;
   generateItemId: (productId: string, size: ProductSize) => string;
   getSizeLabel: (size: ProductSize) => string;
+  /** Etiqueta cuando no hay tamaño (p. ej. libro en preventa) */
+  lineLabelForItem?: (item: CartItem) => string;
 }
 
 export default function CartItemList({
@@ -33,7 +35,8 @@ export default function CartItemList({
   onUpdateQuantity,
   onRemoveItem,
   generateItemId,
-  getSizeLabel
+  getSizeLabel,
+  lineLabelForItem,
 }: CartItemListProps) {
   return (
     <ul className="space-y-3">
@@ -59,7 +62,15 @@ export default function CartItemList({
                 {item.subtitle}
               </div>
               <div className="text-sm text-gray-500">
-                {getSizeLabel(item.size)}
+                {item.productType === 'book'
+                  ? locale === 'es'
+                    ? 'Preventa'
+                    : 'Pre-sale'
+                  : item.size
+                    ? getSizeLabel(item.size)
+                    : lineLabelForItem
+                      ? lineLabelForItem(item)
+                      : '—'}
               </div>
             </div>
             

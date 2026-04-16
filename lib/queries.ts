@@ -75,6 +75,8 @@ export const bioQuery = `
 
 export const bookQuery = `
   *[_type == "book"][0] {
+    _id,
+    presalePriceUSD,
     coverImage,
     content {
       es {
@@ -84,7 +86,8 @@ export const bookQuery = `
         comingSoon,
         availability,
         emailPlaceholder,
-        subscribe
+        subscribe,
+        presaleButton
       },
       en {
         title,
@@ -93,7 +96,8 @@ export const bookQuery = `
         comingSoon,
         availability,
         emailPlaceholder,
-        subscribe
+        subscribe,
+        presaleButton
       }
     }
   }
