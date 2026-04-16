@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/app/[locale]/components/ui/button";
 import { Plus, Minus } from "lucide-react";
 import type { RegionInfo } from "@/lib/payment/region-detector";
@@ -11,7 +10,7 @@ interface CartItem {
   title: string;
   subtitle: string;
   image: string;
-  productType?: 'photos' | 'postcards' | 'book';
+  productType?: 'photos' | 'postcards';
   quantity: number;
   size?: ProductSize;
 }
@@ -24,8 +23,6 @@ interface CartItemListProps {
   onRemoveItem: (itemId: string) => void;
   generateItemId: (productId: string, size: ProductSize) => string;
   getSizeLabel: (size: ProductSize) => string;
-  /** Etiqueta cuando no hay tamaño (p. ej. libro en preventa) */
-  lineLabelForItem?: (item: CartItem) => string;
 }
 
 export default function CartItemList({
@@ -36,7 +33,6 @@ export default function CartItemList({
   onRemoveItem,
   generateItemId,
   getSizeLabel,
-  lineLabelForItem,
 }: CartItemListProps) {
   return (
     <ul className="space-y-3">
@@ -62,15 +58,7 @@ export default function CartItemList({
                 {item.subtitle}
               </div>
               <div className="text-sm text-gray-500">
-                {item.productType === 'book'
-                  ? locale === 'es'
-                    ? 'Preventa'
-                    : 'Pre-sale'
-                  : item.size
-                    ? getSizeLabel(item.size)
-                    : lineLabelForItem
-                      ? lineLabelForItem(item)
-                      : '—'}
+                {item.size ? getSizeLabel(item.size) : '—'}
               </div>
             </div>
             

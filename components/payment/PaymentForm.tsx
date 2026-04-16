@@ -11,6 +11,13 @@ import { CardForm } from './CardForm';
 import { MercadoPagoScript } from './MercadoPagoScript';
 import type { CardFormData, Installment, PaymentMethod, IdentificationType } from '@/app/types/payment';
 
+export type PaymentLineItem = {
+  id: string;
+  title: string;
+  quantity: number;
+  productType: 'photos' | 'postcards' | 'book';
+};
+
 interface PaymentFormProps {
   onSuccess: (paymentId: number | string, status: string) => void;
   onError: (error: string) => void;
@@ -28,9 +35,17 @@ interface PaymentFormProps {
     };
   };
   total?: number; // Total calculado desde el checkout
+  /** Checkout libro u otro flujo sin carrito de tienda: metadata MP y sin vaciar el carrito de fotos */
+  paymentLineItems?: PaymentLineItem[];
 }
 
-export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal }: PaymentFormProps) {
+export function PaymentForm({
+  onSuccess,
+  onError,
+  customerInfo,
+  total: propTotal,
+  paymentLineItems,
+}: PaymentFormProps) {
   const publicKey = (process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || '').trim();
   const { items: cart, getTotals, clearCart } = useCart();
 
@@ -200,7 +215,19 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
              const correctPaymentMethodId = paymentMethod ? getCorrectPaymentMethodId(paymentMethod) : undefined;
 
       // Generar external_reference único y robusto
-      const externalReference = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${cart.length}items`;
+      const lineItemsForMp =
+        paymentLineItems && paymentLineItems.length > 0
+          ? paymentLineItems
+          : cart.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              quantity: item.quantity || 1,
+              productType: (item.productType || 'photos') as PaymentLineItem['productType'],
+            }));
+
+      const isIsolatedBookPayment = !!(paymentLineItems && paymentLineItems.length > 0);
+
+      const externalReference = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${lineItemsForMp.length}items`;
 
       // Procesar teléfono para formato de Mercado Pago
       // Formato esperado: { area_code: "11", number: "12345678" }
@@ -263,17 +290,19 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
                 },
               }),
             },
-            description: `Compra en Portfolio Fotográfico - ${cart.length} items`,
+            description: isIsolatedBookPayment
+              ? `Preventa libro — ${lineItemsForMp[0]?.title || 'Libro'}`
+              : `Compra en Portfolio Fotográfico - ${lineItemsForMp.length} items`,
             external_reference: externalReference, // ✅ Mejorado: referencia única y consistente
             metadata: {
-              cart_items: cart.map((item: any) => ({
+              cart_items: lineItemsForMp.map((item) => ({
                 id: item.id,
                 title: item.title,
                 quantity: item.quantity,
                 productType: item.productType,
               })),
               order_reference: externalReference,
-              cart_total_items: cart.length,
+              cart_total_items: lineItemsForMp.length,
             },
           },
         }),
@@ -312,8 +341,8 @@ export function PaymentForm({ onSuccess, onError, customerInfo, total: propTotal
 
       const payment = data.payment;
 
-      // Limpiar carrito si el pago fue aprobado
-      if (payment.status === 'approved') {
+      // Limpiar carrito de la tienda solo si el pago no es el flujo aislado del libro
+      if (payment.status === 'approved' && !isIsolatedBookPayment) {
         clearCart();
       }
 

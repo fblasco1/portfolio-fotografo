@@ -85,8 +85,6 @@ export const bookQuery = `
         description,
         comingSoon,
         availability,
-        emailPlaceholder,
-        subscribe,
         presaleButton
       },
       en {
@@ -95,8 +93,6 @@ export const bookQuery = `
         description,
         comingSoon,
         availability,
-        emailPlaceholder,
-        subscribe,
         presaleButton
       }
     }

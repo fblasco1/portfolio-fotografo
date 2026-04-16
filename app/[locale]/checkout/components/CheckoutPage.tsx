@@ -76,7 +76,6 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
   useEffect(() => {
     const initialSelections: Record<string, { productType: 'photos' | 'postcards', size: ProductSize }> = {};
     cart.forEach(item => {
-      if (item.productType === 'book') return;
       if (!item.productType || !item.size) {
         // Si no tiene tipo ni tamaño, inicializar con valores por defecto solo si no existe ya
         if (!selectedTypesAndSizes[item.id]) {
@@ -101,13 +100,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
   // Cargar precios convertidos
   useEffect(() => {
     const loadPrices = async () => {
-      if (!region || !region.isSupported || cart.length === 0) {
-        setLoadingPrices(false);
-        return;
-      }
-
-      const needsPhotoPricing = cart.some((i) => i.productType !== 'book');
-      if (needsPhotoPricing && !pricing) {
+      if (!region || !region.isSupported || cart.length === 0 || !pricing) {
         setLoadingPrices(false);
         return;
       }
@@ -117,11 +110,6 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
 
       try {
         for (const item of cart) {
-          if (item.productType === 'book' && typeof item.unitPriceLocal === 'number') {
-            priceMap[`${item.id}_book`] = item.unitPriceLocal;
-            continue;
-          }
-
           // Usar tipo y tamaño seleccionados o los del item (solo foto ahora)
           const size = item.size || selectedTypesAndSizes[item.id]?.size || '15x21';
           
@@ -150,9 +138,6 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
 
         // Calcular total usando los valores seleccionados actuales
         const subtotal = cart.reduce((sum, item) => {
-          if (item.productType === 'book' && typeof item.unitPriceLocal === 'number') {
-            return sum + item.unitPriceLocal * item.quantity;
-          }
           // Usar tamaño seleccionado o el del item (solo foto ahora)
           const size = selectedTypesAndSizes[item.id]?.size || item.size || '15x21';
           const price = priceMap[`${item.id}_${size}`] || 0;
@@ -366,7 +351,6 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
 
   // Verificar si todos los items tienen tamaño seleccionado
   const allItemsConfigured = cart.every(item => {
-    if (item.productType === 'book') return true;
     if (item.size) return true;
     const selection = selectedTypesAndSizes[item.id];
     return selection && selection.size;
@@ -449,11 +433,8 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                   const selection = selectedTypesAndSizes[item.id];
                   // Usar nullish coalescing para asegurar que se use el estado si existe
                   const currentSize: ProductSize = selection?.size ?? item.size ?? '15x21';
-                  const isBook = item.productType === 'book';
-                  const itemPrice = isBook
-                    ? itemPrices[`${item.id}_book`] || 0
-                    : itemPrices[`${item.id}_${currentSize}`] || 0;
-                  const needsConfiguration = !isBook && !item.size;
+                  const itemPrice = itemPrices[`${item.id}_${currentSize}`] || 0;
+                  const needsConfiguration = !item.size;
                   
                   // Generar key única para evitar problemas de re-render
                   // Usar el índice para items sin tamaño para mantener la key estable
@@ -469,25 +450,9 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                       <div className="flex-1">
                         <h3 className="font-medium">{item.title}</h3>
                         <p className="text-sm text-gray-600">{item.subtitle}</p>
-
-                        {isBook && (
-                          <p className="text-sm font-medium text-stone-700 mt-2">
-                            {locale === 'es' ? 'Preventa' : 'Pre-sale'}
-                            {itemPrice > 0 && (
-                              <span className="text-gray-600 font-normal">
-                                {' '}
-                                ·{' '}
-                                {new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
-                                  style: 'currency',
-                                  currency: region?.currency || 'ARS',
-                                }).format(itemPrice)}
-                              </span>
-                            )}
-                          </p>
-                        )}
                         
                         {/* Selector de tipo y tamaño - siempre visible para permitir edición */}
-                        {!isBook && pricing ? (
+                        {pricing ? (
                           <div className="mt-3 space-y-3 p-3 bg-gray-50 rounded-lg">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -524,7 +489,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                               )}
                             </div>
                           </div>
-                        ) : !isBook ? (
+                        ) : (
                           <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <p className="text-sm text-yellow-800">
                               {locale === 'es' 
@@ -532,12 +497,12 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                                 : '⚠️ Loading pricing information...'}
                             </p>
                           </div>
-                        ) : null}
+                        )}
                         
                         <p className="text-sm mt-2">
                           {locale === 'es' ? 'Cantidad' : 'Quantity'}: {item.quantity}
                         </p>
-                        {!isBook && currentSize === 'custom' && (
+                        {currentSize === 'custom' && (
                           <p className="text-xs text-gray-500 italic">
                             {locale === 'es' ? 'Precio a cotizar' : 'Price to be quoted'}
                           </p>

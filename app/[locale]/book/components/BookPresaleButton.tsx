@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/contexts/CartContext";
 import { useRegion } from "@/contexts/RegionContext";
 import { convertUSDToLocal } from "@/lib/currency-converter";
+import { saveBookCheckoutSession } from "@/lib/book-checkout-session";
 import { urlFor } from "@/lib/sanity";
 import { Button } from "@/app/[locale]/components/ui/button";
 
@@ -35,7 +35,6 @@ export default function BookPresaleButton({
 }: BookPresaleButtonProps) {
   const router = useRouter();
   const { region, loading: regionLoading } = useRegion();
-  const { addItem } = useCart();
   const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
   const [converting, setConverting] = useState(false);
 
@@ -76,17 +75,17 @@ export default function BookPresaleButton({
   const goToCheckout = useCallback(() => {
     if (convertedPrice == null || convertedPrice <= 0) return;
 
-    addItem({
-      id: bookId,
+    saveBookCheckoutSession({
+      bookId,
       title,
       subtitle: author,
       image: coverUrl || BOOK_IMG_FALLBACK,
-      productType: "book",
       unitPriceLocal: convertedPrice,
+      quantity: 1,
     });
 
-    router.push(`/${locale}/checkout`);
-  }, [addItem, author, bookId, convertedPrice, coverUrl, locale, router, title]);
+    router.push(`/${locale}/checkout/book`);
+  }, [author, bookId, convertedPrice, coverUrl, locale, router, title]);
 
   if (presalePriceUSD == null || presalePriceUSD <= 0) {
     return null;

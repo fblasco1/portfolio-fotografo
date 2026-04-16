@@ -1,6 +1,5 @@
 "use client";
 
-import SanityNewsletterForm from "./SanityNewsletterForm";
 import BookPresaleButton from "./BookPresaleButton";
 
 interface SanityBookData {
@@ -11,8 +10,6 @@ interface SanityBookData {
     es: {
       comingSoon: string;
       availability: string;
-      emailPlaceholder: string;
-      subscribe: string;
       title: string;
       author: string;
       presaleButton?: string | null;
@@ -20,8 +17,6 @@ interface SanityBookData {
     en: {
       comingSoon: string;
       availability: string;
-      emailPlaceholder: string;
-      subscribe: string;
       title: string;
       author: string;
       presaleButton?: string | null;
@@ -53,12 +48,6 @@ export default function SanityNewsletterSection({ bookData, locale }: SanityNews
               coverImage={bookData.coverImage}
               presalePriceUSD={bookData.presalePriceUSD}
               presaleButtonLabel={content.presaleButton}
-            />
-          </div>
-          <div className="mt-6 lg:mt-4 text-center">
-            <SanityNewsletterForm
-              placeholder={content.emailPlaceholder}
-              buttonText={content.subscribe}
             />
           </div>
         </div>
