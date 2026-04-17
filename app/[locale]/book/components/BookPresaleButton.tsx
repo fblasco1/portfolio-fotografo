@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRegion } from "@/contexts/RegionContext";
-import { convertUSDToLocal } from "@/lib/currency-converter";
 import { saveBookCheckoutSession } from "@/lib/book-checkout-session";
 import { urlFor } from "@/lib/sanity";
 import { Button } from "@/app/[locale]/components/ui/button";
@@ -14,6 +13,7 @@ type BookPresaleButtonProps = {
   title: string;
   author: string;
   coverImage?: unknown;
+  presalePriceARS?: number | null;
   presalePriceUSD?: number | null;
   presaleButtonLabel?: string | null;
 };
@@ -30,84 +30,57 @@ export default function BookPresaleButton({
   title,
   author,
   coverImage,
+  presalePriceARS,
   presalePriceUSD,
   presaleButtonLabel,
 }: BookPresaleButtonProps) {
   const router = useRouter();
   const { region, loading: regionLoading } = useRegion();
-  const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
-  const [converting, setConverting] = useState(false);
 
   const coverUrl =
     coverImage && typeof coverImage === "object"
       ? urlFor(coverImage as any).width(400).height(560).fit("crop").url()
       : "";
 
-  useEffect(() => {
-    if (
-      presalePriceUSD == null ||
-      presalePriceUSD <= 0 ||
-      !region?.isSupported ||
-      !region.currency
-    ) {
-      setConvertedPrice(null);
-      return;
-    }
-
-    let cancelled = false;
-    setConverting(true);
-    convertUSDToLocal(presalePriceUSD, region.currency, region.country)
-      .then((v) => {
-        if (!cancelled) setConvertedPrice(v);
-      })
-      .catch(() => {
-        if (!cancelled) setConvertedPrice(null);
-      })
-      .finally(() => {
-        if (!cancelled) setConverting(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [presalePriceUSD, region?.currency, region?.country, region?.isSupported]);
+  const priceARS = useMemo(() => {
+    if (presalePriceARS != null && presalePriceARS > 0) return presalePriceARS;
+    return null;
+  }, [presalePriceARS]);
 
   const goToCheckout = useCallback(() => {
-    if (convertedPrice == null || convertedPrice <= 0) return;
+    if (priceARS == null || priceARS <= 0) return;
+    if (!region?.country || region.country !== "AR") return;
 
     saveBookCheckoutSession({
       bookId,
       title,
       subtitle: author,
       image: coverUrl || BOOK_IMG_FALLBACK,
-      unitPriceLocal: convertedPrice,
+      unitPriceLocal: priceARS,
       quantity: 1,
     });
 
     router.push(`/${locale}/checkout/book`);
-  }, [author, bookId, convertedPrice, coverUrl, locale, router, title]);
+  }, [author, bookId, coverUrl, locale, priceARS, region?.country, router, title]);
 
-  if (presalePriceUSD == null || presalePriceUSD <= 0) {
+  // Solo mostramos el botón si hay precio configurado directamente en ARS
+  if (priceARS == null || priceARS <= 0) {
     return null;
   }
 
   const defaultLabel = locale === "en" ? "Pre-sale" : "Preventa";
   const label = (presaleButtonLabel && presaleButtonLabel.trim()) || defaultLabel;
 
-  const formatted =
-    convertedPrice != null && region?.currency
-      ? new Intl.NumberFormat(locale === "en" ? "en-US" : "es-AR", {
-          style: "currency",
-          currency: region.currency,
-        }).format(convertedPrice)
-      : null;
+  const formatted = new Intl.NumberFormat(locale === "en" ? "en-US" : "es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(priceARS);
 
   const disabled =
     regionLoading ||
-    !region?.isSupported ||
-    converting ||
-    convertedPrice == null ||
-    convertedPrice <= 0;
+    !region?.country ||
+    region.country !== "AR";
 
   return (
     <div className="mt-6">
@@ -117,17 +90,13 @@ export default function BookPresaleButton({
         disabled={disabled}
         className="w-full sm:w-auto min-w-[220px] bg-stone-800 hover:bg-stone-900 text-white px-6 py-3 text-base font-medium disabled:opacity-50"
       >
-        {converting || convertedPrice == null
-          ? locale === "en"
-            ? "Loading price…"
-            : "Cargando precio…"
-          : `${label} — ${formatted}`}
+        {`${label} — ${formatted}`}
       </Button>
-      {!region?.isSupported && !regionLoading && (
+      {!regionLoading && region?.country && region.country !== "AR" && (
         <p className="text-sm text-amber-800 mt-2">
           {locale === "en"
-            ? "Select a supported country in Latin America to see the price and pay."
-            : "Selecciona un país de Latinoamérica soportado para ver el precio y pagar."}
+            ? "Payments for the book are available in Argentina (ARS)."
+            : "Los pagos del libro están disponibles en Argentina (ARS)."}
         </p>
       )}
     </div>

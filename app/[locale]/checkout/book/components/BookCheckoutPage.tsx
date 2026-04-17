@@ -59,8 +59,8 @@ export default function BookCheckoutPage({ locale }: BookCheckoutPageProps) {
       review: { es: "Tu pedido", en: "Your order" },
       regionNotSupported: { es: "Región no soportada", en: "Unsupported region" },
       regionMessage: {
-        es: "Solo admitimos pagos en Latinoamérica. Elige un país de la región para continuar.",
-        en: "We only support payments in Latin America. Pick a country from the region to continue.",
+        es: "La preventa del libro se cobra en pesos argentinos (ARS) y está disponible para Argentina.",
+        en: "The book pre-sale is charged in Argentine pesos (ARS) and is available for Argentina.",
       },
     };
     return texts[key]?.[locale as "es" | "en"] || texts[key]?.es || "";
@@ -76,7 +76,7 @@ export default function BookCheckoutPage({ locale }: BookCheckoutPageProps) {
     );
   }
 
-  if (!region || !region.isSupported) {
+  if (!region || !region.country || region.country !== "AR") {
     return (
       <div className="container mx-auto px-4 pt-32 pb-16">
         <div className="text-center py-12">
@@ -183,7 +183,8 @@ export default function BookCheckoutPage({ locale }: BookCheckoutPageProps) {
               <span>
                 {new Intl.NumberFormat(locale === "en" ? "en-US" : "es-AR", {
                   style: "currency",
-                  currency: region.currency,
+                  currency: "ARS",
+                  maximumFractionDigits: 0,
                 }).format(total)}
               </span>
             </div>

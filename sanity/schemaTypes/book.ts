@@ -4,10 +4,17 @@ export default {
   type: 'document',
   fields: [
     {
+      name: 'presalePriceARS',
+      title: 'Precio preventa (ARS)',
+      type: 'number',
+      description: 'Precio directo en pesos argentinos (ARS) para la preventa.',
+      validation: (Rule: any) => Rule.min(0).precision(0),
+    },
+    {
       name: 'presalePriceUSD',
       title: 'Precio preventa (USD)',
       type: 'number',
-      description: 'Precio base en dólares para la preventa. En la web se muestra convertido a la moneda del visitante (misma lógica que la tienda).',
+      description: 'LEGACY: precio base en USD. Preferir configurar “Precio preventa (ARS)”.',
       validation: (Rule: any) => Rule.min(0).precision(2),
     },
     { name: 'coverImage', title: 'Imagen de portada', type: 'image', options: { hotspot: true }, description: 'Imagen de portada del libro' },

@@ -76,6 +76,7 @@ export const bioQuery = `
 export const bookQuery = `
   *[_type == "book"][0] {
     _id,
+    presalePriceARS,
     presalePriceUSD,
     coverImage,
     content {

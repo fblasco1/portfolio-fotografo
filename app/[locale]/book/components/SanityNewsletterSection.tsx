@@ -4,6 +4,7 @@ import BookPresaleButton from "./BookPresaleButton";
 
 interface SanityBookData {
   _id: string;
+  presalePriceARS?: number | null;
   presalePriceUSD?: number | null;
   coverImage?: unknown;
   content: {
@@ -46,6 +47,7 @@ export default function SanityNewsletterSection({ bookData, locale }: SanityNews
               title={content.title}
               author={content.author}
               coverImage={bookData.coverImage}
+              presalePriceARS={bookData.presalePriceARS}
               presalePriceUSD={bookData.presalePriceUSD}
               presaleButtonLabel={content.presaleButton}
             />
