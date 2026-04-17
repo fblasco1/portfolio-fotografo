@@ -14,23 +14,35 @@ interface VideoModalProps {
 export default function VideoModal({ videoUrl, title, children }: VideoModalProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Función para convertir URL de YouTube a URL embebida
+  /** Normaliza URL de trailer a formato embebible (YouTube / Vimeo). */
   const getEmbedUrl = (url: string) => {
-    // Si ya es una URL embebida, la devolvemos tal como está
-    if (url.includes('/embed/')) {
-      return url;
+    const trimmed = url.trim();
+    if (!trimmed) return trimmed;
+
+    // Ya es embed
+    if (trimmed.includes("youtube.com/embed/") || trimmed.includes("youtube-nocookie.com/embed/")) {
+      return trimmed.startsWith("http") ? trimmed : `https:${trimmed}`;
     }
-    
-    // Extraer el ID del video de diferentes formatos de URL de YouTube
-    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = url.match(youtubeRegex);
-    
-    if (match) {
-      return `https://www.youtube.com/embed/${match[1]}`;
+    if (trimmed.includes("player.vimeo.com/video/")) {
+      return trimmed.startsWith("http") ? trimmed : `https:${trimmed}`;
     }
-    
-    // Si no es una URL de YouTube válida, devolver la URL original
-    return url;
+
+    // YouTube: varios formatos (watch, youtu.be, shorts, embed)
+    const youtubeRegex =
+      /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
+    const yt = trimmed.match(youtubeRegex);
+    if (yt) {
+      return `https://www.youtube.com/embed/${yt[1]}`;
+    }
+
+    // Vimeo: vimeo.com/123456789 o vimeo.com/channels/.../123456789
+    const vimeoRegex = /vimeo\.com\/(?:.*\/)?(\d+)/;
+    const vm = trimmed.match(vimeoRegex);
+    if (vm) {
+      return `https://player.vimeo.com/video/${vm[1]}`;
+    }
+
+    return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
   };
 
   const embedUrl = getEmbedUrl(videoUrl);
