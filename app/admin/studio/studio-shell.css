@@ -1,0 +1,10 @@
+/**
+ * next-sanity envuelve el Studio en [data-ui="NextStudioLayout"] con height: 100vh.
+ * Con AdminNav encima, eso suma más de 100vh y el scroll de página “corre” el toolbar
+ * (incluido Publish). Forzamos 100% del contenedor flex en su lugar.
+ */
+.admin-studio-root [data-ui="NextStudioLayout"] {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+}

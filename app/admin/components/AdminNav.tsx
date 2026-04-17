@@ -16,7 +16,13 @@ export default function AdminNav() {
   const navButtonClass = "gap-2 border border-stone-200 bg-white shadow-sm hover:bg-stone-50 hover:border-stone-300"
 
   return (
-    <nav className="flex flex-wrap items-center gap-2 border-b border-stone-200 bg-white px-4 py-3 mb-6 rounded-lg shadow-sm">
+    <nav
+      className={`flex flex-wrap items-center gap-2 bg-white px-4 py-3 ${
+        isStudio
+          ? 'mb-0 rounded-none border-0 py-2 shadow-none'
+          : 'mb-6 rounded-lg border-b border-stone-200 shadow-sm'
+      }`}
+    >
       {!isHub && (
         <Link href="/admin">
           <Button variant="outline" size="sm" className={navButtonClass}>
