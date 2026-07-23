@@ -1,0 +1,62 @@
+# Evita que el proyecto Free de Supabase se pause por inactividad (~7 días).
+# Genera actividad real con una consulta mínima a la API REST.
+#
+# Secrets requeridos (Settings → Secrets and variables → Actions):
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY
+#
+# Nota: los cron de GitHub Actions solo corren en la rama default (master).
+
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Lun, mié y vie a las 15:00 UTC (12:00 AR)
+    - cron: '0 15 * * 1,3,5'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::Faltan secrets NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY"
+            exit 1
+          fi
+
+          # Quitar barra final si existe
+          BASE_URL="${SUPABASE_URL%/}"
+          ENDPOINT="${BASE_URL}/rest/v1/orders?select=id&limit=1"
+
+          echo "Ping: ${ENDPOINT}"
+
+          HTTP_CODE=$(curl -sS -o /tmp/supabase-ping-body.txt -w "%{http_code}" \
+            --connect-timeout 20 \
+            --max-time 60 \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Accept: application/json" \
+            "${ENDPOINT}" || true)
+
+          echo "HTTP status: ${HTTP_CODE}"
+          head -c 500 /tmp/supabase-ping-body.txt || true
+          echo
+
+          # 2xx/4xx = el proyecto responde (activo). 5xx/000 = pausado o caída.
+          case "${HTTP_CODE}" in
+            2??|4??)
+              echo "OK: proyecto activo"
+              ;;
+            *)
+              echo "::error::Supabase no respondió bien (HTTP ${HTTP_CODE}). ¿Proyecto pausado?"
+              exit 1
+              ;;
+          esac
