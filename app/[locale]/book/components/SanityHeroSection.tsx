@@ -33,9 +33,9 @@ export default function SanityHeroSection({ bookData, locale }: SanityHeroSectio
 
   return (
     <div className="relative min-h-[50vh] flex flex-col lg:flex-1 lg:min-h-0 lg:shrink bg-gradient-to-b from-stone-50 via-stone-50 to-white">
-      <div className="container mx-auto px-4 h-full pt-36 lg:pt-24 flex flex-col justify-center relative z-10 lg:min-h-0 lg:overflow-hidden lg:pb-2">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-10 lg:gap-12 xl:gap-16 items-center w-full">
-          <div className="order-2 lg:order-1 max-w-2xl">
+      <div className="container mx-auto px-4 h-full pt-28 pb-6 md:pt-32 lg:pt-24 lg:pb-3 flex flex-col justify-start lg:justify-center relative z-10 lg:min-h-0 lg:overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 lg:gap-10 xl:gap-14 items-start lg:items-center w-full min-h-0">
+          <div className="order-2 lg:order-1 max-w-2xl min-w-0">
             <h1 className="text-2xl md:text-4xl lg:text-3xl font-bold text-stone-900 tracking-tight">
               {content.title}
             </h1>
@@ -48,9 +48,9 @@ export default function SanityHeroSection({ bookData, locale }: SanityHeroSectio
           </div>
 
           {coverImageUrl && (
-            <div className="order-1 lg:order-2 flex justify-center lg:justify-end lg:pr-4">
+            <div className="order-1 lg:order-2 flex justify-center lg:justify-end lg:pr-2 min-h-0">
               <figure
-                className="relative w-[min(240px,72vw)] sm:w-[280px] lg:w-[min(300px,26vw)] xl:w-[320px] aspect-[3/4] bg-stone-200"
+                className="relative w-[min(240px,72vw)] sm:w-[280px] lg:w-auto lg:h-[min(420px,calc(100dvh-14rem))] xl:h-[min(460px,calc(100dvh-13rem))] aspect-[3/4] bg-stone-200 shrink-0"
                 style={{
                   boxShadow:
                     "0 2px 4px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.18), 0 28px 56px -12px rgba(0,0,0,0.28), 8px 12px 24px -8px rgba(0,0,0,0.2)",
@@ -64,7 +64,6 @@ export default function SanityHeroSection({ bookData, locale }: SanityHeroSectio
                   sizes="(max-width: 1024px) 280px, 320px"
                   priority
                 />
-                {/* Filo derecho sutil: volumen de libro */}
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-y-0 right-0 w-[3px] bg-gradient-to-l from-black/25 to-transparent"
