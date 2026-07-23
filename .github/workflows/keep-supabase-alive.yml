@@ -1,9 +1,10 @@
 # Evita que el proyecto Free de Supabase se pause por inactividad (~7 días).
 # Genera actividad real con una consulta mínima a la API REST.
 #
-# Secrets requeridos (Settings → Secrets and variables → Actions):
+# Variables de repositorio (Settings → Secrets and variables → Actions → Variables):
 #   NEXT_PUBLIC_SUPABASE_URL
 #   NEXT_PUBLIC_SUPABASE_ANON_KEY
+# URL y anon key son públicas por diseño; no hace falta Secrets.
 #
 # Nota: los cron de GitHub Actions solo corren en la rama default (master).
 
@@ -22,13 +23,13 @@ jobs:
     steps:
       - name: Ping Supabase REST API
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
 
           if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
-            echo "::error::Faltan secrets NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY"
+            echo "::error::Faltan variables NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY"
             exit 1
           fi
 
