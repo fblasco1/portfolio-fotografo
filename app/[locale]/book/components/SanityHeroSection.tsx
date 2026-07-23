@@ -32,26 +32,25 @@ export default function SanityHeroSection({ bookData, locale }: SanityHeroSectio
     : null;
 
   return (
-    <div className="relative flex flex-col lg:flex-1 lg:min-h-0 lg:shrink bg-gradient-to-b from-stone-50 via-stone-50 to-white">
-      {/* pt >= header fijo (h-16) + aire; sin centrado vertical para que la tapa no suba bajo el header */}
-      <div className="container mx-auto px-4 pt-24 pb-8 md:pt-28 lg:pt-28 lg:pb-4 flex flex-col justify-start relative z-10 lg:min-h-0 lg:overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_auto] gap-8 lg:gap-12 xl:gap-16 items-start w-full">
-          <div className="order-2 lg:order-1 max-w-2xl min-w-0 pt-1">
-            <h1 className="text-2xl md:text-4xl lg:text-3xl font-bold text-stone-900 tracking-tight">
+    <section className="bg-white pt-24 pb-10 md:pt-28 md:pb-12 lg:pt-28 lg:pb-14">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-10 xl:gap-12">
+          <div className="order-2 w-full max-w-xl lg:order-1 lg:flex-1 lg:pt-2">
+            <h1 className="text-2xl font-bold tracking-tight text-stone-900 md:text-4xl lg:text-3xl">
               {content.title}
             </h1>
-            <h2 className="text-md md:text-lg lg:text-base mt-1 mb-4 lg:mb-3 text-stone-600">
+            <h2 className="mt-1 mb-4 text-md text-stone-600 md:text-lg lg:mb-3 lg:text-base">
               {content.author}
             </h2>
-            <p className="text-base md:text-lg lg:text-sm text-stone-800 leading-relaxed lg:line-clamp-6">
+            <p className="text-base leading-relaxed text-stone-800 md:text-lg lg:text-base">
               {content.description}
             </p>
           </div>
 
           {coverImageUrl && (
-            <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+            <div className="order-1 shrink-0 lg:order-2">
               <figure
-                className="relative w-[min(240px,72vw)] sm:w-[260px] lg:w-[240px] xl:w-[260px] aspect-[3/4] max-h-[min(360px,calc(100dvh-16rem))] bg-stone-200"
+                className="relative aspect-[3/4] w-[min(260px,72vw)] sm:w-[280px] lg:w-[280px] xl:w-[300px] bg-stone-100"
                 style={{
                   boxShadow:
                     "0 2px 4px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.18), 0 28px 56px -12px rgba(0,0,0,0.28), 8px 12px 24px -8px rgba(0,0,0,0.2)",
@@ -62,7 +61,7 @@ export default function SanityHeroSection({ bookData, locale }: SanityHeroSectio
                   alt={`Tapa: ${content.title}`}
                   fill
                   className="object-cover"
-                  sizes="260px"
+                  sizes="300px"
                   priority
                 />
                 <span
@@ -74,6 +73,6 @@ export default function SanityHeroSection({ bookData, locale }: SanityHeroSectio
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

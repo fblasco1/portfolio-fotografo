@@ -35,10 +35,10 @@ export default function SanityNewsletterSection({ bookData, locale }: SanityNews
   const content = bookData.content[locale as keyof typeof bookData.content] || bookData.content.es;
 
   return (
-    <section className="py-6 lg:py-4 lg:shrink-0">
+    <section className="bg-white py-8 md:py-10">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-stone-100 rounded-lg text-center p-4 lg:p-4">
+          <div className="bg-stone-100 rounded-lg text-center p-4 lg:p-5">
             <h3 className="text-xl lg:text-lg font-semibold mb-2 lg:mb-1">{content.comingSoon}</h3>
             <p className="text-base lg:text-sm text-gray-700">{content.availability}</p>
             <BookPresaleButton
