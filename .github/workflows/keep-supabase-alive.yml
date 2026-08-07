@@ -1,5 +1,6 @@
 # Evita que el proyecto Free de Supabase se pause por inactividad (~7 días).
-# Genera actividad real con una consulta mínima a la API REST.
+# Supabase exige "unas pocas" consultas a la DB casi cada día de la semana;
+# 3 pings/semana no bastaron (el proyecto se pausó igual).
 #
 # Variables de repositorio (Settings → Secrets and variables → Actions → Variables):
 #   NEXT_PUBLIC_SUPABASE_URL
@@ -12,8 +13,9 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    # Lun, mié y vie a las 15:00 UTC (12:00 AR)
-    - cron: '0 15 * * 1,3,5'
+    # Dos veces al día (00:00 y 12:00 AR / 03:00 y 15:00 UTC).
+    # GitHub puede demorar el cron; el doble margen reduce huecos >24h.
+    - cron: '0 3,15 * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Ping Supabase REST API
+      - name: Ping Supabase (DB + Auth)
         env:
           SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -33,31 +35,42 @@ jobs:
             exit 1
           fi
 
-          # Quitar barra final si existe
           BASE_URL="${SUPABASE_URL%/}"
-          ENDPOINT="${BASE_URL}/rest/v1/orders?select=id&limit=1"
+          AUTH_HEADER="Authorization: Bearer ${SUPABASE_ANON_KEY}"
+          API_HEADER="apikey: ${SUPABASE_ANON_KEY}"
 
-          echo "Ping: ${ENDPOINT}"
+          ping_url() {
+            local label="$1"
+            local url="$2"
+            local body_file
+            body_file="$(mktemp)"
+            local code
+            code=$(curl -sS -o "${body_file}" -w "%{http_code}" \
+              --connect-timeout 20 \
+              --max-time 60 \
+              -H "${API_HEADER}" \
+              -H "${AUTH_HEADER}" \
+              -H "Accept: application/json" \
+              "${url}" || true)
+            echo "${label}: HTTP ${code} → ${url}"
+            head -c 300 "${body_file}" || true
+            echo
+            case "${code}" in
+              2??|4??) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
 
-          HTTP_CODE=$(curl -sS -o /tmp/supabase-ping-body.txt -w "%{http_code}" \
-            --connect-timeout 20 \
-            --max-time 60 \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            -H "Accept: application/json" \
-            "${ENDPOINT}" || true)
+          # Varias consultas a la DB (lo que Supabase cuenta como actividad).
+          FAIL=0
+          ping_url "orders" "${BASE_URL}/rest/v1/orders?select=id&limit=1" || FAIL=1
+          ping_url "orders-count" "${BASE_URL}/rest/v1/orders?select=id&limit=1&offset=0" || FAIL=1
+          # Auth health: actividad de servicio (complemento; la DB es lo crítico).
+          ping_url "auth-health" "${BASE_URL}/auth/v1/health" || FAIL=1
 
-          echo "HTTP status: ${HTTP_CODE}"
-          head -c 500 /tmp/supabase-ping-body.txt || true
-          echo
+          if [ "${FAIL}" -ne 0 ]; then
+            echo "::error::Supabase no respondió bien. ¿Proyecto pausado o caída de red/DNS?"
+            exit 1
+          fi
 
-          # 2xx/4xx = el proyecto responde (activo). 5xx/000 = pausado o caída.
-          case "${HTTP_CODE}" in
-            2??|4??)
-              echo "OK: proyecto activo"
-              ;;
-            *)
-              echo "::error::Supabase no respondió bien (HTTP ${HTTP_CODE}). ¿Proyecto pausado?"
-              exit 1
-              ;;
-          esac
+          echo "OK: actividad registrada; proyecto activo"
