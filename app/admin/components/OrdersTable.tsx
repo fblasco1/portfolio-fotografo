@@ -3,9 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/app/[locale]/components/ui/card';
 import { Button } from '@/app/[locale]/components/ui/button';
-import { Eye, RefreshCw } from 'lucide-react';
+import { Eye, RefreshCw, CheckCircle2, Mail, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { Order } from '@/app/types/admin';
+import {
+  canAdminActOnPendingTransfer,
+  canAdminMarkOrderPaid,
+} from '@/lib/orders/transfer-rules';
 
 interface OrdersTableProps {
   beginDate: string;
@@ -16,6 +20,7 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -35,6 +40,24 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
     }
   }, [beginDate, endDate, filter]);
 
+  const postAction = async (order: Order, path: string, confirmMsg: string) => {
+    if (!confirm(confirmMsg)) return;
+    setBusyId(order.id);
+    try {
+      const res = await fetch(
+        `/api/admin/orders/${encodeURIComponent(order.id)}/${path}`,
+        { method: 'POST' }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al ejecutar la acción');
+      await fetchOrders();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al ejecutar la acción');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -42,11 +65,16 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       approved: 'bg-emerald-100 text-emerald-800',
+      PAID: 'bg-emerald-100 text-emerald-800',
       pending: 'bg-amber-100 text-amber-800',
+      PENDING_TRANSFER: 'bg-amber-100 text-amber-800',
+      AWAITING_VERIFICATION: 'bg-blue-100 text-blue-800',
       rejected: 'bg-red-100 text-red-800',
+      EXPIRED: 'bg-red-100 text-red-800',
       in_process: 'bg-blue-100 text-blue-800',
       cancelled: 'bg-stone-100 text-stone-800',
       refunded: 'bg-purple-100 text-purple-800',
+      SHIPPED: 'bg-indigo-100 text-indigo-800',
     };
 
     return (
@@ -87,7 +115,7 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
-        {['all', 'pending', 'approved', 'rejected'].map((status) => (
+        {['all', 'pending', 'approved', 'PENDING_TRANSFER', 'AWAITING_VERIFICATION', 'PAID', 'rejected'].map((status) => (
           <Button
             key={status}
             variant={filter === status ? 'default' : 'outline'}
@@ -98,7 +126,13 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
           >
             {status === 'all'
               ? 'Todas'
-              : status.charAt(0).toUpperCase() + status.slice(1)}
+              : status === 'PENDING_TRANSFER'
+                ? 'Transferencia'
+                : status === 'AWAITING_VERIFICATION'
+                  ? 'Verificar'
+                  : status === 'PAID'
+                    ? 'Paid'
+                    : status.charAt(0).toUpperCase() + status.slice(1)}
           </Button>
         ))}
       </div>
@@ -132,45 +166,115 @@ export default function OrdersTable({ beginDate, endDate }: OrdersTableProps) {
                 </td>
               </tr>
             ) : (
-              orders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-b border-stone-100 hover:bg-stone-50"
-                >
-                  <td className="p-3">
-                    <code className="text-xs text-stone-700">
-                      {order.id.length > 12 ? `${order.id.slice(0, 12)}...` : order.id}
-                    </code>
-                  </td>
-                  <td className="p-3 text-stone-900">
-                    {new Intl.NumberFormat('es-AR', {
-                      style: 'currency',
-                      currency: order.currency || 'ARS',
-                    }).format(Number(order.total_amount))}
-                  </td>
-                  <td className="p-3">{getStatusBadge(order.status)}</td>
-                  <td className="p-3 text-sm text-stone-600">
-                    {new Date(order.created_at).toLocaleDateString('es-AR', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </td>
-                  <td className="p-3">
-                    <Link
-                      href={`/admin/orders/${encodeURIComponent(order.id)}`}
-                      className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md hover:bg-stone-100 active:bg-stone-200 transition-colors"
-                      aria-label="Ver detalle de la orden"
-                    >
-                      <Button variant="ghost" size="sm" className="cursor-pointer hover:bg-stone-100">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </td>
-                </tr>
-              ))
+              orders.map((order) => {
+                const pendingTransfer = canAdminActOnPendingTransfer({
+                  status: order.status,
+                  payment_method_id: order.payment_method_id,
+                  metadata: order.metadata,
+                });
+                const canPay = canAdminMarkOrderPaid({
+                  status: order.status,
+                  payment_method_id: order.payment_method_id,
+                  metadata: order.metadata,
+                });
+                const busy = busyId === order.id;
+
+                return (
+                  <tr
+                    key={order.id}
+                    className="border-b border-stone-100 hover:bg-stone-50"
+                  >
+                    <td className="p-3">
+                      <code className="text-xs text-stone-700">
+                        {order.id.length > 12 ? `${order.id.slice(0, 12)}...` : order.id}
+                      </code>
+                    </td>
+                    <td className="p-3 text-stone-900">
+                      {new Intl.NumberFormat('es-AR', {
+                        style: 'currency',
+                        currency: order.currency || 'ARS',
+                      }).format(Number(order.total_amount))}
+                    </td>
+                    <td className="p-3">{getStatusBadge(order.status)}</td>
+                    <td className="p-3 text-sm text-stone-600">
+                      {new Date(order.created_at).toLocaleDateString('es-AR', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {canPay && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-[36px] border-emerald-300 text-emerald-800 hover:bg-emerald-50 cursor-pointer"
+                            disabled={busy}
+                            onClick={() =>
+                              postAction(
+                                order,
+                                'mark-paid',
+                                '¿Confirmás que verificaste el comprobante y querés marcar esta orden como PAID?'
+                              )
+                            }
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            {busy ? '…' : 'Aprobar'}
+                          </Button>
+                        )}
+                        {pendingTransfer && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="min-h-[36px] cursor-pointer"
+                              disabled={busy}
+                              onClick={() =>
+                                postAction(
+                                  order,
+                                  'resend-receipt',
+                                  '¿Reenviar al cliente el mail para subir el comprobante?'
+                                )
+                              }
+                            >
+                              <Mail className="h-4 w-4 mr-1" />
+                              {busy ? '…' : 'Reenviar mail'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="min-h-[36px] border-red-300 text-red-800 hover:bg-red-50 cursor-pointer"
+                              disabled={busy}
+                              onClick={() =>
+                                postAction(
+                                  order,
+                                  'reject',
+                                  '¿Rechazar esta orden pendiente? El cliente no podrá subir comprobante.'
+                                )
+                              }
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              {busy ? '…' : 'Rechazar'}
+                            </Button>
+                          </>
+                        )}
+                        <Link
+                          href={`/admin/orders/${encodeURIComponent(order.id)}`}
+                          className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md hover:bg-stone-100 active:bg-stone-200 transition-colors"
+                          aria-label="Ver detalle de la orden"
+                        >
+                          <Button variant="ghost" size="sm" className="cursor-pointer hover:bg-stone-100">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

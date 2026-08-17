@@ -19,7 +19,18 @@ export interface Order {
   payment_id: string | null;
   preference_id: string | null;
   mercadopago_order_id: string | null;
-  status: 'pending' | 'approved' | 'rejected' | 'in_process' | 'cancelled' | 'refunded';
+  status:
+    | 'pending'
+    | 'approved'
+    | 'rejected'
+    | 'in_process'
+    | 'cancelled'
+    | 'refunded'
+    | 'PENDING_TRANSFER'
+    | 'AWAITING_VERIFICATION'
+    | 'PAID'
+    | 'EXPIRED'
+    | 'SHIPPED';
   status_detail: string | null;
   total_amount: number;
   currency: string;

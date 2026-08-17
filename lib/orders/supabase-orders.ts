@@ -4,12 +4,19 @@
  * Los webhooks actualizan el estado
  */
 
-import { supabaseAdmin } from '@/lib/supabase/client';
+import { randomBytes } from 'crypto';
+
+import { sendCustomerTransferInstructionsEmail } from '@/lib/email/transfer-receipt.service';
+import { getMerchantBankDetails } from '@/lib/orders/bank-details';
+import { buildReceiptUploadUrl } from '@/lib/orders/receipt-link';
 import {
+  canAdminActOnPendingTransfer,
+  canAdminMarkOrderPaid,
   getTransferExpiryHours,
   isTransferOrderStale,
   isTransferPaymentMethod,
 } from '@/lib/orders/transfer-rules';
+import { supabaseAdmin } from '@/lib/supabase/client';
 
 function mapMPStatusToOrderStatus(status: string): string {
   if (status === 'processed') return 'approved';
@@ -158,13 +165,14 @@ export type CreateTransferOrderParams = {
 };
 
 export type CreateTransferOrderResult =
-  | { ok: true; orderId: string }
+  | { ok: true; orderId: string; receiptToken: string }
   | { ok: false; error: string };
 
 export async function createTransferOrder(
   params: CreateTransferOrderParams
 ): Promise<CreateTransferOrderResult> {
   const now = new Date().toISOString();
+  const receiptToken = randomBytes(32).toString('hex');
   const orderData = {
     customer_email: params.customerEmail,
     customer_name: params.customerName || null,
@@ -181,6 +189,7 @@ export async function createTransferOrder(
     metadata: {
       source: params.source || 'photos',
       payment_flow: 'manual_transfer',
+      receipt_token: receiptToken,
     },
     created_at: now,
     updated_at: now,
@@ -208,7 +217,7 @@ export async function createTransferOrder(
     console.error('⚠️ Error guardando historial inicial de transferencia:', historyError);
   }
 
-  return { ok: true, orderId: data.id };
+  return { ok: true, orderId: data.id, receiptToken };
 }
 
 export type MarkOrderAwaitingVerificationResult =
@@ -384,4 +393,265 @@ export async function expireTransferOrderIfStale(
   });
 
   return true;
+}
+
+export type MarkOrderPaidResult =
+  | { ok: true }
+  | { ok: false; error: string; notFound?: boolean; conflict?: boolean };
+
+/**
+ * Marca una orden de transferencia como PAID tras verificación del comprobante.
+ * Solo desde AWAITING_VERIFICATION.
+ */
+export async function markTransferOrderPaid(
+  orderId: string
+): Promise<MarkOrderPaidResult> {
+  const order = await findOrderByAdminId(orderId, [
+    'id',
+    'status',
+    'payment_method',
+    'payment_method_id',
+    'metadata',
+  ]);
+
+  if (!order.ok) {
+    return order;
+  }
+
+  if (
+    !canAdminMarkOrderPaid({
+      status: order.row.status,
+      payment_method: order.row.payment_method,
+      payment_method_id: order.row.payment_method_id,
+      metadata: (order.row.metadata as Record<string, unknown> | null) || null,
+    })
+  ) {
+    return {
+      ok: false,
+      error: `No se puede marcar como PAID una orden en estado '${order.row.status}'. Primero tiene que haber comprobante (AWAITING_VERIFICATION).`,
+      conflict: true,
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+  const { error: updateError } = await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'PAID',
+      status_detail: 'transfer_verified_manually',
+      updated_at: nowIso,
+    })
+    .eq('id', order.row.id)
+    .eq('status', 'AWAITING_VERIFICATION');
+
+  if (updateError) {
+    console.error('❌ Error marcando orden PAID:', updateError);
+    return { ok: false, error: updateError.message };
+  }
+
+  const { error: historyError } = await supabaseAdmin.from('order_status_history').insert({
+    order_id: order.row.id,
+    status: 'PAID',
+    status_detail: 'transfer_verified_manually',
+    notes: 'Pago por transferencia verificado y marcado como PAID desde el panel admin',
+  });
+
+  if (historyError) {
+    console.error('⚠️ Error guardando historial PAID:', historyError);
+  }
+
+  return { ok: true };
+}
+
+export type RejectTransferOrderResult =
+  | { ok: true }
+  | { ok: false; error: string; notFound?: boolean; conflict?: boolean };
+
+/**
+ * Rechaza una orden de transferencia que todavía no tiene comprobante.
+ */
+export async function rejectPendingTransferOrder(
+  orderId: string
+): Promise<RejectTransferOrderResult> {
+  const order = await findOrderByAdminId(orderId, [
+    'id',
+    'status',
+    'payment_method',
+    'payment_method_id',
+    'metadata',
+  ]);
+
+  if (!order.ok) {
+    return order;
+  }
+
+  if (
+    !canAdminActOnPendingTransfer({
+      status: order.row.status,
+      payment_method: order.row.payment_method,
+      payment_method_id: order.row.payment_method_id,
+      metadata: (order.row.metadata as Record<string, unknown> | null) || null,
+    })
+  ) {
+    return {
+      ok: false,
+      error: `No se puede rechazar una orden en estado '${order.row.status}'.`,
+      conflict: true,
+    };
+  }
+
+  const previousStatus = order.row.status;
+  const nowIso = new Date().toISOString();
+  const { error: updateError } = await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'rejected',
+      status_detail: 'transfer_rejected_by_admin',
+      updated_at: nowIso,
+    })
+    .eq('id', order.row.id)
+    .eq('status', previousStatus);
+
+  if (updateError) {
+    console.error('❌ Error rechazando orden:', updateError);
+    return { ok: false, error: updateError.message };
+  }
+
+  const { error: historyError } = await supabaseAdmin.from('order_status_history').insert({
+    order_id: order.row.id,
+    status: 'rejected',
+    status_detail: 'transfer_rejected_by_admin',
+    notes: 'Orden de transferencia rechazada desde el panel admin (sin comprobante)',
+  });
+
+  if (historyError) {
+    console.error('⚠️ Error guardando historial de rechazo:', historyError);
+  }
+
+  return { ok: true };
+}
+
+export type ResendReceiptEmailResult =
+  | { ok: true; emailId: string | null }
+  | { ok: false; error: string; notFound?: boolean; conflict?: boolean };
+
+/**
+ * Reenvía al cliente el mail con el link para subir el comprobante.
+ */
+export async function resendTransferReceiptEmail(
+  orderId: string
+): Promise<ResendReceiptEmailResult> {
+  const order = await findOrderByAdminId(orderId, [
+    'id',
+    'status',
+    'payment_method',
+    'payment_method_id',
+    'metadata',
+    'customer_email',
+    'customer_name',
+    'total_amount',
+    'currency',
+  ]);
+
+  if (!order.ok) {
+    return order;
+  }
+
+  if (
+    !canAdminActOnPendingTransfer({
+      status: order.row.status,
+      payment_method: order.row.payment_method,
+      payment_method_id: order.row.payment_method_id,
+      metadata: (order.row.metadata as Record<string, unknown> | null) || null,
+    })
+  ) {
+    return {
+      ok: false,
+      error: `No se puede reenviar el mail: la orden está en estado '${order.row.status}'.`,
+      conflict: true,
+    };
+  }
+
+  const email = String(order.row.customer_email || '').trim();
+  if (!email) {
+    return { ok: false, error: 'La orden no tiene email de cliente.' };
+  }
+
+  const bank = getMerchantBankDetails();
+  if (!bank) {
+    return {
+      ok: false,
+      error: 'Faltan datos bancarios (MERCHANT_CBU, MERCHANT_ALIAS, MERCHANT_BANK_HOLDER).',
+    };
+  }
+
+  const metadata = {
+    ...((order.row.metadata as Record<string, unknown> | null) || {}),
+  };
+  let receiptToken =
+    typeof metadata.receipt_token === 'string' ? metadata.receipt_token : '';
+
+  if (!receiptToken) {
+    receiptToken = randomBytes(32).toString('hex');
+    metadata.receipt_token = receiptToken;
+    const { error: tokenError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        metadata,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', order.row.id);
+
+    if (tokenError) {
+      console.error('❌ Error guardando receipt_token:', tokenError);
+      return { ok: false, error: 'No se pudo generar el link de comprobante.' };
+    }
+  }
+
+  const emailResult = await sendCustomerTransferInstructionsEmail({
+    toEmail: email,
+    customerName: (order.row.customer_name as string | null) || null,
+    orderId: order.row.id,
+    totalAmount: Number(order.row.total_amount) || 0,
+    currency: (order.row.currency as string) || 'ARS',
+    bank,
+    receiptUrl: buildReceiptUploadUrl(order.row.id, receiptToken, 'es'),
+    expiryHours: getTransferExpiryHours(),
+    locale: 'es',
+  });
+
+  if (!emailResult.ok) {
+    return { ok: false, error: emailResult.error };
+  }
+
+  return { ok: true, emailId: emailResult.emailId };
+}
+
+type OrderLookupResult =
+  | { ok: true; row: Record<string, any> }
+  | { ok: false; error: string; notFound?: boolean };
+
+async function findOrderByAdminId(
+  orderId: string,
+  columns: string[]
+): Promise<OrderLookupResult> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    orderId
+  );
+
+  let query = supabaseAdmin.from('orders').select(columns.join(', '));
+  query = isUuid ? query.eq('id', orderId) : query.eq('mercadopago_order_id', orderId);
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    console.error('❌ Error buscando orden admin:', error);
+    return { ok: false, error: error.message };
+  }
+
+  if (!data) {
+    return { ok: false, error: 'Orden no encontrada', notFound: true };
+  }
+
+  return { ok: true, row: data as Record<string, any> };
 }

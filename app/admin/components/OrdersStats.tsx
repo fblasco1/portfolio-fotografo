@@ -37,8 +37,15 @@ export default function OrdersStats({ beginDate, endDate }: OrdersStatsProps) {
         const data = await res.json();
         const orders: Order[] = data.orders || [];
 
-        const approved = orders.filter((o) => o.status === 'approved');
-        const pending = orders.filter((o) => o.status === 'pending');
+        const approved = orders.filter(
+          (o) => o.status === 'approved' || o.status === 'PAID'
+        );
+        const pending = orders.filter(
+          (o) =>
+            o.status === 'pending' ||
+            o.status === 'PENDING_TRANSFER' ||
+            o.status === 'AWAITING_VERIFICATION'
+        );
         const rejected = orders.filter((o) => o.status === 'rejected');
         const totalRevenue = approved.reduce(
           (sum, o) => sum + Number(o.total_amount || 0),

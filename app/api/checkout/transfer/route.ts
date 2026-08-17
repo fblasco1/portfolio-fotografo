@@ -1,15 +1,18 @@
 /**
  * POST /api/checkout/transfer
- * Crea una orden PENDING_TRANSFER y devuelve CBU/alias + order_id.
+ * Crea una orden PENDING_TRANSFER, envía email al cliente con link de comprobante,
+ * y devuelve CBU/alias + order_id.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 
+import { sendCustomerTransferInstructionsEmail } from "@/lib/email/transfer-receipt.service";
 import {
   getMerchantBankDetails,
   validateTransferCheckoutInput,
 } from "@/lib/orders/bank-details";
 import { createTransferOrder } from "@/lib/orders/supabase-orders";
+import { buildReceiptUploadUrl } from "@/lib/orders/receipt-link";
 import { getTransferExpiryHours } from "@/lib/orders/transfer-rules";
 
 export const runtime = "nodejs";
@@ -34,6 +37,7 @@ type Body = {
   totalAmount?: number;
   currency?: string;
   source?: "photos" | "book";
+  locale?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -51,6 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as Body;
+    const locale = body.locale === "en" ? "en" : "es";
     const items = (body.items || [])
       .filter((i) => i.title && Number(i.quantity) > 0)
       .map((i) => ({
@@ -110,17 +115,41 @@ export async function POST(request: NextRequest) {
     }
 
     const expiryHours = getTransferExpiryHours();
+    const receiptUrl = buildReceiptUploadUrl(created.orderId, created.receiptToken, locale);
+
+    const emailResult = await sendCustomerTransferInstructionsEmail({
+      toEmail: email,
+      customerName: customerName || null,
+      orderId: created.orderId,
+      totalAmount,
+      currency: body.currency || "ARS",
+      bank,
+      receiptUrl,
+      expiryHours,
+      locale,
+    });
+
+    if (!emailResult.ok) {
+      console.error(
+        "⚠️ Orden creada pero falló email al cliente:",
+        emailResult.error,
+        "orderId=",
+        created.orderId
+      );
+    }
 
     return NextResponse.json({
       success: true,
       orderId: created.orderId,
+      receiptToken: created.receiptToken,
       status: "PENDING_TRANSFER",
       totalAmount,
       currency: body.currency || "ARS",
       bank,
       expiryHours,
+      customerEmailSent: emailResult.ok,
       instructions:
-        "Transferí el monto exacto y subí el comprobante. Tenés 48 horas para enviarlo.",
+        "Transferí el monto exacto y subí el comprobante. Tenés 48 horas. También te enviamos un email con el link para subir el comprobante más tarde.",
     });
   } catch (err) {
     console.error("❌ /api/checkout/transfer:", err);

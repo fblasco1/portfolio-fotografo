@@ -17,6 +17,8 @@ import {
   getTransferExpiryHours,
   isTransferOrderStale,
   isTransferPaymentMethod,
+  canAdminMarkOrderPaid,
+  canAdminActOnPendingTransfer,
   validateReceiptFile,
 } from "../lib/orders/transfer-rules";
 
@@ -101,6 +103,57 @@ describe("transfer-rules: estados y expiración 48h", () => {
     assert.equal(isTransferPaymentMethod(null), true);
     assert.equal(isTransferPaymentMethod(undefined), true);
     assert.equal(isTransferPaymentMethod("MERCADOPAGO"), false);
+  });
+
+  it("permite al admin aprobar solo con comprobante en verificación", () => {
+    assert.equal(
+      canAdminMarkOrderPaid({ status: "PENDING_TRANSFER", payment_method: "TRANSFER" }),
+      false
+    );
+    assert.equal(
+      canAdminMarkOrderPaid({ status: "AWAITING_VERIFICATION", payment_method: "TRANSFER" }),
+      true
+    );
+    assert.equal(
+      canAdminMarkOrderPaid({
+        status: "pending",
+        payment_method_id: "TRANSFER",
+        metadata: { payment_flow: "manual_transfer" },
+      }),
+      false
+    );
+    assert.equal(
+      canAdminMarkOrderPaid({ status: "pending", payment_method_id: "visa" }),
+      false
+    );
+    assert.equal(canAdminMarkOrderPaid({ status: "PAID", payment_method: "TRANSFER" }), false);
+    assert.equal(canAdminMarkOrderPaid({ status: "approved" }), false);
+  });
+
+  it("permite rechazar o reenviar mail solo si la transferencia está pendiente", () => {
+    assert.equal(
+      canAdminActOnPendingTransfer({ status: "PENDING_TRANSFER", payment_method: "TRANSFER" }),
+      true
+    );
+    assert.equal(
+      canAdminActOnPendingTransfer({
+        status: "pending",
+        payment_method_id: "TRANSFER",
+        metadata: { payment_flow: "manual_transfer" },
+      }),
+      true
+    );
+    assert.equal(
+      canAdminActOnPendingTransfer({
+        status: "AWAITING_VERIFICATION",
+        payment_method: "TRANSFER",
+      }),
+      false
+    );
+    assert.equal(
+      canAdminActOnPendingTransfer({ status: "pending", payment_method_id: "visa" }),
+      false
+    );
   });
 
   it("marca stale si created_at supera 48h", () => {

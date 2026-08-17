@@ -40,6 +40,41 @@ export function isTransferPaymentMethod(paymentMethod: string | null | undefined
   return !paymentMethod || paymentMethod === "TRANSFER";
 }
 
+export function isManualTransferOrder(input: {
+  status?: string | null;
+  payment_method?: string | null;
+  payment_method_id?: string | null;
+  metadata?: Record<string, unknown> | null;
+}): boolean {
+  const method = String(input.payment_method || input.payment_method_id || "").toUpperCase();
+  if (method === "TRANSFER") return true;
+  if (input.status === "PENDING_TRANSFER" || input.status === "AWAITING_VERIFICATION") {
+    return true;
+  }
+  return input.metadata?.payment_flow === "manual_transfer";
+}
+
+/** PAID solo después de que el cliente envió el comprobante. */
+export function canAdminMarkOrderPaid(input: {
+  status?: string | null;
+  payment_method?: string | null;
+  payment_method_id?: string | null;
+  metadata?: Record<string, unknown> | null;
+}): boolean {
+  return input.status === "AWAITING_VERIFICATION" && isManualTransferOrder(input);
+}
+
+/** Rechazar o reenviar mail de comprobante: orden de transferencia aún sin comprobante. */
+export function canAdminActOnPendingTransfer(input: {
+  status?: string | null;
+  payment_method?: string | null;
+  payment_method_id?: string | null;
+  metadata?: Record<string, unknown> | null;
+}): boolean {
+  if (!isManualTransferOrder(input)) return false;
+  return input.status === "PENDING_TRANSFER" || input.status === "pending";
+}
+
 export type ReceiptValidationOk = { ok: true; mimeType: string };
 export type ReceiptValidationErr = {
   ok: false;

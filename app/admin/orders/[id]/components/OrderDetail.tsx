@@ -3,10 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/app/[locale]/components/ui/card';
 import { Button } from '@/app/[locale]/components/ui/button';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Mail, RotateCcw, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import AdminNav from '@/app/admin/components/AdminNav';
 import type { Order } from '@/app/types/admin';
+import {
+  canAdminActOnPendingTransfer,
+  canAdminMarkOrderPaid,
+} from '@/lib/orders/transfer-rules';
 
 interface OrderDetailProps {
   orderId: string;
@@ -61,6 +65,9 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
   const [payment, setPayment] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refunding, setRefunding] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrder = async () => {
@@ -105,7 +112,94 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
     }
   };
 
+  const handleMarkPaid = async () => {
+    if (
+      !order ||
+      !confirm(
+        '¿Confirmás que verificaste el comprobante y querés marcar esta orden como PAID?'
+      )
+    ) {
+      return;
+    }
+    setMarkingPaid(true);
+    try {
+      const res = await fetch(
+        `/api/admin/orders/${encodeURIComponent(orderId)}/mark-paid`,
+        { method: 'POST' }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al marcar como PAID');
+      alert('Orden marcada como PAID');
+      fetchOrder();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Error al marcar como PAID');
+    } finally {
+      setMarkingPaid(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (
+      !order ||
+      !confirm('¿Rechazar esta orden pendiente? El cliente no podrá subir comprobante.')
+    ) {
+      return;
+    }
+    setRejecting(true);
+    try {
+      const res = await fetch(
+        `/api/admin/orders/${encodeURIComponent(orderId)}/reject`,
+        { method: 'POST' }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al rechazar');
+      alert('Orden rechazada');
+      fetchOrder();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Error al rechazar');
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const handleResendReceipt = async () => {
+    if (
+      !order ||
+      !confirm('¿Reenviar al cliente el mail para subir el comprobante?')
+    ) {
+      return;
+    }
+    setResending(true);
+    try {
+      const res = await fetch(
+        `/api/admin/orders/${encodeURIComponent(orderId)}/resend-receipt`,
+        { method: 'POST' }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al reenviar el mail');
+      alert('Mail reenviado al cliente');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Error al reenviar el mail');
+    } finally {
+      setResending(false);
+    }
+  };
+
   const canRefund = order?.status === 'approved';
+  const canMarkPaid = order
+    ? canAdminMarkOrderPaid({
+        status: order.status,
+        payment_method_id: order.payment_method_id,
+        metadata: order.metadata,
+      })
+    : false;
+  const canActOnPending = order
+    ? canAdminActOnPendingTransfer({
+        status: order.status,
+        payment_method_id: order.payment_method_id,
+        metadata: order.metadata,
+      })
+    : false;
 
   if (loading) {
     return (
@@ -237,6 +331,40 @@ export default function OrderDetail({ orderId }: OrderDetailProps) {
                   <p className="text-sm text-stone-600">{order.status_detail}</p>
                 )}
               </div>
+
+              {canMarkPaid && (
+                <Button
+                  onClick={handleMarkPaid}
+                  disabled={markingPaid}
+                  className="w-full min-h-[44px] bg-emerald-700 text-white hover:bg-emerald-800 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer gap-2 transition-all"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {markingPaid ? 'Aprobando…' : 'Aprobar pago (PAID)'}
+                </Button>
+              )}
+
+              {canActOnPending && (
+                <>
+                  <Button
+                    onClick={handleResendReceipt}
+                    disabled={resending}
+                    variant="outline"
+                    className="w-full min-h-[44px] cursor-pointer gap-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {resending ? 'Reenviando…' : 'Reenviar mail de comprobante'}
+                  </Button>
+                  <Button
+                    onClick={handleReject}
+                    disabled={rejecting}
+                    variant="outline"
+                    className="w-full min-h-[44px] border-red-300 text-red-800 hover:bg-red-50 cursor-pointer gap-2"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    {rejecting ? 'Rechazando…' : 'Rechazar orden'}
+                  </Button>
+                </>
+              )}
 
               {canRefund && (
                 <Button

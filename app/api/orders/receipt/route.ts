@@ -2,21 +2,12 @@
  * POST /api/orders/receipt
  *
  * Flujo serverless (Vercel):
- * 1) Recibe FormData con `order_id` + archivo `receipt`
- * 2) Valida tamaño ≤ 3 MB (margen bajo el límite ~4.5 MB del body en Vercel)
- * 3) Lee el archivo en memoria (Buffer) — NO se guarda en Storage ni DB
- * 4) Envía el comprobante como adjunto al admin vía Resend
- * 5) Si el email OK → actualiza la orden a AWAITING_VERIFICATION
- *
- * --- Frontend (importante) ---
- * - Usar <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" />
- * - Validar `file.size <= 3 * 1024 * 1024` ANTES de enviar (mejor UX).
- * - Si el usuario elige una foto de celular > 3 MB, comprimir en el cliente
- *   (p. ej. browser-image-compression / canvas) a JPEG ~0.8 calidad / maxWidth 1600
- *   antes del FormData.append("receipt", blob, filename).
- * - PDFs: no comprimir en browser; pedir al usuario un archivo más liviano.
- * - Enviar con fetch(..., { method: "POST", body: formData }) SIN Content-Type manual
- *   (el browser setea el boundary multipart).
+ * 1) Recibe FormData con `order_id` + archivo `receipt` (+ `token` obligatorio)
+ * 2) Valida token vs metadata.receipt_token
+ * 3) Valida tamaño ≤ 3 MB
+ * 4) Lee el archivo en memoria (Buffer) — NO se guarda en Storage ni DB
+ * 5) Envía el comprobante como adjunto al admin vía Resend
+ * 6) Si el email OK → actualiza la orden a AWAITING_VERIFICATION
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -42,6 +33,7 @@ type OrderRow = {
   customer_email: string | null;
   customer_name: string | null;
   created_at: string;
+  metadata: Record<string, unknown> | null;
 };
 
 function jsonError(message: string, status: number, extra?: Record<string, unknown>) {
@@ -55,6 +47,9 @@ export async function POST(request: NextRequest) {
     const orderIdRaw = formData.get("order_id");
     const orderId =
       typeof orderIdRaw === "string" ? orderIdRaw.trim() : "";
+
+    const tokenRaw = formData.get("token");
+    const token = typeof tokenRaw === "string" ? tokenRaw.trim() : "";
 
     // Campo esperado: "receipt". Alias "file" / "comprobante" por compatibilidad.
     const receiptEntry =
@@ -70,12 +65,18 @@ export async function POST(request: NextRequest) {
       return jsonError(validation.error, validation.status, validation.extra);
     }
 
+    if (!token) {
+      return jsonError("Falta el token de acceso al comprobante.", 401);
+    }
+
     const mimeType = validation.mimeType;
     const receiptFile = receiptEntry as File;
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, status, total_amount, currency, customer_email, customer_name, created_at")
+      .select(
+        "id, status, total_amount, currency, customer_email, customer_name, created_at, metadata"
+      )
       .eq("id", orderId)
       .maybeSingle<OrderRow>();
 
@@ -86,6 +87,15 @@ export async function POST(request: NextRequest) {
 
     if (!order) {
       return jsonError(`Orden ${orderId} no encontrada.`, 404);
+    }
+
+    const storedToken =
+      typeof order.metadata?.receipt_token === "string"
+        ? order.metadata.receipt_token
+        : "";
+
+    if (!storedToken || storedToken !== token) {
+      return jsonError("Token inválido para esta orden.", 403);
     }
 
     if (order.status === "EXPIRED") {

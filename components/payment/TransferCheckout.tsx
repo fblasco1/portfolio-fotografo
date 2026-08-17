@@ -65,7 +65,9 @@ export function TransferCheckout({
   const es = locale === "es";
   const inputId = useId();
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [receiptToken, setReceiptToken] = useState<string | null>(null);
   const [bank, setBank] = useState<BankDetails | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -89,6 +91,7 @@ export function TransferCheckout({
           totalAmount: total,
           currency,
           source,
+          locale,
         }),
       });
       const data = await res.json();
@@ -96,7 +99,9 @@ export function TransferCheckout({
         throw new Error(data.error || "No se pudo crear la orden");
       }
       setOrderId(data.orderId);
+      setReceiptToken(typeof data.receiptToken === "string" ? data.receiptToken : null);
       setBank(data.bank);
+      setEmailSent(Boolean(data.customerEmailSent));
     } catch (err) {
       onError(err instanceof Error ? err.message : "Error al crear la orden");
     } finally {
@@ -129,11 +134,20 @@ export function TransferCheckout({
       onError(es ? "Primero elegí el archivo del comprobante." : "Please select a receipt file first.");
       return;
     }
+    if (!receiptToken) {
+      onError(
+        es
+          ? "Falta el token de la orden. Revisá el email con el link para subir el comprobante."
+          : "Missing order token. Check the email with the upload link."
+      );
+      return;
+    }
 
     setUploading(true);
     try {
       const form = new FormData();
       form.append("order_id", orderId);
+      form.append("token", receiptToken);
       form.append("receipt", file);
       const res = await fetch("/api/orders/receipt", { method: "POST", body: form });
       const data = await res.json();
@@ -217,6 +231,13 @@ export function TransferCheckout({
             ? `Orden ${orderId}. Tenés 48 h para subir el comprobante.`
             : `Order ${orderId}. You have 48h to upload the receipt.`}
         </p>
+        {emailSent && (
+          <p className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5 mt-2">
+            {es
+              ? "Te enviamos un email con estos datos y un link para subir el comprobante más tarde."
+              : "We emailed you these details and a link to upload the receipt later."}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
