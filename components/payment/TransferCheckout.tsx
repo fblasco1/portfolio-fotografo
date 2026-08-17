@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Check, FileUp, Upload } from "lucide-react";
 import { Button } from "@/app/[locale]/components/ui/button";
 import { MAX_RECEIPT_BYTES, ALLOWED_RECEIPT_MIME_TYPES } from "@/lib/orders/transfer-rules";
 
@@ -45,6 +46,12 @@ function copy(text: string) {
   return navigator.clipboard.writeText(text);
 }
 
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 export function TransferCheckout({
   locale,
   customerInfo,
@@ -56,6 +63,7 @@ export function TransferCheckout({
   onReceiptSent,
 }: Props) {
   const es = locale === "es";
+  const inputId = useId();
   const [orderId, setOrderId] = useState<string | null>(null);
   const [bank, setBank] = useState<BankDetails | null>(null);
   const [creating, setCreating] = useState(false);
@@ -96,12 +104,12 @@ export function TransferCheckout({
     }
   };
 
-  const handleUpload = async () => {
-    if (!orderId || !file) {
-      onError(es ? "Seleccioná un comprobante." : "Please select a receipt file.");
+  const assignFile = (next: File | null) => {
+    if (!next) {
+      setFile(null);
       return;
     }
-    if (file.size > MAX_RECEIPT_BYTES) {
+    if (next.size > MAX_RECEIPT_BYTES) {
       onError(
         es
           ? "El archivo supera 3 MB. Comprimí la imagen o usá un PDF más liviano."
@@ -109,8 +117,16 @@ export function TransferCheckout({
       );
       return;
     }
-    if (file.type && !ALLOWED_RECEIPT_MIME_TYPES.has(file.type)) {
+    if (next.type && !ALLOWED_RECEIPT_MIME_TYPES.has(next.type)) {
       onError(es ? "Formato no permitido (PDF, JPG, PNG o WEBP)." : "Invalid file type.");
+      return;
+    }
+    setFile(next);
+  };
+
+  const handleUpload = async () => {
+    if (!orderId || !file) {
+      onError(es ? "Primero elegí el archivo del comprobante." : "Please select a receipt file first.");
       return;
     }
 
@@ -160,10 +176,25 @@ export function TransferCheckout({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <ol className="space-y-1 text-sm text-stone-600">
+        <li>
+          <span className="font-semibold text-stone-900">1.</span>{" "}
+          {es ? "Transferí el monto exacto." : "Transfer the exact amount."}
+        </li>
+        <li>
+          <span className="font-semibold text-stone-900">2.</span>{" "}
+          {es ? "Hacé clic en el recuadro para elegir el comprobante." : "Click the box to choose your receipt."}
+        </li>
+        <li>
+          <span className="font-semibold text-stone-900">3.</span>{" "}
+          {es ? "Enviá el archivo con el botón verde." : "Send the file with the green button."}
+        </li>
+      </ol>
+
       <div className="rounded-lg border border-stone-200 bg-stone-50 p-4 space-y-2 text-sm">
         <p className="font-semibold text-stone-900">
-          {es ? "Transferí el monto exacto" : "Transfer the exact amount"}
+          {es ? "Datos para transferir" : "Transfer details"}
         </p>
         <p>
           <span className="text-stone-500">CBU</span>{" "}
@@ -188,33 +219,74 @@ export function TransferCheckout({
         </p>
       </div>
 
-      <div>
-        <label htmlFor="receipt" className="block text-sm font-medium mb-2">
-          {es ? "Comprobante (PDF o imagen, máx. 3 MB)" : "Receipt (PDF or image, max 3 MB)"}
-        </label>
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-stone-900">
+          {es ? "2. Elegí el comprobante" : "2. Choose the receipt"}
+        </p>
         <input
-          id="receipt"
+          id={inputId}
           type="file"
           accept="application/pdf,image/jpeg,image/png,image/webp"
-          className="w-full text-sm"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className="sr-only"
+          onChange={(e) => assignFile(e.target.files?.[0] ?? null)}
         />
+        <label
+          htmlFor={inputId}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors ${
+            file
+              ? "border-green-600 bg-green-50"
+              : "border-stone-400 bg-white hover:border-stone-800 hover:bg-stone-50"
+          }`}
+        >
+          {file ? (
+            <>
+              <Check className="h-8 w-8 text-green-700" aria-hidden />
+              <span className="font-medium text-stone-900">{file.name}</span>
+              <span className="text-sm text-stone-600">{formatFileSize(file.size)}</span>
+              <span className="text-sm font-medium text-stone-800 underline">
+                {es ? "Hacé clic para cambiar el archivo" : "Click to change the file"}
+              </span>
+            </>
+          ) : (
+            <>
+              <Upload className="h-8 w-8 text-stone-700" aria-hidden />
+              <span className="text-base font-semibold text-stone-900">
+                {es ? "Hacé clic acá para elegir el archivo" : "Click here to choose the file"}
+              </span>
+              <span className="text-sm text-stone-600">
+                {es
+                  ? "PDF, JPG, PNG o WEBP · máximo 3 MB"
+                  : "PDF, JPG, PNG or WEBP · max 3 MB"}
+              </span>
+            </>
+          )}
+        </label>
       </div>
 
-      <Button
-        type="button"
-        className="w-full bg-green-600 hover:bg-green-700 text-white"
-        disabled={uploading || !file}
-        onClick={handleUpload}
-      >
-        {uploading
-          ? es
-            ? "Enviando…"
-            : "Sending…"
-          : es
-            ? "Enviar comprobante"
-            : "Send receipt"}
-      </Button>
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-stone-900">
+          {es ? "3. Enviá el comprobante" : "3. Send the receipt"}
+        </p>
+        <Button
+          type="button"
+          className="w-full h-12 text-base bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+          disabled={uploading || !file}
+          onClick={handleUpload}
+        >
+          <FileUp className="mr-2 h-5 w-5" aria-hidden />
+          {uploading
+            ? es
+              ? "Enviando comprobante…"
+              : "Sending receipt…"
+            : file
+              ? es
+                ? "Enviar comprobante ahora"
+                : "Send receipt now"
+              : es
+                ? "Primero elegí un archivo"
+                : "Choose a file first"}
+        </Button>
+      </div>
     </div>
   );
 }
