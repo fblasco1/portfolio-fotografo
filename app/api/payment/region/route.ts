@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getClientIp } from '@/lib/http/client-ip';
 import { detectRegionByIP } from '@/lib/payment/region-detector';
 
 export async function GET(request: NextRequest) {
   try {
-    // Obtener IP del cliente
-    const forwarded = request.headers.get('x-forwarded-for');
-    const ip = forwarded ? forwarded.split(',')[0] : request.ip || 'unknown';
+    const ip = getClientIp(request, 'unknown');
     
     console.log('🌍 Detectando región para IP:', ip);
     

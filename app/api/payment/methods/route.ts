@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentFactory } from '@/lib/payment/payment-factory';
 import { initializePaymentProviders } from '@/lib/payment/config';
-import type { RegionInfo } from '@/lib/payment/region-detector';
+import { detectRegion } from '@/lib/payment/region-detector';
 
 // Inicializar proveedores de pago
 initializePaymentProviders();
@@ -11,14 +11,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const country = searchParams.get('country') || 'AR';
     
-    // Crear región ficticia para obtener el proveedor
-    const region: RegionInfo = {
-      country,
-      currency: country === 'AR' ? 'ARS' : 'USD',
-      isLatinAmerica: true,
-      isSupported: true,
-      paymentProvider: 'mercadopago'
-    };
+    const region = detectRegion(country);
 
     const provider = PaymentFactory.getProvider(region);
     

@@ -172,9 +172,14 @@ export interface MercadoPagoSDK {
   new (publicKey: string, options?: { locale?: string }): MercadoPagoInstance;
 }
 
+/** Respuesta del SDK: a veces array directo, a veces envelope con `results`. */
+export type PaymentMethodsResponse =
+  | PaymentMethod[]
+  | { results?: PaymentMethod[] };
+
 export interface MercadoPagoInstance {
   getIdentificationTypes(): Promise<IdentificationType[]>;
-  getPaymentMethods(options: { bin: string }): Promise<PaymentMethod[]>;
+  getPaymentMethods(options: { bin: string }): Promise<PaymentMethodsResponse>;
   getIssuers(options: { paymentMethodId: string; bin: string }): Promise<Issuer[]>;
   getInstallments(options: {
     amount: string;

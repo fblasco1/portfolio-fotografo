@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getClientIp } from '@/lib/http/client-ip';
 
 // Cache simple en memoria para evitar llamadas repetidas
 const geolocationCache = new Map<string, { data: any; timestamp: number }>();
@@ -6,10 +7,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 export async function GET(request: NextRequest) {
   try {
-    // Obtener la IP del cliente
-    const forwarded = request.headers.get('x-forwarded-for');
-    const realIP = request.headers.get('x-real-ip');
-    const ip = forwarded ? forwarded.split(',')[0] : realIP || request.ip || '127.0.0.1';
+    const ip = getClientIp(request);
     
     // Si estamos en localhost, usar una IP de Argentina para pruebas
     const testIP = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost' 

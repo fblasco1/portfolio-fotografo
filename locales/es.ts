@@ -61,7 +61,8 @@ export default {
         "submit": "Enviar Mensaje",
         "submitting": "Enviando...",
         "success": "¡Tu mensaje ha sido enviado exitosamente!",
-        "error": "Algo salió mal. Por favor, intenta de nuevo."
+        "error": "Algo salió mal. Por favor, intenta de nuevo.",
+        "invalidEmail": "Por favor, ingresá un email válido."
     },
     "shop": {
         "addToCart": "Agregar al carrito",

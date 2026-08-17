@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRegion } from "@/contexts/RegionContext";
 import { PaymentForm } from "@/components/payment/PaymentForm";
+import { TransferCheckout } from "@/components/payment/TransferCheckout";
 import { PaymentResultModal } from "@/components/payment/PaymentResultModal";
 import { Button } from "@/app/[locale]/components/ui/button";
 import { Card } from "@/app/[locale]/components/ui/card";
@@ -41,6 +42,7 @@ export default function BookCheckoutPage({ locale }: BookCheckoutPageProps) {
     },
   });
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"mercadopago" | "transfer">("mercadopago");
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -371,13 +373,56 @@ export default function BookCheckoutPage({ locale }: BookCheckoutPageProps) {
                 </Button>
               </form>
             ) : (
-              <PaymentForm
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                customerInfo={customerInfo}
-                total={total}
-                paymentLineItems={paymentLineItems}
-              />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={paymentMethod === "mercadopago" ? "default" : "outline"}
+                    className={paymentMethod === "mercadopago" ? "bg-stone-800 text-white" : ""}
+                    onClick={() => setPaymentMethod("mercadopago")}
+                  >
+                    Mercado Pago
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={paymentMethod === "transfer" ? "default" : "outline"}
+                    className={paymentMethod === "transfer" ? "bg-stone-800 text-white" : ""}
+                    onClick={() => setPaymentMethod("transfer")}
+                  >
+                    {locale === "es" ? "Transferencia" : "Bank transfer"}
+                  </Button>
+                </div>
+
+                {paymentMethod === "mercadopago" ? (
+                  <PaymentForm
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                    customerInfo={customerInfo}
+                    total={total}
+                    paymentLineItems={paymentLineItems}
+                  />
+                ) : (
+                  <TransferCheckout
+                    locale={locale}
+                    customerInfo={customerInfo}
+                    total={total}
+                    currency="ARS"
+                    source="book"
+                    items={[
+                      {
+                        title: session.title,
+                        quantity: qty,
+                        price: total,
+                      },
+                    ]}
+                    onError={handlePaymentError}
+                    onReceiptSent={(id) => {
+                      clearBookCheckoutSession();
+                      handlePaymentSuccess(id, "pending");
+                    }}
+                  />
+                )}
+              </div>
             )}
           </Card>
         </div>

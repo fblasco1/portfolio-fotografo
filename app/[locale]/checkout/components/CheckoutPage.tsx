@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useRegion } from '@/contexts/RegionContext';
 import { PaymentForm } from '@/components/payment/PaymentForm';
+import { TransferCheckout } from '@/components/payment/TransferCheckout';
 import { PaymentResultModal } from '@/components/payment/PaymentResultModal';
 import { Button } from '@/app/[locale]/components/ui/button';
 import { Card } from '@/app/[locale]/components/ui/card';
@@ -19,7 +20,7 @@ interface CheckoutPageProps {
 
 export default function CheckoutPage({ locale }: CheckoutPageProps) {
   const router = useRouter();
-  const { items: cart, getTotalItems, isEmpty, getTotals, updateItemTypeAndSize } = useCart();
+  const { items: cart, getTotalItems, isEmpty, getTotals, updateItemTypeAndSize, clearCartAfterPurchase } = useCart();
   const { region, loading: regionLoading } = useRegion();
   const [itemPrices, setItemPrices] = useState<Record<string, number>>({});
   const [loadingPrices, setLoadingPrices] = useState(true);
@@ -47,6 +48,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
     },
   });
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'transfer'>('mercadopago');
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Cargar precios globales
@@ -294,7 +296,7 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
   }
 
   // Handlers para el flujo de pago
-  const handlePaymentSuccess = (id: number, status: string) => {
+  const handlePaymentSuccess = (id: number | string, status: string) => {
     setPaymentId(id);
     setPaymentStatus(status as any);
     setShowResultModal(true);
@@ -688,12 +690,58 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                 </Button>
               </form>
             ) : (
-              <PaymentForm
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                customerInfo={customerInfo}
-                total={total}
-              />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={paymentMethod === 'mercadopago' ? 'default' : 'outline'}
+                    className={paymentMethod === 'mercadopago' ? 'bg-stone-800 text-white' : ''}
+                    onClick={() => setPaymentMethod('mercadopago')}
+                  >
+                    Mercado Pago
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={paymentMethod === 'transfer' ? 'default' : 'outline'}
+                    className={paymentMethod === 'transfer' ? 'bg-stone-800 text-white' : ''}
+                    onClick={() => setPaymentMethod('transfer')}
+                  >
+                    {locale === 'es' ? 'Transferencia' : 'Bank transfer'}
+                  </Button>
+                </div>
+
+                {paymentMethod === 'mercadopago' ? (
+                  <PaymentForm
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                    customerInfo={customerInfo}
+                    total={total}
+                  />
+                ) : (
+                  <TransferCheckout
+                    locale={locale}
+                    customerInfo={customerInfo}
+                    total={total}
+                    currency={region.currency || 'ARS'}
+                    source="photos"
+                    items={cart.map((item) => {
+                      const selection = selectedTypesAndSizes[item.id];
+                      const size = selection?.size ?? item.size ?? '15x21';
+                      const price = itemPrices[`${item.id}_${size}`] || 0;
+                      return {
+                        title: item.title,
+                        quantity: item.quantity || 1,
+                        price,
+                      };
+                    })}
+                    onError={handlePaymentError}
+                    onReceiptSent={(id) => {
+                      clearCartAfterPurchase();
+                      handlePaymentSuccess(id, 'pending');
+                    }}
+                  />
+                )}
+              </div>
             )}
           </Card>
         </div>

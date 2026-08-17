@@ -49,18 +49,18 @@ const nextConfig = {
     '@sanity/vision',
     'next-sanity',
   ],
-  webpack: (config, { isServer }) => {
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
     // Sanity 5.x importa `useEffectEvent` desde "react"; la copia empaquetada por Next
     // puede no exportarlo. Redirigimos react/react-dom a los de node_modules.
     // Importante: alias también los directorios completos (`…/cjs/…`), no solo `…$`,
     // para que react y react-dom coincidan en runtime (evitar "Incompatible React versions").
     if (!isServer) {
-      const prev = config.resolve.conditionNames
-      if (Array.isArray(prev)) {
+      const prev = config.resolve?.conditionNames
+      if (Array.isArray(prev) && config.resolve) {
         config.resolve.conditionNames = prev.filter((n) => n !== 'react-server')
       }
-      const alias = config.resolve.alias
-      if (alias && typeof alias === 'object' && !Array.isArray(alias)) {
+      const alias = config.resolve?.alias
+      if (alias && typeof alias === 'object' && !Array.isArray(alias) && config.resolve) {
         const r = require.resolve('react')
         const rd = require.resolve('react-dom')
         const reactPkgDir = path.dirname(require.resolve('react/package.json'))
@@ -85,11 +85,9 @@ const nextConfig = {
     return config
   },
   serverExternalPackages: ['@sanity/client', '@sanity/image-url'],
+  // Deuda ESLint legacy (any / unused); no bloquea tipos. Limpiar en un PR aparte.
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
   },
   images: {
     remotePatterns: [

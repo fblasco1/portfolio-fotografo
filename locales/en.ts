@@ -61,7 +61,8 @@ export default {
         "submit": "Send Message",
         "submitting": "Submitting...",
         "success": "Your message has been sent successfully!",
-        "error": "Something went wrong. Please try again."
+        "error": "Something went wrong. Please try again.",
+        "invalidEmail": "Please enter a valid email address."
     },
     "shop": {
         "addToCart": "Add to Cart",

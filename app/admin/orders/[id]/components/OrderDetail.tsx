@@ -40,7 +40,7 @@ function PaymentInfoCard({ payment }: { payment: Record<string, unknown> }) {
           <span className="text-stone-900">{renderValue(value)}</span>
         </div>
       ))}
-      {(payment.metadata || payment.additional_info) && (
+      {(payment.metadata != null || payment.additional_info != null) && (
         <details className="mt-2">
           <summary className="font-medium text-stone-600 cursor-pointer">metadata / additional_info</summary>
           <pre className="text-xs bg-stone-100 p-2 rounded mt-2 overflow-x-auto max-h-40 overflow-y-auto">

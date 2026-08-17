@@ -85,7 +85,9 @@ export function useMercadoPago({ publicKey, locale = 'es-AR' }: UseMercadoPagoOp
 
     try {
       const methods = await mp.getPaymentMethods({ bin });
-      return Array.isArray(methods) ? methods : methods?.results ?? [];
+      if (Array.isArray(methods)) return methods;
+      if (methods && Array.isArray(methods.results)) return methods.results;
+      return [];
     } catch (err) {
       const msg = getErrorMessage(err);
       console.warn('Métodos de pago desde SDK fallaron, se ignora BIN:', msg);

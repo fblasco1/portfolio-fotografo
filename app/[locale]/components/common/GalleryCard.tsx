@@ -11,6 +11,9 @@ interface GalleryCardProps {
 
 export default function GalleryCard({ folder, onClick }: GalleryCardProps) {
   const t = useI18n();
+  // Carpetas legacy usan keys de i18n (ej. "eraMileiTitulo")
+  type TranslationKey = Parameters<typeof t>[0];
+  const displayTitle = t(folder.title as TranslationKey);
 
   return (
     <div
@@ -19,13 +22,13 @@ export default function GalleryCard({ folder, onClick }: GalleryCardProps) {
     >
       <Image
         src={folder.cover || "/placeholder.svg"}
-        alt={folder.title}
+        alt={typeof displayTitle === "string" ? displayTitle : folder.title}
         width={300}
         height={200}
         className="w-full h-48 object-cover"
       />
       <div className="p-4">
-        <h3 className="text-lg font-semibold">{t(folder.title)}</h3>
+        <h3 className="text-lg font-semibold">{displayTitle}</h3>
         <p className="text-sm text-gray-500">{folder.location}</p>
       </div>
     </div>

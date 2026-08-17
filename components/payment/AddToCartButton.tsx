@@ -40,27 +40,26 @@ export default function AddToCartButton({
   const isDisabled = loading || !region || !region.isSupported || !isValidSize;
 
   const handleAddToCart = async () => {
-    if (isDisabled) {
-      if (!region || !region.isSupported) {
-        alert(locale === 'es' 
-          ? 'Región no soportada. Por favor selecciona un país de Latinoamérica.'
-          : 'Unsupported region. Please select a Latin American country.'
-        );
-        return;
-      }
-      if (!selectedSize || selectedSize === 'custom') {
-        alert(locale === 'es'
-          ? 'Por favor selecciona un tamaño válido.'
-          : 'Please select a valid size.'
-        );
-        return;
-      }
+    if (!region || !region.isSupported) {
+      alert(locale === 'es' 
+        ? 'Región no soportada. Por favor selecciona un país de Latinoamérica.'
+        : 'Unsupported region. Please select a Latin American country.'
+      );
       return;
     }
 
-    if (!selectedSize || selectedSize === 'custom') {
+    // Narrowing explícito: excluye null y 'custom'
+    if (selectedSize === null || selectedSize === 'custom') {
+      alert(locale === 'es'
+        ? 'Por favor selecciona un tamaño válido.'
+        : 'Please select a valid size.'
+      );
       return;
     }
+
+    if (loading) return;
+
+    const sizeToAdd = selectedSize;
 
     setIsAdding(true);
     
@@ -71,7 +70,7 @@ export default function AddToCartButton({
       // Agregar producto con tamaño al carrito
       addItem({
         ...product,
-        size: selectedSize
+        size: sizeToAdd
       });
       setShowSuccess(true);
       
