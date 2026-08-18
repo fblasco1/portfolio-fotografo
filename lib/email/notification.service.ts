@@ -34,7 +34,7 @@ export interface PaymentNotificationData {
  * Servicio para enviar notificaciones por email relacionadas con pagos
  */
 export class EmailNotificationService {
-  private fromEmail = process.env.RESEND_FROM_EMAIL || "Ventas <noreply@tu-dominio.com>";
+  private fromEmail = process.env.RESEND_FROM_EMAIL || "Cristian Pirovano <noreply@contacto.cristianpirovano.com>";
   private photographerEmail = process.env.PHOTOGRAPHER_EMAIL || "cristianpirovanoportfolio@gmail.com";
 
   /**

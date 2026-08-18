@@ -48,12 +48,15 @@ function getAdminEmail(): string {
   return (
     process.env.ADMIN_EMAIL ||
     process.env.PHOTOGRAPHER_EMAIL ||
-    "pirovanofotografia@gmail.com"
+    "cristianpirovanoportfolio@gmail.com"
   );
 }
 
 function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL || "Ventas <noreply@tu-dominio.com>";
+  return (
+    process.env.RESEND_FROM_EMAIL ||
+    "Cristian Pirovano <noreply@contacto.cristianpirovano.com>"
+  );
 }
 
 /**
