@@ -180,7 +180,7 @@ export function ReceiptUploadForm({ locale, orderId, token }: Props) {
           <span className="text-stone-500">{es ? "Titular" : "Holder"}</span> {bank.holder}
         </p>
         <p className="text-lg font-bold pt-1">{formatMoney(totalAmount)}</p>
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-stone-500 break-all">
           {es
             ? `Orden ${orderId}. Tenés ${expiryHours} h para subir el comprobante.`
             : `Order ${orderId}. You have ${expiryHours}h to upload the receipt.`}

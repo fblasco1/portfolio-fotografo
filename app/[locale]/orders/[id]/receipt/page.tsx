@@ -12,7 +12,7 @@ export default async function OrderReceiptPage({ params, searchParams }: PagePro
 
   if (!token?.trim()) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100 px-4 py-12">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100 px-4 pt-32 pb-16">
         <div className="mx-auto max-w-lg rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
           <h1 className="text-xl font-semibold mb-2">
             {es ? "Enlace incompleto" : "Incomplete link"}
@@ -28,7 +28,7 @@ export default async function OrderReceiptPage({ params, searchParams }: PagePro
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100 px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100 px-4 pt-32 pb-16">
       <div className="mx-auto max-w-lg space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-stone-900">

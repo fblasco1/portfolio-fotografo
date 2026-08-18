@@ -48,7 +48,7 @@ function getAdminEmail(): string {
   return (
     process.env.ADMIN_EMAIL ||
     process.env.PHOTOGRAPHER_EMAIL ||
-    "cristianpirovanoportfolio@gmail.com"
+    "pirovanofotografia@gmail.com"
   );
 }
 
