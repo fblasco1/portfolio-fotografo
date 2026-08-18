@@ -695,15 +695,19 @@ export default function CheckoutPage({ locale }: CheckoutPageProps) {
                   <Button
                     type="button"
                     variant={paymentMethod === 'mercadopago' ? 'default' : 'outline'}
-                    className={paymentMethod === 'mercadopago' ? 'bg-stone-800 text-white' : ''}
+                    className={`whitespace-normal text-sm leading-tight min-h-[44px] ${
+                      paymentMethod === 'mercadopago' ? 'bg-stone-800 text-white' : ''
+                    }`}
                     onClick={() => setPaymentMethod('mercadopago')}
                   >
-                    Mercado Pago
+                    {locale === 'es' ? 'Tarjeta crédito/débito' : 'Credit/debit card'}
                   </Button>
                   <Button
                     type="button"
                     variant={paymentMethod === 'transfer' ? 'default' : 'outline'}
-                    className={paymentMethod === 'transfer' ? 'bg-stone-800 text-white' : ''}
+                    className={`min-h-[44px] ${
+                      paymentMethod === 'transfer' ? 'bg-stone-800 text-white' : ''
+                    }`}
                     onClick={() => setPaymentMethod('transfer')}
                   >
                     {locale === 'es' ? 'Transferencia' : 'Bank transfer'}
